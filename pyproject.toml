@@ -1,0 +1,16 @@
+[project]
+name = "vcf_analysis_agent"
+version = "0.1.0"
+description = "VCF Analysis Agent using bcftools, strands, and AI."
+authors = ["elementalcollision <your-email@example.com>"]
+requires-python = ">=3.11"
+dependencies = [
+    "pytest",
+    "pre-commit",
+    # "bcftools",  # Python wrapper, if available on PyPI
+    # "strands",   # If available on PyPI
+]
+
+[build-system]
+requires = ["uv"]
+build-backend = "uv.build" 
