@@ -120,69 +120,51 @@ This project is currently in active development. See the Projects tab for curren
 - **Local LLM:** The agent is configured to use `qwen3:latest` via Ollama (ensure your Ollama server at `<ORBSTACK_SERVER_IP_PLACEHOLDER>` or your configured IP is running with this model).
 - **CI/CD (Kestra):** Basic Kestra workflow for build/lint/test is defined but on HOLD pending setup resolution.
 
-## CI/CD with Kestra
-
-This project includes a [Kestra](https://kestra.io/) workflow for CI/CD automation, located at `.context/ci/kestra_vcf_agent.yml`.
-
-### Register the Workflow
-
-**With Kestra CLI:**
-```bash
-kestra workflow create .context/ci/kestra_vcf_agent.yml
-```
-
-**With Kestra Web UI:**
-1. Go to `http://<KESTRA_SERVER_IP>:8080/ui` (replace `<KESTRA_SERVER_IP>` with your actual server IP)
-2. Log in and navigate to "Workflows"
-3. Click "Create" or "Import" and upload `.context/ci/kestra_vcf_agent.yml`
-
-### Run the Workflow
-
-- From the UI: Select the workflow (`vcf-agent-ci` in namespace `vcf.agent`) and click "Run".
-- From the CLI:
-  ```bash
-  kestra workflow trigger vcf.agent.vcf-agent-ci
-  ```
-
-### Monitor Results
-- Use the Kestra UI to view workflow runs, logs, and results for build, lint, and test steps.
-
-### Notes
-- The workflow builds the Docker image, runs linting (pre-commit), and tests (pytest) in a reproducible environment.
-- The agent currently defaults to using `qwen3:latest` via Ollama for local development. Update `src/vcf_agent/agent.py` if you wish to use a different model.
-- You can extend the workflow as your CI/CD needs grow.
-
-**Note:** Replace `<KESTRA_SERVER_IP>` and `<ORBSTACK_SERVER_IP>` with your actual server IP addresses in your local environment. Do not commit real IP addresses to public repositories.
-
 ## Project Structure
 
 The codebase follows modern Python best practices for maintainability and extensibility:
 
 ```
-vcf_analysis/
+VCF_Agent/
+├── docs/                      # Developer and user documentation
+├── golden/                    # Golden outputs for contract test validation
+├── prompts/                   # Versioned, auditable prompt contracts (YAML/Markdown)
+│   ├── vcf_analysis_summary_v1.yaml
+│   ├── vcf_comparison_v1.yaml
+│   ├── vcf_summarization_v1.yaml
+│   └── README.md
+├── sample_data/               # Place sample VCFs and indexes here (not committed)
+├── scripts/                   # Utility and automation scripts
 ├── src/
 │   └── vcf_agent/
-│       ├── __init__.py                # Package marker
-│       ├── agent.py                   # Main Strands agent scaffold
-│       ├── cli.py                     # CLI entrypoint for agent interaction
-│       ├── config.py                  # Configuration management
-│       └── bcftools_integration.py    # bcftools integration wrappers
-├── prompts/                           # Versioned, auditable prompt contracts (YAML/Markdown)
-│   ├── vcf_analysis_summary_v1.yaml   # Example: VCF summary analysis contract
-│   └── README.md                      # Prompt contract audit documentation
+│       ├── __init__.py
+│       ├── agent.py           # Main agent logic and tool integration
+│       ├── bcftools_integration.py
+│       ├── cli.py
+│       └── config.py
 ├── tests/
-│   ├── __init__.py                    # Test package marker
-│   ├── test_agent.py                  # Agent and tool tests
-│   ├── prompt_contracts/              # Automated prompt contract tests
-│   └── golden/                        # Golden outputs for contract test validation
-├── sample_data/                       # Place sample VCFs and indexes here (not committed)
+│   ├── __init__.py
+│   ├── test_agent.py
+│   ├── prompt_contracts/      # Automated prompt contract tests
+│   └── golden/                # Golden outputs for contract test validation
+├── .dockerignore
+├── .gitignore
+├── Dockerfile
+├── LICENSE
+├── orbstack.yaml
+├── PRD -  VCF Analysis Agent.md
+├── pyproject.toml
+├── pytest.ini
+├── README.md
+├── requirements.txt
 ```
 
-- **src/vcf_agent/agent.py**: Defines the Strands agent, system prompt, and tool integration.
-- **src/vcf_agent/cli.py**: Command-line interface for interacting with the agent.
-- **src/vcf_agent/config.py**: Placeholder for future configuration logic.
-- **src/vcf_agent/bcftools_integration.py**: Stub for integrating bcftools commands.
-- **tests/**: Contains all tests, mirroring the main package structure.
+- **prompts/**: Versioned prompt contracts and documentation
+- **src/vcf_agent/**: Agent logic, CLI, bcftools integration, and config
+- **tests/prompt_contracts/**: Automated contract-driven tests
+- **golden/**: Golden outputs for test validation
+- **sample_data/**: Example/sample VCFs (not committed)
+- **scripts/**: Utility scripts for batch operations, compliance, etc.
 
 This structure supports modular development, easy testing, and future extensibility.
 
@@ -310,4 +292,61 @@ python scripts/batch_compliance_check.py -d my_vcfs/ -t bcftools
 ### CLI Subprocess Mocking for Tests
 
 - CLI tests use a robust subprocess mocking strategy to ensure thorough coverage and reliability.
-- When running CLI tests, the environment variable `
+
+## CI/CD, Containerization, and Test Automation
+
+### Containerization (Docker & OrbStack)
+
+You can build and run the VCF Analysis Agent in a containerized environment using Docker or OrbStack.
+
+#### Build the Docker image
+```bash
+./scripts/build.sh
+```
+
+#### Run the container (with OrbStack or Docker)
+```bash
+./scripts/run.sh
+```
+- This mounts your project directory to `/app` in the container.
+- The container exposes port 8000 by default (edit if needed).
+- The OrbStack server is set to `<ORBSTACK_SERVER_IP>` (edit `scripts/run.sh` if your server changes).
+
+#### OrbStack Configuration
+- The `orbstack.yaml` file is provided for local development and multi-service orchestration.
+- Ensure your Ollama service within OrbStack (or your local Ollama server) is accessible and running `qwen3:latest` if you intend to use the default agent configuration.
+- You can use OrbStack's UI or CLI to manage and launch the stack.
+
+### CI/CD with Kestra
+
+This project includes a [Kestra](https://kestra.io/) workflow for CI/CD automation, located at `.context/ci/kestra_vcf_agent.yml`.
+
+#### Register the Workflow
+
+**With Kestra CLI:**
+```bash
+kestra workflow create .context/ci/kestra_vcf_agent.yml
+```
+
+**With Kestra Web UI:**
+1. Go to `http://<KESTRA_SERVER_IP>:8080/ui` (replace `<KESTRA_SERVER_IP>` with your actual server IP)
+2. Log in and navigate to "Workflows"
+3. Click "Create" or "Import" and upload `.context/ci/kestra_vcf_agent.yml`
+
+#### Run the Workflow
+
+- From the UI: Select the workflow (`vcf-agent-ci` in namespace `vcf.agent`) and click "Run".
+- From the CLI:
+  ```bash
+  kestra workflow trigger vcf.agent.vcf-agent-ci
+  ```
+
+#### Monitor Results
+- Use the Kestra UI to view workflow runs, logs, and results for build, lint, and test steps.
+
+#### Notes
+- The workflow builds the Docker image, runs linting (pre-commit), and tests (pytest) in a reproducible environment.
+- The agent currently defaults to using `qwen3:latest` via Ollama for local development. Update `src/vcf_agent/agent.py` if you wish to use a different model.
+- You can extend the workflow as your CI/CD needs grow.
+
+**Note:** Replace `<KESTRA_SERVER_IP>` and `<ORBSTACK_SERVER_IP>` with your actual server IP addresses in your local environment. Do not commit real IP addresses to public repositories.
