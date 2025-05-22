@@ -39,6 +39,7 @@ Dockerfile*
 # Test & Coverage
 .coverage
 htmlcov/
+coverage.xml
 .tox/
 .cache/
 pytest_cache/
@@ -60,4 +61,10 @@ Thumbs.db
 
 # Project/Editor
 .cursor/
-.context/ 
+.context/
+
+sample_data/
+golden/
+.hypothesis/
+
+# Edge-case documentation is now versioned in .context/plan/EDGECASE_VCF_DESCRIPTIONS.md 
