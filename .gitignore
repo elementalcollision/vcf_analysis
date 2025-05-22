@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+*.log
+
+# Environments
+.env
+.venv
+venv/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints
+
+# Data
+*.vcf
+*.bcf
+*.gz
+*.csi
+*.db
+*.sqlite
+*.h5
+*.csv
+*.tsv
+*.jsonl
+*.lancedb
+
+# Containers
+*.img
+*.dockerfile
+Dockerfile*
+.dockerignore
+
+# Test & Coverage
+.coverage
+htmlcov/
+.tox/
+.cache/
+pytest_cache/
+
+# Secrets
+*.key
+*.pem
+*.env
+secrets.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Project/Editor
+.cursor/
+.context/ 
