@@ -1,0 +1,47 @@
+id: vcf-summarization-001
+version: 1.0.0
+compliance: [VCFv4.3, FDA, GCP]
+changelog:
+  - "1.0.0: Initial version for VCF summarization"
+role: "Genomics data analyst"
+context: "Summarize a VCF file for key variant statistics and sample-level insights"
+instructions: |
+  - Provide a summary of the VCF file, including variant counts, types, and sample-level statistics.
+  - Highlight any notable patterns or outliers in the data.
+  - Respond with ONLY valid JSON matching the provided schema. Do not include any explanation, markdown, <think> blocks, or extra text.
+  - If you cannot perform the task, return a valid JSON object with an 'error' field and no other fields.
+constraints:
+  - Use only the provided file and metadata.
+  - Output must be in JSON schema (see below).
+  - Output must be valid JSON, with no extra text, explanation, <think> blocks, or formatting.
+  - If the task cannot be performed, output a valid JSON object with an 'error' field and no other fields.
+evaluation:
+  - Output must match the provided JSON schema.
+  - Determinism: Output must be identical for the same input and seed.
+test_cases:
+  - input: "sample_data/HG00098.vcf.gz"
+    seed: 42
+    expected_output: "tests/golden/vcf_summarization_HG00098.json"
+json_schema:
+  type: object
+  properties:
+    variant_count:
+      type: integer
+    variant_types:
+      type: object
+      additionalProperties:
+        type: integer
+    sample_statistics:
+      type: object
+      additionalProperties:
+        type: object
+        properties:
+          mean_depth:
+            type: number
+          het_ratio:
+            type: number
+    notable_patterns:
+      type: array
+      items:
+        type: string
+  required: [variant_count, variant_types, sample_statistics, notable_patterns] 

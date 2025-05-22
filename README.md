@@ -165,11 +165,16 @@ vcf_analysis/
 │       ├── __init__.py                # Package marker
 │       ├── agent.py                   # Main Strands agent scaffold
 │       ├── cli.py                     # CLI entrypoint for agent interaction
-│       ├── config.py                  # Configuration management (placeholder)
-│       └── bcftools_integration.py    # Placeholder for bcftools integration
+│       ├── config.py                  # Configuration management
+│       └── bcftools_integration.py    # bcftools integration wrappers
+├── prompts/                           # Versioned, auditable prompt contracts (YAML/Markdown)
+│   ├── vcf_analysis_summary_v1.yaml   # Example: VCF summary analysis contract
+│   └── README.md                      # Prompt contract audit documentation
 ├── tests/
 │   ├── __init__.py                    # Test package marker
-│   └── test_agent.py                  # Basic agent tests (pytest)
+│   ├── test_agent.py                  # Agent and tool tests
+│   ├── prompt_contracts/              # Automated prompt contract tests
+│   └── golden/                        # Golden outputs for contract test validation
 ├── sample_data/                       # Place sample VCFs and indexes here (not committed)
 ```
 
@@ -190,16 +195,24 @@ This structure supports modular development, easy testing, and future extensibil
 - The wrapper is easily extensible for additional `bcftools` commands.
 - All wrapper functions are covered by automated tests using pytest.
 
+**VCF Comparison Tool (`vcf_compare`)**
+
+- The agent provides a high-level VCF comparison tool via the `vcf_compare` function in `src/vcf_agent/bcftools_integration.py`.
+- This tool runs `bcftools isec` to compare two VCF files, parses the output, and returns a JSON-ready Python dict summarizing:
+  - `concordant_variant_count`: Number of variants present in both files
+  - `discordant_variant_count`: Number of variants unique to either file
+  - `unique_to_file_1`: List of variant dicts unique to file 1
+  - `unique_to_file_2`: List of variant dicts unique to file 2
+  - `quality_metrics`: (reserved for future extension)
+- Each variant is represented as a dict: `{ "CHROM": ..., "POS": ..., "REF": ..., "ALT": ... }`
+- The function handles all error cases and always returns a contract-compliant JSON object.
+- This tool is critical for contract-driven VCF comparison, automated testing, and agent workflows.
+
 **Example usage:**
 ```python
-from vcf_agent.bcftools_integration import bcftools_stats
-
-# Run 'bcftools stats --help'
-returncode, stdout, stderr = bcftools_stats(["--help"])
-if returncode == 0 or returncode == 1:
-    print(stdout or stderr)
-else:
-    print(f"Error: {stderr}")
+from vcf_agent.bcftools_integration import vcf_compare
+result = vcf_compare("sample1.vcf.gz", "sample2.vcf.gz")
+print(result)
 ```
 
 See the module docstrings for more details and usage patterns.
@@ -297,77 +310,4 @@ python scripts/batch_compliance_check.py -d my_vcfs/ -t bcftools
 ### CLI Subprocess Mocking for Tests
 
 - CLI tests use a robust subprocess mocking strategy to ensure thorough coverage and reliability.
-- When running CLI tests, the environment variable `VCF_AGENT_CLI_MOCK_RESPONSE` is set in the subprocess. If this variable is present, the CLI prints its value and exits, bypassing the real agent logic.
-- This allows tests to assert CLI output deterministically, even in subprocesses, and ensures that CLI entrypoint code is fully covered.
-- Example (from test):
-  ```python
-  import subprocess, sys, os
-  result = subprocess.run(
-      [sys.executable, '-m', 'vcf_agent.cli', 'echo: CLI test!'],
-      capture_output=True, text=True,
-      env={**os.environ, "VCF_AGENT_CLI_MOCK_RESPONSE": "Echo: CLI test!"}
-  )
-  assert result.returncode == 0
-  assert 'Echo: CLI test!' in result.stdout
-  ```
-- This approach is used for all CLI tool tests, including validation and echo tools.
-
-### Coverage
-
-- The project maintains high test coverage, including for CLI and configuration modules.
-- Coverage is measured using `pytest-cov`:
-  ```bash
-  PYTHONPATH=src pytest --cov=src/vcf_agent --cov-report=term-missing --cov-report=xml
-  ```
-- Coverage reports are available in the terminal and as `coverage.xml` for CI integration.
-
-## Sample Data for Testing
-
-- Sample VCF files for testing should be placed in the `sample_data/` directory (which is gitignored).
-- A sample file is required for validation tests (see `tests/test_validation.py`).
-- You can obtain example VCF files from: https://bioinformaticstools.mayo.edu/research/vcf-miner-sample-vcfs/
-- Index files (`.csi`/`.tbi`) may be generated for these files using `bcftools index`.
-
-## Golden-File Regression Tests
-
-Golden-file tests ensure that the output of wrappers (e.g., bcftools_stats) on known input files remains consistent over time.
-
-- **Inputs:** Place sample VCF/BCF files in `sample_data/` (e.g., `sample_data/<your_sample.vcf.gz>`).
-- **Golden outputs:** Place expected outputs in `golden/` (e.g., `golden/<your_sample.stats.txt>`). These files are gitignored by default.
-- **How to generate/update:**
-  1. Run the wrapper on your sample file and save the output:
-     ```bash
-     python -m vcf_agent.cli "validate_vcf: sample_data/<your_sample.vcf.gz>" > golden/<your_sample.stats.txt>
-     # Or use a Python script to call the wrapper and write output
-     ```
-  2. If the output changes intentionally, update the golden file and review the diff.
-- **How to write a golden-file test:**
-  ```python
-  import os
-  import pytest
-  from vcf_agent.bcftools_integration import bcftools_stats
-
-  def normalize(text):
-      return '\n'.join(line.strip() for line in text.strip().splitlines() if line.strip())
-
-  SAMPLE_VCF = "sample_data/<your_sample.vcf.gz>"
-  GOLDEN_STATS = "golden/<your_sample.stats.txt>"
-
-  @pytest.mark.skipif(not os.path.exists(SAMPLE_VCF), reason="Sample VCF file not found")
-  @pytest.mark.skipif(not os.path.exists(GOLDEN_STATS), reason="Golden stats file not found")
-  def test_bcftools_stats_golden():
-      rc, out, err = bcftools_stats([SAMPLE_VCF])
-      actual = out if out else err
-      with open(GOLDEN_STATS) as f:
-          golden = f.read()
-      assert normalize(actual) == normalize(golden), "Output does not match golden file. Update the golden file if this is intentional."
-  ```
-- **Interpreting failures:** If a golden-file test fails, review the diff. If the change is expected, regenerate the golden file. If not, investigate for regressions. 
-
-## References
-
-- [SAM/BAM/CRAM/VCF Specifications (hts-specs)](https://github.com/samtools/hts-specs) 
-
-## Edge-case documentation
-
-Edge-case documentation is maintained in `.context/plan/EDGECASE_VCF_DESCRIPTIONS.md` (moved from `sample_data/` to ensure it is versioned and not masked by `.gitignore`). 
+- When running CLI tests, the environment variable `

@@ -1,0 +1,42 @@
+id: vcf-analysis-001
+version: 1.0.0
+compliance: [VCFv4.3, FDA, GCP]
+changelog:
+  - "1.0.0: Initial version for VCF summary analysis"
+role: "Genomics data analyst"
+context: "Analyze a VCF file for variant quality and compliance"
+instructions: |
+  - Summarize the number of variants, types, and quality metrics.
+  - Flag any records that do not meet VCFv4.3 compliance.
+  - Respond with ONLY valid JSON matching the provided schema. Do not include any explanation, markdown, <think> blocks, or extra text.
+  - If you cannot perform the task, return a valid JSON object with an 'error' field and no other fields.
+constraints:
+  - Use only the provided file and metadata.
+  - Output must be in JSON schema (see below).
+  - Output must be valid JSON, with no extra text, explanation, <think> blocks, or formatting.
+  - If the task cannot be performed, output a valid JSON object with an 'error' field and no other fields.
+evaluation:
+  - Output must match the provided JSON schema.
+  - Determinism: Output must be identical for the same input and seed.
+test_cases:
+  - input: "sample_data/HG00098.vcf.gz"
+    seed: 42
+    expected_output: "tests/golden/vcf_summary_HG00098.json"
+json_schema:
+  type: object
+  properties:
+    variant_count:
+      type: integer
+    variant_types:
+      type: object
+      additionalProperties:
+        type: integer
+    quality_metrics:
+      type: object
+      additionalProperties:
+        type: number
+    non_compliant_records:
+      type: array
+      items:
+        type: string
+  required: [variant_count, variant_types, quality_metrics, non_compliant_records] 

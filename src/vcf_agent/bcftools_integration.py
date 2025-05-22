@@ -6,6 +6,8 @@ Extensible for additional bcftools commands.
 
 import subprocess
 from typing import List, Optional, Tuple
+import tempfile
+import shutil
 
 def run_bcftools_command(command: List[str], input_data: Optional[bytes] = None) -> Tuple[int, str, str]:
     """
@@ -145,5 +147,105 @@ def bcftools_annotate(args: List[str], input_data: Optional[bytes] = None) -> Tu
         (0, '...', '')
     """
     return run_bcftools_command(["annotate"] + args, input_data)
+
+def bcftools_isec(file1: str, file2: str) -> dict:
+    """
+    Run bcftools isec to compare two VCF files.
+    Returns paths to unique and common VCFs in a temp directory.
+    """
+    temp_dir = tempfile.mkdtemp(prefix="bcftools_isec_")
+    try:
+        rc, out, err = run_bcftools_command(["isec", file1, file2, "-p", temp_dir])
+        if rc != 0:
+            raise RuntimeError(f"bcftools isec failed: {err}")
+        return {
+            "temp_dir": temp_dir,
+            "unique_to_file1": f"{temp_dir}/0000.vcf",
+            "unique_to_file2": f"{temp_dir}/0001.vcf",
+            "concordant": f"{temp_dir}/0002.vcf"
+        }
+    except Exception as e:
+        shutil.rmtree(temp_dir)
+        raise e
+
+def count_variants_in_vcf(vcf_path: str) -> int:
+    """
+    Count the number of variant records in a VCF file (ignores header lines).
+    """
+    count = 0
+    with open(vcf_path, "r") as f:
+        for line in f:
+            if not line.startswith("#"):
+                count += 1
+    return count
+
+def parse_vcf_variants(vcf_path):
+    """
+    Parse a VCF file and return a list of variant dicts (CHROM, POS, REF, ALT).
+    Skips header lines.
+    """
+    variants = []
+    try:
+        with open(vcf_path, "r") as f:
+            for line in f:
+                if line.startswith("#"):
+                    continue
+                fields = line.strip().split("\t")
+                if len(fields) < 5:
+                    continue  # skip malformed lines
+                chrom, pos, ref, alt = fields[0], int(fields[1]), fields[3], fields[4]
+                variants.append({
+                    "CHROM": chrom,
+                    "POS": pos,
+                    "REF": ref,
+                    "ALT": alt
+                })
+    except Exception as e:
+        raise RuntimeError(f"Failed to parse VCF {vcf_path}: {e}")
+    return variants
+
+def vcf_compare(file1: str, file2: str) -> dict:
+    """
+    Compare two VCF files using bcftools isec and return concordant/discordant/unique counts and lists.
+    Returns a JSON-ready dict. Always returns all required fields, even on error.
+    """
+    try:
+        isec = bcftools_isec(file1, file2)
+        unique1 = parse_vcf_variants(isec["unique_to_file1"])
+        unique2 = parse_vcf_variants(isec["unique_to_file2"])
+        concordant = parse_vcf_variants(isec["concordant"])
+        result = {
+            "concordant_variant_count": len(concordant),
+            "discordant_variant_count": len(unique1) + len(unique2),
+            "unique_to_file_1": unique1,
+            "unique_to_file_2": unique2,
+            "quality_metrics": {}
+        }
+        return result
+    except Exception as e:
+        return {
+            "concordant_variant_count": 0,
+            "discordant_variant_count": 0,
+            "unique_to_file_1": [],
+            "unique_to_file_2": [],
+            "quality_metrics": {},
+            "error": str(e)
+        }
+    finally:
+        # Clean up temp directory if it exists
+        try:
+            if 'isec' in locals() and "temp_dir" in isec:
+                shutil.rmtree(isec["temp_dir"], ignore_errors=True)
+        except Exception:
+            pass
+    # Fallback return to satisfy linter
+    return {
+        "concordant_variant_count": 0,
+        "discordant_variant_count": 0,
+        "unique_to_file_1": [],
+        "unique_to_file_2": [],
+        "quality_metrics": {},
+        "error": "Unknown error in vcf_compare"
+    }
 
 # Example extensibility: add more bcftools commands as needed 
