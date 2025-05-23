@@ -32,8 +32,8 @@ class SessionConfig:
     """
     Session configuration for VCF Analysis Agent.
 
-    Controls session-specific settings, including output mode toggling (chain-of-thought vs. raw output)
-    and model provider selection.
+    Controls session-specific settings, including output mode toggling (chain-of-thought vs. raw output),
+    model provider selection, and reference FASTA for normalization.
 
     Attributes:
         raw_mode (Optional[bool]):
@@ -47,10 +47,12 @@ class SessionConfig:
         credentials_file (Optional[str]):
             - Path to JSON file with API credentials
             - If None, will use environment variables
+        reference_fasta (Optional[str]):
+            - Path to reference FASTA for normalization (required for some tools)
 
     Usage:
         >>> from vcf_agent.config import SessionConfig
-        >>> session_config = SessionConfig(raw_mode=True, model_provider="openai")
+        >>> session_config = SessionConfig(raw_mode=True, model_provider="openai", reference_fasta="ref.fa")
         >>> from vcf_agent.agent import get_agent_with_session
         >>> agent = get_agent_with_session(session_config)
 
@@ -60,16 +62,19 @@ class SessionConfig:
         self, 
         raw_mode: Optional[bool] = None,
         model_provider: Literal["ollama", "openai", "cerebras"] = "ollama",
-        credentials_file: Optional[str] = None
+        credentials_file: Optional[str] = None,
+        reference_fasta: Optional[str] = None
     ):
         self.raw_mode = raw_mode
         self.model_provider = model_provider
         self.credentials_file = credentials_file
+        self.reference_fasta = reference_fasta
 
     def __repr__(self) -> str:
         """String representation of the session config."""
         return (
             f"SessionConfig(raw_mode={self.raw_mode}, "
             f"model_provider='{self.model_provider}', "
-            f"credentials_file={repr(self.credentials_file)})"
+            f"credentials_file={repr(self.credentials_file)}, "
+            f"reference_fasta={repr(self.reference_fasta)})"
         ) 

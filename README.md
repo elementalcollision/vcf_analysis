@@ -188,7 +188,16 @@ VCF_Agent/
 │   ├── vcf_comparison_v1.yaml
 │   ├── vcf_summarization_v1.yaml
 │   └── README.md
-├── sample_data/              # Example/sample VCFs and indexes (not committed)
+├── sample_test_data/         # Canonical, version-controlled edge case VCFs for robust testing and normalization/validation regression tests. Includes:
+│   ├── minimal.vcf.gz: Minimal valid VCF
+│   ├── multiallelic.vcf.gz: Multiallelic site
+│   ├── empty_alt.vcf.gz: Empty ALT field
+│   ├── inconsistent_format.vcf.gz: Inconsistent FORMAT
+│   ├── bad_info.vcf.gz: Malformed INFO
+│   ├── symbolic_allele.vcf.gz: Symbolic ALT allele
+│   └── nonstandard_chrom.vcf.gz: Nonstandard chromosome name
+│   └── missing_header_field.vcf.gz: Missing INFO header for AF
+│   └── README.md
 ├── scripts/                  # Utility and automation scripts
 │   ├── batch_compliance_check.py
 │   ├── build.sh
@@ -233,7 +242,16 @@ VCF_Agent/
 - **src/vcf_agent/**: Agent logic, API clients, CLI, bcftools/gatk integration, and config
 - **tests/**: All test modules, including contract and golden output tests
 - **golden/**: Golden outputs for test validation
-- **sample_data/**: Example/sample VCFs (not committed)
+- **sample_test_data/**: Canonical, version-controlled edge case VCFs for robust testing and normalization/validation regression tests. Includes:
+  - minimal.vcf.gz: Minimal valid VCF
+  - multiallelic.vcf.gz: Multiallelic site
+  - empty_alt.vcf.gz: Empty ALT field
+  - inconsistent_format.vcf.gz: Inconsistent FORMAT
+  - bad_info.vcf.gz: Malformed INFO
+  - symbolic_allele.vcf.gz: Symbolic ALT allele
+  - nonstandard_chrom.vcf.gz: Nonstandard chromosome name
+  - missing_header_field.vcf.gz: Missing INFO header for AF
+  All files are bgzipped, tabix-indexed, and validated with bcftools.
 - **scripts/**: Utility scripts for batch operations, compliance, etc.
 
 This structure supports modular development, easy testing, and future extensibility.
@@ -362,6 +380,18 @@ python scripts/batch_compliance_check.py -d my_vcfs/ -t bcftools
 ### CLI Subprocess Mocking for Tests
 
 - CLI tests use a robust subprocess mocking strategy to ensure thorough coverage and reliability.
+
+### Edge Case VCF Testing
+
+The `sample_test_data/` directory contains canonical, bcftools-validated edge case VCFs for robust regression and normalization testing. These files are strictly formatted, version-controlled, and cover a wide range of VCF edge cases encountered in real-world genomics workflows. Use these for:
+- Normalization and comparison tool validation
+- Regression testing for parser and compliance logic
+- Demonstrating compatibility with bcftools and other tools
+
+To validate all edge case VCFs:
+```bash
+for f in sample_test_data/*.vcf.gz; do bcftools view "$f"; done
+```
 
 ## CI/CD, Containerization, and Test Automation
 

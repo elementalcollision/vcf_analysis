@@ -51,6 +51,10 @@ def main():
         "--credentials", type=str, 
         help="Path to JSON credentials file for API access"
     )
+    parser.add_argument(
+        "--reference", "--fasta", type=str, default=None,
+        help="Path to reference FASTA for normalization (required for some tools)"
+    )
     args = parser.parse_args()
 
     if args.raw:
@@ -65,7 +69,8 @@ def main():
     session_config = SessionConfig(
         raw_mode=args.raw if args.raw else None,
         model_provider=model_provider,
-        credentials_file=args.credentials
+        credentials_file=args.credentials,
+        reference_fasta=args.reference
     )
     
     # Get agent with specified model
