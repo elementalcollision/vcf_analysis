@@ -15,6 +15,61 @@ The VCF Analysis Agent is an AI-powered tool that combines the robustness of bcf
 - Smart filtering and annotation capabilities
 - Extensible plugin architecture for custom analyses
 
+## LLM Provider Integration & Credential Management
+
+The VCF Analysis Agent supports multiple Large Language Model (LLM) providers for flexible, secure, and cost-effective AI integration:
+
+- **Ollama** (local, open-source; default)
+- **OpenAI** (cloud, commercial)
+- **Cerebras** (cloud, specialized; mock implementation for now)
+
+### Credential Management
+
+You can provide API credentials in two ways:
+
+1. **Environment Variables (.env file)**
+   - Place a `.env` file in your project root with:
+     ```env
+     OPENAI_API_KEY=sk-...
+     CEREBRAS_API_KEY=csk-...
+     ```
+   - These will be loaded automatically at runtime.
+
+2. **JSON Credentials File**
+   - Create a file (e.g., `my_credentials.json`):
+     ```json
+     {
+       "openai": { "api_key": "sk-..." },
+       "cerebras": { "api_key": "csk-..." }
+     }
+     ```
+   - Pass the path via CLI (`--credentials my_credentials.json`) or in your config/session.
+   - The JSON file takes precedence over environment variables if both are present.
+
+### Selecting LLM Providers
+
+You can select the LLM provider in several ways:
+
+- **CLI:**
+  ```bash
+  python -m vcf_agent.cli --model openai --credentials my_credentials.json "echo: Hello from OpenAI!"
+  python -m vcf_agent.cli --model cerebras "echo: Hello from Cerebras!"
+  python -m vcf_agent.cli --model ollama "echo: Hello from Ollama!"
+  ```
+- **SessionConfig (Python):**
+  ```python
+  from vcf_agent.config import SessionConfig
+  from vcf_agent.agent import get_agent_with_session
+  session_config = SessionConfig(model_provider="openai", credentials_file="my_credentials.json")
+  agent = get_agent_with_session(session_config)
+  ```
+- **Default:** If not specified, the agent uses Ollama (local) by default.
+
+### Architecture Notes
+- The agent uses a unified API client interface for all providers (see `src/vcf_agent/api_clients.py`).
+- Provider selection and credential loading are fully documented in the [API Integration Decision Record](.context/decisions/2025-05-21-api-integration-update.md).
+- Cerebras integration is currently a mock for testing and future extension.
+
 ## Installation
 
 ```bash
@@ -126,29 +181,44 @@ The codebase follows modern Python best practices for maintainability and extens
 
 ```
 VCF_Agent/
-├── docs/                      # Developer and user documentation
-├── golden/                    # Golden outputs for contract test validation
-├── prompts/                   # Versioned, auditable prompt contracts (YAML/Markdown)
+├── docs/                     # Developer and user documentation
+├── golden/                   # Golden outputs for contract test validation
+├── prompts/                  # Versioned, auditable prompt contracts (YAML/Markdown)
 │   ├── vcf_analysis_summary_v1.yaml
 │   ├── vcf_comparison_v1.yaml
 │   ├── vcf_summarization_v1.yaml
 │   └── README.md
-├── sample_data/               # Place sample VCFs and indexes here (not committed)
-├── scripts/                   # Utility and automation scripts
+├── sample_data/              # Example/sample VCFs and indexes (not committed)
+├── scripts/                  # Utility and automation scripts
+│   ├── batch_compliance_check.py
+│   ├── build.sh
+│   └── run.sh
 ├── src/
 │   └── vcf_agent/
 │       ├── __init__.py
 │       ├── agent.py           # Main agent logic and tool integration
+│       ├── api_clients.py     # API client logic for LLM providers
 │       ├── bcftools_integration.py
 │       ├── cli.py
-│       └── config.py
+│       ├── config.py
+│       ├── gatk_integration.py
+│       ├── validation.py
 ├── tests/
 │   ├── __init__.py
 │   ├── test_agent.py
+│   ├── test_api_clients.py
+│   ├── test_bcftools_integration.py
+│   ├── test_bcftools_mocked.py
+│   ├── test_edgecase_compliance.py
+│   ├── test_golden_output.py
+│   ├── test_validation.py
+│   ├── test_validation_edge_cases.py
+│   ├── test_validation_property.py
 │   ├── prompt_contracts/      # Automated prompt contract tests
 │   └── golden/                # Golden outputs for contract test validation
 ├── .dockerignore
 ├── .gitignore
+├── .env
 ├── Dockerfile
 ├── LICENSE
 ├── orbstack.yaml
@@ -160,8 +230,8 @@ VCF_Agent/
 ```
 
 - **prompts/**: Versioned prompt contracts and documentation
-- **src/vcf_agent/**: Agent logic, CLI, bcftools integration, and config
-- **tests/prompt_contracts/**: Automated contract-driven tests
+- **src/vcf_agent/**: Agent logic, API clients, CLI, bcftools/gatk integration, and config
+- **tests/**: All test modules, including contract and golden output tests
 - **golden/**: Golden outputs for test validation
 - **sample_data/**: Example/sample VCFs (not committed)
 - **scripts/**: Utility scripts for batch operations, compliance, etc.
@@ -310,43 +380,4 @@ You can build and run the VCF Analysis Agent in a containerized environment usin
 ```
 - This mounts your project directory to `/app` in the container.
 - The container exposes port 8000 by default (edit if needed).
-- The OrbStack server is set to `<ORBSTACK_SERVER_IP>` (edit `scripts/run.sh` if your server changes).
-
-#### OrbStack Configuration
-- The `orbstack.yaml` file is provided for local development and multi-service orchestration.
-- Ensure your Ollama service within OrbStack (or your local Ollama server) is accessible and running `qwen3:latest` if you intend to use the default agent configuration.
-- You can use OrbStack's UI or CLI to manage and launch the stack.
-
-### CI/CD with Kestra
-
-This project includes a [Kestra](https://kestra.io/) workflow for CI/CD automation, located at `.context/ci/kestra_vcf_agent.yml`.
-
-#### Register the Workflow
-
-**With Kestra CLI:**
-```bash
-kestra workflow create .context/ci/kestra_vcf_agent.yml
-```
-
-**With Kestra Web UI:**
-1. Go to `http://<KESTRA_SERVER_IP>:8080/ui` (replace `<KESTRA_SERVER_IP>` with your actual server IP)
-2. Log in and navigate to "Workflows"
-3. Click "Create" or "Import" and upload `.context/ci/kestra_vcf_agent.yml`
-
-#### Run the Workflow
-
-- From the UI: Select the workflow (`vcf-agent-ci` in namespace `vcf.agent`) and click "Run".
-- From the CLI:
-  ```bash
-  kestra workflow trigger vcf.agent.vcf-agent-ci
-  ```
-
-#### Monitor Results
-- Use the Kestra UI to view workflow runs, logs, and results for build, lint, and test steps.
-
-#### Notes
-- The workflow builds the Docker image, runs linting (pre-commit), and tests (pytest) in a reproducible environment.
-- The agent currently defaults to using `qwen3:latest` via Ollama for local development. Update `src/vcf_agent/agent.py` if you wish to use a different model.
-- You can extend the workflow as your CI/CD needs grow.
-
-**Note:** Replace `<KESTRA_SERVER_IP>` and `<ORBSTACK_SERVER_IP>` with your actual server IP addresses in your local environment. Do not commit real IP addresses to public repositories.
+- The OrbStack server is set to `<ORBSTACK_SERVER_IP>`

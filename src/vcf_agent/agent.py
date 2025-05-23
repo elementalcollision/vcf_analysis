@@ -17,7 +17,8 @@ See the README for usage examples and details.
 from strands import Agent, tools
 from strands.tools import tool
 from strands.models.ollama import OllamaModel
-from typing import Any, Optional
+from strands.models.litellm import LiteLLMModel
+from typing import Any, Optional, Dict, List, cast, Union, Literal
 from .validation import validate_vcf_file
 from .bcftools_integration import (
     bcftools_view as _bcftools_view,
@@ -30,6 +31,7 @@ from .bcftools_integration import (
 )
 import os
 from .config import SessionConfig
+from .api_clients import OpenAIClient, CerebrasClient, APIClientError
 
 # Output mode toggling: chain-of-thought (CoT) vs. raw output
 # 1. Environment variable: VCF_AGENT_RAW_MODE ("1", "true", "yes" = raw)
@@ -257,7 +259,104 @@ ollama_model = OllamaModel(
     model_id="qwen3:latest"
 )
 
-def get_agent_with_session(session_config: Optional[SessionConfig] = None):
+# Setup OpenAI model adapter for Strands using LiteLLM
+def get_openai_model(credential_manager=None):
+    """
+    Create an OpenAI model instance for Strands using LiteLLM.
+    
+    Args:
+        credential_manager: Optional CredentialManager instance.
+                           If None, a new one will be created.
+    
+    Returns:
+        LiteLLMModel: Configured OpenAI model instance
+    """
+    try:
+        openai_client = OpenAIClient(credential_manager=credential_manager)
+        # Basic connection test
+        openai_client.test_connection()
+        
+        # Get API key from our credential manager
+        api_key = openai_client.credential_manager.get_credential("openai")
+        
+        # Create LiteLLM model for OpenAI
+        return LiteLLMModel(
+            client_args={"api_key": api_key},
+            model_id="openai/gpt-4o",
+            params={
+                "temperature": 0.7,
+                "max_tokens": 4000
+            }
+        )
+    except APIClientError as e:
+        import logging
+        logging.error(f"Failed to initialize OpenAI model: {e}")
+        raise
+
+# Create a mock Cerebras model adapter for Strands
+class CerebrasStrandsModel:
+    """Custom Strands model implementation for Cerebras API."""
+    
+    def __init__(self, model: str = "cerebras-gpt", credential_manager=None):
+        """
+        Initialize the Cerebras model adapter.
+        
+        Args:
+            model: Model name to use
+            credential_manager: Optional CredentialManager instance.
+                               If None, a new one will be created.
+        """
+        self.model = model
+        self.client = CerebrasClient(credential_manager=credential_manager)
+        # Test connection during initialization
+        self.client.test_connection()
+    
+    def generate(self, prompt: str, **kwargs) -> str:
+        """
+        Generate text from the Cerebras model.
+        
+        Args:
+            prompt: The prompt text
+            **kwargs: Additional arguments for the model
+            
+        Returns:
+            str: The generated text
+        """
+        # Convert prompt to messages format
+        messages = [{"role": "user", "content": prompt}]
+        
+        # Call the Cerebras API
+        response = self.client.chat_completion(
+            messages=messages,
+            model=self.model,
+            **kwargs
+        )
+        
+        # Extract the response text from Cerebras response format
+        return response["choices"][0]["message"]["content"]
+
+def get_cerebras_model(credential_manager=None):
+    """
+    Create a Cerebras model instance for Strands using our custom API client.
+    
+    Args:
+        credential_manager: Optional CredentialManager instance.
+                           If None, a new one will be created.
+    
+    Returns:
+        CerebrasStrandsModel: Configured Cerebras model instance
+    """
+    try:
+        return CerebrasStrandsModel(credential_manager=credential_manager)
+    except APIClientError as e:
+        import logging
+        logging.error(f"Failed to initialize Cerebras model: {e}")
+        raise
+
+def get_agent_with_session(
+    session_config: Optional[SessionConfig] = None,
+    model_provider: Literal["ollama", "openai", "cerebras"] = "ollama"
+):
     """
     Instantiate a VCF Analysis Agent with optional session-based configuration.
 
@@ -268,6 +367,7 @@ def get_agent_with_session(session_config: Optional[SessionConfig] = None):
 
     Args:
         session_config (Optional[SessionConfig]): Session configuration. If raw_mode is set, it overrides env/CLI.
+        model_provider (str): The LLM provider to use: "ollama" (default), "openai", or "cerebras"
 
     Returns:
         Agent: Configured VCF Analysis Agent instance.
@@ -276,7 +376,7 @@ def get_agent_with_session(session_config: Optional[SessionConfig] = None):
         >>> from vcf_agent.config import SessionConfig
         >>> session_config = SessionConfig(raw_mode=True)
         >>> from vcf_agent.agent import get_agent_with_session
-        >>> agent = get_agent_with_session(session_config)
+        >>> agent = get_agent_with_session(session_config, model_provider="openai")
     """
     # Always use raw output mode (no chain-of-thought, no <think> blocks)
     system_prompt = (
@@ -287,18 +387,41 @@ def get_agent_with_session(session_config: Optional[SessionConfig] = None):
         "/no_think"  # Always disable chain-of-thought
     )
 
-    ollama_model = OllamaModel(
-        host="http://192.168.0.14:11434",
-        model_id="qwen3:latest"
-    )
+    # Use model_provider from session_config if available
+    if session_config and session_config.model_provider:
+        model_provider = session_config.model_provider
+
+    # Get credentials file from session config
+    credentials_file = session_config.credentials_file if session_config else None
+
+    # Select the appropriate model based on provider
+    model = None
+    if model_provider == "ollama":
+        model = OllamaModel(
+            host="http://192.168.0.14:11434",
+            model_id="qwen3:latest"
+        )
+    elif model_provider == "openai":
+        from .api_clients import CredentialManager
+        # Create credential manager with the credentials file
+        credential_manager = CredentialManager(credentials_file=credentials_file)
+        model = get_openai_model(credential_manager)
+    elif model_provider == "cerebras":
+        from .api_clients import CredentialManager
+        # Create credential manager with the credentials file
+        credential_manager = CredentialManager(credentials_file=credentials_file)
+        model = get_cerebras_model(credential_manager)
+    else:
+        raise ValueError(f"Unknown model provider: {model_provider}")
+    
     return Agent(
         system_prompt=system_prompt,
         tools=tools_list,  # type: ignore
-        model=ollama_model,
+        model=model,
         callback_handler=None
     )
 
 # Default agent instance (uses env/CLI for RAW_MODE)
 agent = get_agent_with_session()
 
-__all__ = ["agent", "SYSTEM_PROMPT"] 
+__all__ = ["agent", "SYSTEM_PROMPT", "get_agent_with_session"] 
