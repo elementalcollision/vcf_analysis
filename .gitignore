@@ -72,4 +72,10 @@ golden/
 # Ignore test agent script and credentials
 
 test_agent.py
-test_credentials.json 
+test_credentials.json
+
+# Sphinx build artifacts
+docs/build/
+
+# If you want to version canonical test VCFs in sample_test_data/
+!sample_test_data/*.vcf.gz 

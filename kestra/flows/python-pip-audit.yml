@@ -1,0 +1,44 @@
+id: python-pip-audit
+namespace: ci
+description: >
+  CI/CD flow to audit Python dependencies for vulnerabilities using pip-audit,
+  and generate a CycloneDX SBOM.
+
+tasks:
+  - id: clone-repo
+    type: io.kestra.plugin.git.Clone
+    url: https://github.com/your-org/your-repo.git
+    branch: main
+
+  - id: setup-python
+    type: io.kestra.plugin.scripts.python.Pip
+    requirements: requirements.txt
+    workingDir: "{{ outputs.clone-repo.directory }}"
+
+  - id: pip-audit
+    type: io.kestra.plugin.scripts.shell.Commands
+    commands:
+      - pip install pip-audit
+      - pip-audit -r requirements.txt -f cyclonedx-json -o sbom.json
+    workingDir: "{{ outputs.clone-repo.directory }}"
+    errorOnExitCode: true  # Fail if vulnerabilities are found
+
+  - id: upload-sbom
+    type: io.kestra.plugin.fs.Upload
+    from: "{{ outputs.pip-audit.workingDir }}/sbom.json"
+    to: "artifacts/sbom.json"
+    description: "Upload the generated SBOM as a build artifact"
+
+  - id: cyclonedx-sbom
+    type: io.kestra.plugin.scripts.shell.Commands
+    commands:
+      - pip install cyclonedx-bom
+      - cyclonedx-py requirements -i requirements.txt -o sbom-cyclonedx.json
+    workingDir: "{{ outputs.clone-repo.directory }}"
+    errorOnExitCode: true
+
+  - id: upload-cyclonedx-sbom
+    type: io.kestra.plugin.fs.Upload
+    from: "{{ outputs.cyclonedx-sbom.workingDir }}/sbom-cyclonedx.json"
+    to: "artifacts/sbom-cyclonedx.json"
+    description: "Upload the CycloneDX SBOM as a build artifact" 
