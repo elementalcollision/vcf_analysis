@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'vcf_agent'
+    static_configs:
+      - targets: ['192.168.0.84:8000']  # Agent metrics endpoint
+# If running the agent on a different host or container, update the IP/port as needed.

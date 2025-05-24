@@ -179,235 +179,88 @@ This project is currently in active development. See the Projects tab for curren
 
 The codebase follows modern Python best practices for maintainability and extensibility:
 
-```
-VCF_Agent/
-├── docs/                     # Developer and user documentation
-├── golden/                   # Golden outputs for contract test validation
-├── prompts/                  # Versioned, auditable prompt contracts (YAML/Markdown)
-│   ├── vcf_analysis_summary_v1.yaml
-│   ├── vcf_comparison_v1.yaml
-│   ├── vcf_summarization_v1.yaml
-│   └── README.md
-├── sample_test_data/         # Canonical, version-controlled edge case VCFs for robust testing and normalization/validation regression tests. Includes:
-│   ├── minimal.vcf.gz: Minimal valid VCF
-│   ├── multiallelic.vcf.gz: Multiallelic site
-│   ├── empty_alt.vcf.gz: Empty ALT field
-│   ├── inconsistent_format.vcf.gz: Inconsistent FORMAT
-│   ├── bad_info.vcf.gz: Malformed INFO
-│   ├── symbolic_allele.vcf.gz: Symbolic ALT allele
-│   └── nonstandard_chrom.vcf.gz: Nonstandard chromosome name
-│   └── missing_header_field.vcf.gz: Missing INFO header for AF
-│   └── README.md
-├── scripts/                  # Utility and automation scripts
-│   ├── batch_compliance_check.py
-│   ├── build.sh
-│   └── run.sh
-├── src/
-│   └── vcf_agent/
-│       ├── __init__.py
-│       ├── agent.py           # Main agent logic and tool integration
-│       ├── api_clients.py     # API client logic for LLM providers
-│       ├── bcftools_integration.py
-│       ├── cli.py
-│       ├── config.py
-│       ├── gatk_integration.py
-│       ├── validation.py
-├── tests/
-│   ├── __init__.py
-│   ├── test_agent.py
-│   ├── test_api_clients.py
-│   ├── test_bcftools_integration.py
-│   ├── test_bcftools_mocked.py
-│   ├── test_edgecase_compliance.py
-│   ├── test_golden_output.py
-│   ├── test_validation.py
-│   ├── test_validation_edge_cases.py
-│   ├── test_validation_property.py
-│   ├── prompt_contracts/      # Automated prompt contract tests
-│   └── golden/                # Golden outputs for contract test validation
-├── .dockerignore
-├── .gitignore
-├── .env
-├── Dockerfile
-├── LICENSE
-├── orbstack.yaml
-├── PRD -  VCF Analysis Agent.md
-├── pyproject.toml
-├── pytest.ini
-├── README.md
-├── requirements.txt
-```
+## Agent Integration, Prompt Contracts, API Integration, and Testing
 
-- **prompts/**: Versioned prompt contracts and documentation
-- **src/vcf_agent/**: Agent logic, API clients, CLI, bcftools/gatk integration, and config
-- **tests/**: All test modules, including contract and golden output tests
-- **golden/**: Golden outputs for test validation
-- **sample_test_data/**: Canonical, version-controlled edge case VCFs for robust testing and normalization/validation regression tests. Includes:
-  - minimal.vcf.gz: Minimal valid VCF
-  - multiallelic.vcf.gz: Multiallelic site
-  - empty_alt.vcf.gz: Empty ALT field
-  - inconsistent_format.vcf.gz: Inconsistent FORMAT
-  - bad_info.vcf.gz: Malformed INFO
-  - symbolic_allele.vcf.gz: Symbolic ALT allele
-  - nonstandard_chrom.vcf.gz: Nonstandard chromosome name
-  - missing_header_field.vcf.gz: Missing INFO header for AF
-  All files are bgzipped, tabix-indexed, and validated with bcftools.
-- **scripts/**: Utility scripts for batch operations, compliance, etc.
+This project follows robust, open-source-aligned best practices for agent tool registration, prompt contract usage, API integration (with security), and onboarding/testing. Below is a summary of the framework and examples:
 
-This structure supports modular development, easy testing, and future extensibility.
+### 1. Agent Tool Registration
+- Use the `@tool` decorator to register tools with clear docstrings and type hints.
+- Document each tool's name, description, input/output schema, version, and dependencies.
+- For complex tools, define a `TOOL_SPEC` dictionary with input schema and metadata.
+- Register tools in a central list (see `src/vcf_agent/agent.py`).
+- Reference: [Strands SDK Tool Registration](https://github.com/strands-agents/docs/blob/main/docs/user-guide/concepts/tools/tools_overview.md)
 
-## bcftools Python Wrapper
-
-- The agent includes a Python wrapper for `bcftools` commands (`view`, `query`, `filter`, `norm`, `stats`, `annotate`) in `src/vcf_agent/bcftools_integration.py`.
-- Each command is exposed as a function: `bcftools_view`, `bcftools_query`, `bcftools_filter`, `bcftools_norm`, `bcftools_stats`, `bcftools_annotate`.
-- Functions accept a list of arguments (as you would pass on the command line) and optional input data.
-- Output and errors are captured and returned for error handling.
-- The wrapper is easily extensible for additional `bcftools` commands.
-- All wrapper functions are covered by automated tests using pytest.
-
-**VCF Comparison Tool (`vcf_compare`)**
-
-- The agent provides a high-level VCF comparison tool via the `vcf_compare` function in `src/vcf_agent/bcftools_integration.py`.
-- This tool runs `bcftools isec` to compare two VCF files, parses the output, and returns a JSON-ready Python dict summarizing:
-  - `concordant_variant_count`: Number of variants present in both files
-  - `discordant_variant_count`: Number of variants unique to either file
-  - `unique_to_file_1`: List of variant dicts unique to file 1
-  - `unique_to_file_2`: List of variant dicts unique to file 2
-  - `quality_metrics`: (reserved for future extension)
-- Each variant is represented as a dict: `{ "CHROM": ..., "POS": ..., "REF": ..., "ALT": ... }`
-- The function handles all error cases and always returns a contract-compliant JSON object.
-- This tool is critical for contract-driven VCF comparison, automated testing, and agent workflows.
-
-**Example usage:**
+**Example:**
 ```python
-from vcf_agent.bcftools_integration import vcf_compare
-result = vcf_compare("sample1.vcf.gz", "sample2.vcf.gz")
-print(result)
+from strands import Agent, tool
+
+@tool
+def echo(text: str) -> str:
+    """Echoes the input text back to the user."""
+    return f"Echo: {text}"
+
+agent = Agent(tools=[echo])
 ```
 
-See the module docstrings for more details and usage patterns.
+### 2. Prompt Contract Usage
+- Store prompt contracts as versioned YAML files in `prompts/`.
+- Each contract includes: `id`, `version`, `compliance`, `changelog`, `role`, `context`, `instructions`, `constraints`, `evaluation`, `test_cases`, `json_schema`.
+- Document contract structure and provide usage examples in `prompts/README.md`.
+- Use the loader utility in `src/vcf_agent/prompt_templates.py` to render prompts.
+- Require all AI outputs to match the contract's JSON schema for determinism and testability.
+- Test contracts using pytest (see `tests/prompt_contracts/`).
 
-## Compliance Checking
-
-The agent supports robust, configurable compliance checking for VCF/BCF files using multiple tools:
-
-- **bcftools** (default): Fast, standard validation for VCF/BCF format and content.
-- **GATK ValidateVariants**: Strict compliance checking, including reference validation (requires reference FASTA).
-- **Manufacturer-specific tools**: Easily extensible for tools from Oxford Nanopore, Illumina, or others.
-
-### Tool Selection and Configuration
-
-- The compliance checker backend is selected via `src/vcf_agent/config.py`:
-  ```python
-  CONFIG = {
-      "compliance_tool": "bcftools",  # Options: "bcftools", "gatk", or manufacturer/tool name
-      "gatk_reference": "/path/to/ref.fasta",  # Required for GATK
-      "manufacturer_tool": None,  # e.g., "ont_vcf_validator"
-  }
-  ```
-- You can override the tool at runtime by passing a `tool` argument to validation functions.
-
-### Example CLI Usage
-
-Validate a VCF file using the default tool (set in config):
-```bash
-python -m vcf_agent.cli "validate_vcf: sample_data/<your_sample.vcf.gz>"
+**Example YAML:**
+```yaml
+id: vcf_analysis_summary_v1
+version: 1.0.0
+role: "Genomics Analyst"
+context: "Summarize VCF for quality and compliance"
+instructions: "Return only valid JSON matching the schema."
+json_schema: {...}
+test_cases:
+  - input: sample_data/HG00098.vcf.gz
+    expected_output: tests/golden/vcf_summary_HG00098.json
 ```
 
-Validate using GATK (ensure reference is set in config):
+### 3. API Integration & Security
+- Use secure credential management (env vars, JSON files; never hardcode keys).
+- Document API endpoints, authentication methods, and required headers.
+- Enforce TLS for all network communication.
+- Rate-limit API calls and log all access for auditability.
+- Provide code examples for API usage (see `src/vcf_agent/api_clients.py`).
+
+**Example:**
 ```python
-from vcf_agent.validation import validate_vcf_file
-is_valid, error = validate_vcf_file("sample_data/<your_sample.vcf.gz>", tool="gatk")
+from vcf_agent.api_clients import OpenAIClient
+client = OpenAIClient(api_key="sk-...")
+response = client.chat_completion(messages=[...])
 ```
 
-### Adding Manufacturer-Specific Tools
-- Implement a wrapper in `validation.py` or a new module.
-- Set `compliance_tool` in config to the tool name.
-- The compliance interface will route validation to your tool.
+### 4. Onboarding & Testing Strategy
+- Provide a clear onboarding checklist (see `docs/DEVELOPER_GUIDE.md`):
+  - Environment setup, dependency installation, running tests, reviewing docstrings.
+- Document test types: unit, integration, contract, edge case, and UAT.
+- Use golden files and property-based tests for regression and compliance.
+- Automate test runs in CI/CD (see Kestra workflow in `.context/ci/`).
+- Document how to add new tools, prompt contracts, and tests.
 
-### Reference
-- Official VCF/SAM/CRAM specifications: [hts-specs](https://github.com/samtools/hts-specs)
-
-## Batch Compliance Checking & CI/CD Integration
-
-The repository includes a batch compliance checker script for automated validation of VCF/BCF files:
-
-### scripts/batch_compliance_check.py
-- Scans a directory (default: `sample_data/`) for VCF/BCF files
-- Optionally generates synthetic edge-case files with `--generate-edgecases`
-- Runs compliance checks using the selected tool (`bcftools`, `gatk`, or as configured)
-- Outputs a markdown summary report to stdout or a file
-- Handles errors and missing tools gracefully
-
-#### CLI Usage
-```bash
-# Generate edge-case files and run compliance check with default tool
-python scripts/batch_compliance_check.py --generate-edgecases
-
-# Run with GATK and output to a markdown file
-python scripts/batch_compliance_check.py -t gatk -o compliance_report.md
-
-# Run with bcftools on a custom directory
-python scripts/batch_compliance_check.py -d my_vcfs/ -t bcftools
+**Example Checklist:**
+```markdown
+- [ ] Clone repo and set up Python environment
+- [ ] Install dependencies (`uv pip install -r requirements.txt`)
+- [ ] Run all tests (`pytest`)
+- [ ] Review prompt contracts and schemas
+- [ ] Add new tools using @tool decorator and update docs
 ```
 
-#### CLI Options
-- `-d, --directory`: Directory to scan for VCF/BCF files (default: `sample_data`)
-- `-t, --tool`: Compliance tool to use (`bcftools`, `gatk`, or as configured)
-- `-o, --output`: Output markdown file (default: stdout)
-- `--generate-edgecases`: Generate synthetic edge-case VCF files in the directory
+### 5. Open Source & Community Standards
+- Reference open-source agent frameworks (Strands, SuperAGI, Superagent, Relari Agent Contracts) for structure and compliance.
+- Use semantic versioning and changelogs for all contracts and tools.
+- Encourage contributions with clear guidelines and code examples.
 
-#### CI/CD Integration (Kestra)
-- The workflow `.context/ci/kestra_batch_compliance.yml` automates:
-  - Edge-case file generation
-  - Compliance checks with both `bcftools` and `gatk`
-  - Archiving of markdown reports
-  - Failing the workflow if any compliance check fails
-
-## Testing and Configuration
-
-- All wrapper functions are tested using pytest. To run the tests:
-  ```bash
-  pytest
-  ```
-- The project uses a `pytest.ini` file for configuration. This includes:
-  ```ini
-  [pytest]
-  asyncio_default_fixture_loop_scope = function
-  ```
-  This setting is required for compatibility with pytest-asyncio and to avoid deprecation warnings in async test environments.
-
-### CLI Subprocess Mocking for Tests
-
-- CLI tests use a robust subprocess mocking strategy to ensure thorough coverage and reliability.
-
-### Edge Case VCF Testing
-
-The `sample_test_data/` directory contains canonical, bcftools-validated edge case VCFs for robust regression and normalization testing. These files are strictly formatted, version-controlled, and cover a wide range of VCF edge cases encountered in real-world genomics workflows. Use these for:
-- Normalization and comparison tool validation
-- Regression testing for parser and compliance logic
-- Demonstrating compatibility with bcftools and other tools
-
-To validate all edge case VCFs:
-```bash
-for f in sample_test_data/*.vcf.gz; do bcftools view "$f"; done
-```
-
-## CI/CD, Containerization, and Test Automation
-
-### Containerization (Docker & OrbStack)
-
-You can build and run the VCF Analysis Agent in a containerized environment using Docker or OrbStack.
-
-#### Build the Docker image
-```bash
-./scripts/build.sh
-```
-
-#### Run the container (with OrbStack or Docker)
-```bash
-./scripts/run.sh
-```
-- This mounts your project directory to `/app` in the container.
-- The container exposes port 8000 by default (edit if needed).
-- The OrbStack server is set to `<ORBSTACK_SERVER_IP>`
+For more details, see:
+- `prompts/README.md` for prompt contract structure and examples
+- `src/vcf_agent/agent.py` and `src/vcf_agent/prompt_templates.py` for tool and prompt integration
+- `docs/DEVELOPER_GUIDE.md` for onboarding and extension guidelines
+- [Strands Agents SDK Documentation](https://github.com/strands-agents/docs)
