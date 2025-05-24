@@ -9,6 +9,10 @@ import logging # Added for error logging
 from lancedb.table import LanceTable # Ensure this import is present and correct
 import threading # Added for locking
 import re # Added for SQL literal masking
+import pandas as pd # Ensure pandas is imported for DataFrame operations
+
+# Import Kuzu integration functions
+from . import graph_integration
 
 logger = logging.getLogger(__name__) # Added for error logging
 
@@ -38,7 +42,7 @@ def mask_sql_literals(sql_string: Optional[str]) -> Optional[str]:
 # See: https://lancedb.github.io/lancedb/python/pydantic/
 class Variant(LanceModel):
     variant_id: str
-    embedding: Vector(1024)  # noqa: F821 - Suppress linter error for Vector(1024)
+    embedding: Vector(1024)  # type: ignore[valid-type]
     chrom: str
     pos: int
     ref: str
@@ -98,10 +102,10 @@ def add_variants(table: LanceTable, variants: List[dict]): # Added Type Hint for
         # 3. Log problematic records if possible.
         raise
 
-def search_by_embedding(table: LanceTable, query_embedding, limit: int = 10, filter_sql: Optional[str] = None): # Added Type Hint
-    """Searches the table by a query embedding, with optional limit and SQL filter."""
-    # Avoid logging the query_embedding directly as it can be large, potentially sensitive (if inferable),
-    # and adds verbosity. A summary of its structure is logged instead.
+def search_by_embedding(table: LanceTable, query_embedding, limit: int = 10, filter_sql: Optional[str] = None) -> pd.DataFrame: # Added Type Hint and ensure return is DataFrame
+    """Searches the table by a query embedding, with optional limit and SQL filter.
+       Enriches results with context from Kuzu graph database.
+    """
     embedding_summary = f"shape: {len(query_embedding)}x{len(query_embedding[0])}" if isinstance(query_embedding, list) and query_embedding and isinstance(query_embedding[0], list) else f"length: {len(query_embedding)}" if isinstance(query_embedding, list) else "opaque_embedding"
     masked_filter_sql = mask_sql_literals(filter_sql) # Mask SQL literals for logging
     logger.info(f"Attempting to search table '{table.name}' with embedding ({embedding_summary}), limit: {limit}, filter_sql: '{masked_filter_sql}'.")
@@ -109,9 +113,43 @@ def search_by_embedding(table: LanceTable, query_embedding, limit: int = 10, fil
         q = table.search(query_embedding, vector_column_name='embedding').limit(limit)
         if filter_sql:
             q = q.where(filter_sql)
-        results = q.to_pandas()
-        logger.info(f"Search in table '{table.name}' completed. Found {len(results)} results for limit: {limit}, filter_sql: '{masked_filter_sql}'.")
-        return results
+        results_df = q.to_pandas()
+        logger.info(f"Search in table '{table.name}' completed. Found {len(results_df)} results for limit: {limit}, filter_sql: '{masked_filter_sql}'.")
+
+        # Enrich with Kuzu graph context if results are found
+        if not results_df.empty and 'variant_id' in results_df.columns:
+            variant_ids_to_enrich = results_df['variant_id'].tolist()
+            if variant_ids_to_enrich:
+                try:
+                    logger.info(f"Fetching Kuzu context for {len(variant_ids_to_enrich)} variant IDs.")
+                    kuzu_conn = graph_integration.get_managed_kuzu_connection()
+                    if kuzu_conn:
+                        variant_contexts = graph_integration.get_variant_context(kuzu_conn, variant_ids_to_enrich)
+                        
+                        # Merge Kuzu context into the DataFrame
+                        # Add a new column 'kuzu_observed_samples' that will store a list of sample dicts
+                        results_df['kuzu_observed_samples'] = results_df['variant_id'].apply(
+                            lambda vid: variant_contexts.get(vid, {}).get('samples', [])
+                        )
+                        logger.info("Successfully enriched LanceDB results with Kuzu context.")
+                    else:
+                        logger.warning("Kuzu connection not available, skipping enrichment.")
+                        results_df['kuzu_observed_samples'] = [[] for _ in range(len(results_df))] # Add empty list placeholder
+
+                except Exception as kuzu_e:
+                    logger.error(f"Error fetching or merging Kuzu context: {kuzu_e}")
+                    results_df['kuzu_observed_samples'] = [[] for _ in range(len(results_df))] # Add empty list placeholder on error
+            else:
+                results_df['kuzu_observed_samples'] = [[] for _ in range(len(results_df))] # No variant_ids to enrich
+        elif 'variant_id' not in results_df.columns:
+            logger.warning("'variant_id' column not found in LanceDB results, cannot enrich with Kuzu context.")
+            # Optionally add an empty column if a consistent schema is always desired
+            if not results_df.empty:
+                 results_df['kuzu_observed_samples'] = [[] for _ in range(len(results_df))]
+        else: # results_df is empty
+            pass # No results to enrich
+
+        return results_df
     except Exception as e:
         logger.error(f"Search by embedding failed in table '{table.name}' (limit: {limit}, filter_sql: '{masked_filter_sql}'): {e}")
         raise

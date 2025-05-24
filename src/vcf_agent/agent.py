@@ -35,6 +35,8 @@ import os
 from .config import SessionConfig
 from .api_clients import OpenAIClient, CerebrasClient, APIClientError
 from .prompt_templates import get_prompt_for_task
+from . import graph_integration # Import the module
+from . import vcf_utils # Import the new function
 
 # Output mode toggling: chain-of-thought (CoT) vs. raw output
 # 1. Environment variable: VCF_AGENT_RAW_MODE ("1", "true", "yes" = raw)
@@ -53,6 +55,11 @@ SYSTEM_PROMPT = (
 
 # Placeholder for tool imports and configuration
 # from strands_tools import calculator, file_read, shell
+
+# Global variable to hold the main Kuzu connection, initialized by get_agent_with_session
+# This is one way; alternatively, tools can call get_managed_kuzu_connection() directly.
+# For now, we'll initialize it to ensure DB and schema are ready when an agent is created.
+_kuzu_connection_for_agent = None
 
 # Placeholder echo tool using @tools.tool decorator
 @tools.tool
@@ -404,6 +411,48 @@ def vcf_summarization_tool(filepath: str) -> str:
             "error": str(e)
         })
 
+@tools.tool(
+    openai_schema={
+        "name": "load_vcf_into_graph_db",
+        "description": "Parses a VCF file and loads its variants, samples, and relationships into the Kuzu graph database.",
+        "parameters": {
+            "filepath": {"type": "string", "description": "Path to the VCF file to load."},
+            "sample_name_override": {"type": "string", "description": "(Optional) If provided, use this as the sample_id for all records in the VCF."}
+        },
+        "required": ["filepath"]
+    }
+)
+def load_vcf_into_graph_db_tool(filepath: str, sample_name_override: Optional[str] = None) -> str:
+    """
+    Agent tool to load VCF data into the Kuzu graph database.
+
+    Args:
+        filepath: Path to the VCF file.
+        sample_name_override: Optional. If provided, all records are associated with this single sample ID.
+
+    Returns:
+        A JSON string summarizing the loading operation (counts of items added or error message).
+    """
+    import json
+    try:
+        # Get the managed Kuzu connection
+        # It should have been initialized when the agent was created.
+        # If _kuzu_connection_for_agent is None here, it means initialization failed earlier.
+        # Alternatively, robustly call get_managed_kuzu_connection() again.
+        kuzu_conn = graph_integration.get_managed_kuzu_connection()
+        if kuzu_conn is None:
+            return json.dumps({"error": "Kuzu connection not available. Initialization might have failed."}) 
+
+        print(f"Loading VCF {filepath} into Kuzu. Override sample: {sample_name_override}")
+        counts = vcf_utils.populate_kuzu_from_vcf(kuzu_conn, filepath, sample_name_override)
+        return json.dumps({"status": "success", "message": f"VCF file {filepath} processed into Kuzu.", "counts": counts})
+    except FileNotFoundError as fnf_error:
+        return json.dumps({"error": str(fnf_error), "status": "failed"})
+    except Exception as e:
+        # Log the full error for debugging
+        print(f"Error loading VCF {filepath} into Kuzu: {e}")
+        return json.dumps({"error": f"Failed to load VCF into Kuzu: {e}", "status": "failed"})
+
 # Register all bcftools tools to tools_list
 tools_list = [
     echo,
@@ -535,68 +584,84 @@ def get_agent_with_session(
     model_provider: Literal["ollama", "openai", "cerebras"] = "ollama"
 ):
     """
-    Instantiate a VCF Analysis Agent with optional session-based configuration.
-
-    Output mode (CoT vs. raw) is determined in this order:
-      1. session_config.raw_mode (if not None)
-      2. VCF_AGENT_RAW_MODE env var ("1", "true", "yes" = raw)
-      3. Default: chain-of-thought (CoT)
+    Factory function to create and configure a VCF Analysis Agent.
 
     Args:
-        session_config (Optional[SessionConfig]): Session configuration. If raw_mode is set, it overrides env/CLI.
-        model_provider (str): The LLM provider to use: "ollama" (default), "openai", or "cerebras"
+        session_config (Optional[SessionConfig]): Session-specific settings.
+        model_provider (str): Model provider to use ('ollama', 'openai', 'cerebras').
 
     Returns:
         Agent: Configured VCF Analysis Agent instance.
-
-    Usage:
-        >>> from vcf_agent.config import SessionConfig
-        >>> session_config = SessionConfig(raw_mode=True)
-        >>> from vcf_agent.agent import get_agent_with_session
-        >>> agent = get_agent_with_session(session_config, model_provider="openai")
     """
-    # Always use raw output mode (no chain-of-thought, no <think> blocks)
-    system_prompt = (
-        "You are the VCF Analysis Agent. You analyze, validate, and process VCF files for genomics workflows.\n"
-        "For all analysis tasks, you MUST respond with ONLY valid JSON matching the provided schema.\n"
-        "Do NOT include any explanation, markdown, <think> blocks, or extra text—output must be pure JSON.\n"
-        "If you cannot perform the task, return a valid JSON object with an 'error' field and no other fields.\n"
-        "/no_think"  # Always disable chain-of-thought
-    )
+    global _kuzu_connection_for_agent
 
-    # Use model_provider from session_config if available
-    if session_config and session_config.model_provider:
-        model_provider = session_config.model_provider
+    if session_config is None:
+        session_config = SessionConfig() # Use default session config
 
-    # Get credentials file from session config
-    credentials_file = session_config.credentials_file if session_config else None
+    # Determine raw_mode based on SessionConfig, then ENV, then CLI (CLI handled in cli.py)
+    # For now, direct assignment or simple logic here.
+    # This part might need refinement based on how Strands agent handles system prompts or modes.
+    current_raw_mode = RAW_MODE # Default global setting
+    if session_config.raw_mode is not None:
+        current_raw_mode = session_config.raw_mode
+    elif os.environ.get("VCF_AGENT_RAW_MODE", "").lower() in ["1", "true", "yes"]:
+        current_raw_mode = True
+    
+    # effective_system_prompt = SYSTEM_PROMPT if current_raw_mode else SYSTEM_PROMPT.replace("/no_think", "")
+    # Strands agent does not directly take system_prompt for Ollama models in the same way.
+    # For LiteLLM (OpenAI, Cerebras), system prompt is passed in `converse`.
+    # For Ollama, it's part of the Modelfile or initial setup.
+    # The /no_think in SYSTEM_PROMPT is a convention for this agent.
 
-    # Select the appropriate model based on provider
+    # Initialize Kuzu DB Connection and Schema
+    # This ensures Kuzu is ready when an agent is first created.
+    try:
+        print("Attempting to initialize Kuzu for the agent session...")
+        _kuzu_connection_for_agent = graph_integration.get_managed_kuzu_connection()
+        print("Kuzu initialization successful for agent session.")
+    except RuntimeError as e:
+        print(f"CRITICAL: Kuzu database initialization failed during agent setup: {e}")
+        # Decide how to handle this: raise error, or allow agent to run without Kuzu? 
+        # For now, let it proceed but Kuzu-dependent tools will fail.
+        # In a real app, might want to prevent agent creation or have a fallback.
+        pass # Allowing agent to be created, Kuzu tools will fail if connection is None
+
+    # Initialize model and agent
     model = None
     if model_provider == "ollama":
-        model = OllamaModel(
-            host="http://127.0.0.1:11434",
-            model_id="Qwen3:4b"
-        )
+        # Ensure OLLAMA_HOST is set in environment if not using default http://127.0.0.1:11434
+        # Default model can be specified here or rely on Ollama's default.
+        model = OllamaModel(host=os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434"), model_id="mistral") # Or a more specific default model_id
     elif model_provider == "openai":
-        from .api_clients import CredentialManager
-        # Create credential manager with the credentials file
-        credential_manager = CredentialManager(credentials_file=credentials_file)
-        model = get_openai_model(credential_manager)
+        # LiteLLM will use OPENAI_API_KEY environment variable.
+        model = LiteLLMModel(model_id="gpt-4o") # Pass model name as model_id
     elif model_provider == "cerebras":
-        from .api_clients import CredentialManager
-        # Create credential manager with the credentials file
-        credential_manager = CredentialManager(credentials_file=credentials_file)
-        model = get_cerebras_model(credential_manager)
+        # LiteLLM will use CEREBRAS_API_KEY or other relevant env vars for Azure/Cerebras.
+        model = LiteLLMModel(model_id="azure/cerebras-gpt-13b") # Pass model name as model_id
     else:
-        raise ValueError(f"Unknown model provider: {model_provider}")
-    
-    return Agent(
-        system_prompt=system_prompt,
-        tools=tools_list,  # type: ignore
-        model=model,
-        callback_handler=None
-    )
+        raise ValueError(f"Unsupported model provider: {model_provider}")
+
+    # Define tools available to the agent
+    available_tools = [
+        echo,
+        validate_vcf,
+        bcftools_view_tool,
+        bcftools_query_tool,
+        bcftools_filter_tool,
+        bcftools_norm_tool,
+        bcftools_stats_tool,
+        bcftools_annotate_tool,
+        vcf_comparison_tool,
+        vcf_analysis_summary_tool, 
+        vcf_summarization_tool,
+        load_vcf_into_graph_db_tool, # Add the new tool
+        # Add future tools here, e.g., the Kuzu ingestion tool
+    ]
+
+    agent = Agent(model=model, tools=available_tools)
+    # Store session_config on the agent if Strands allows, or manage separately.
+    # agent.session_config = session_config # Example, if agent can hold custom attributes
+    return agent
 
 # Default agent instance (uses env/CLI for RAW_MODE)
 agent = get_agent_with_session()

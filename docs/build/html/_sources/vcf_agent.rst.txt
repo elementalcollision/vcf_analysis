@@ -59,3 +59,16 @@ Module contents
    :members:
    :undoc-members:
    :show-inheritance:
+
+Agent Integration, Prompt Contracts, API Integration, and Testing
+==================================================================
+
+The VCF Analysis Agent implements:
+
+- **Tool Registration:** Decorators and schemas for clear tool definitions (see `src/vcf_agent/agent.py`).
+- **Prompt Contracts:** Versioned YAML contracts with schemas and test cases (`prompts/`).
+- **API Integration & Security:** Secure credential management, endpoint documentation, and TLS (`src/vcf_agent/api_clients.py`).
+- **Onboarding & Testing:** Checklist, test types, golden files, and CI/CD (`docs/DEVELOPER_GUIDE.md`).
+- **Open Source Standards:** Structure and compliance inspired by Strands, SuperAGI, and Relari Agent Contracts.
+
+See the project README for full details and examples.

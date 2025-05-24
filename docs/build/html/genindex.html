@@ -6,11 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Index &#8212; VCF Analysis Agent 1.0.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
-    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
     <script src="_static/documentation_options.js?v=8d563738"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
+window.addEventListener("load", () => mermaid.run());
+</script>
     <link rel="index" title="Index" href="#" />
     <link rel="search" title="Search" href="search.html" />
    
@@ -34,17 +42,35 @@
 <h1 id="index">Index</h1>
 
 <div class="genindex-jumpbox">
- <a href="#B"><strong>B</strong></a>
+ <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
  | <a href="#C"><strong>C</strong></a>
+ | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
  | <a href="#H"><strong>H</strong></a>
  | <a href="#I"><strong>I</strong></a>
  | <a href="#M"><strong>M</strong></a>
+ | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
+ | <a href="#S"><strong>S</strong></a>
+ | <a href="#U"><strong>U</strong></a>
  | <a href="#V"><strong>V</strong></a>
  
 </div>
+<h2 id="A">A</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.add_variants">add_variants() (in module vcf_agent.lancedb_integration)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.Variant.alt">alt (vcf_agent.lancedb_integration.Variant attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -52,10 +78,12 @@
 </li>
       <li><a href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_filter">bcftools_filter() (in module vcf_agent.bcftools_integration)</a>
 </li>
-      <li><a href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_norm">bcftools_norm() (in module vcf_agent.bcftools_integration)</a>
+      <li><a href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_isec">bcftools_isec() (in module vcf_agent.bcftools_integration)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_norm">bcftools_norm() (in module vcf_agent.bcftools_integration)</a>
+</li>
       <li><a href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_query">bcftools_query() (in module vcf_agent.bcftools_integration)</a>
 </li>
       <li><a href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_stats">bcftools_stats() (in module vcf_agent.bcftools_integration)</a>
@@ -68,11 +96,37 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.Variant.chrom">chrom (vcf_agent.lancedb_integration.Variant attribute)</a>
+</li>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.Variant.clinical_significance">clinical_significance (vcf_agent.lancedb_integration.Variant attribute)</a>
+</li>
       <li><a href="vcf_agent.html#vcf_agent.validation.compliance_check">compliance_check() (in module vcf_agent.validation)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="vcf_agent.html#vcf_agent.config.CONFIG">CONFIG (in module vcf_agent.config)</a>
+</li>
+      <li><a href="vcf_agent.html#vcf_agent.bcftools_integration.count_variants_in_vcf">count_variants_in_vcf() (in module vcf_agent.bcftools_integration)</a>
+</li>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.create_scalar_index">create_scalar_index() (in module vcf_agent.lancedb_integration)</a>
+</li>
+      <li><a href="vcf_agent.html#vcf_agent.config.SessionConfig.credentials_file">credentials_file (vcf_agent.config.SessionConfig attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="D">D</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.delete_variants">delete_variants() (in module vcf_agent.lancedb_integration)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.Variant.embedding">embedding (vcf_agent.lancedb_integration.Variant attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -83,12 +137,24 @@
       <li><a href="vcf_agent.html#vcf_agent.validation.file_exists">file_exists() (in module vcf_agent.validation)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.filter_variants_by_metadata">filter_variants_by_metadata() (in module vcf_agent.lancedb_integration)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="vcf_agent.html#vcf_agent.gatk_integration.gatk_validatevariants">gatk_validatevariants() (in module vcf_agent.gatk_integration)</a>
+</li>
+      <li><a href="vcf_agent.html#vcf_agent.agent.get_agent_with_session">get_agent_with_session() (in module vcf_agent.agent)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.get_db">get_db() (in module vcf_agent.lancedb_integration)</a>
+</li>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.get_or_create_table">get_or_create_table() (in module vcf_agent.lancedb_integration)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -112,17 +178,31 @@
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="vcf_agent.html#vcf_agent.cli.main">main() (in module vcf_agent.cli)</a>
+</li>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.mask_sql_literals">mask_sql_literals() (in module vcf_agent.lancedb_integration)</a>
+</li>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.Variant.model_config">model_config (vcf_agent.lancedb_integration.Variant attribute)</a>
+</li>
+      <li><a href="vcf_agent.html#vcf_agent.config.SessionConfig.model_provider">model_provider (vcf_agent.config.SessionConfig attribute)</a>
+</li>
       <li>
     module
 
       <ul>
         <li><a href="vcf_agent.html#module-vcf_agent">vcf_agent</a>
 </li>
+        <li><a href="vcf_agent.html#module-vcf_agent.agent">vcf_agent.agent</a>
+</li>
         <li><a href="vcf_agent.html#module-vcf_agent.bcftools_integration">vcf_agent.bcftools_integration</a>
+</li>
+        <li><a href="vcf_agent.html#module-vcf_agent.cli">vcf_agent.cli</a>
 </li>
         <li><a href="vcf_agent.html#module-vcf_agent.config">vcf_agent.config</a>
 </li>
         <li><a href="vcf_agent.html#module-vcf_agent.gatk_integration">vcf_agent.gatk_integration</a>
+</li>
+        <li><a href="lancedb_developer_guide.html#module-vcf_agent.lancedb_integration">vcf_agent.lancedb_integration</a>
 </li>
         <li><a href="vcf_agent.html#module-vcf_agent.validation">vcf_agent.validation</a>
 </li>
@@ -130,14 +210,52 @@
   </ul></td>
 </tr></table>
 
-<h2 id="R">R</h2>
+<h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="vcf_agent.html#vcf_agent.bcftools_integration.run_bcftools_command">run_bcftools_command() (in module vcf_agent.bcftools_integration)</a>
+      <li><a href="vcf_agent.html#vcf_agent.bcftools_integration.parse_vcf_variants">parse_vcf_variants() (in module vcf_agent.bcftools_integration)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.Variant.pos">pos (vcf_agent.lancedb_integration.Variant attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="R">R</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="vcf_agent.html#vcf_agent.config.SessionConfig.raw_mode">raw_mode (vcf_agent.config.SessionConfig attribute)</a>
+</li>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.Variant.ref">ref (vcf_agent.lancedb_integration.Variant attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="vcf_agent.html#vcf_agent.config.SessionConfig.reference_fasta">reference_fasta (vcf_agent.config.SessionConfig attribute)</a>
+</li>
+      <li><a href="vcf_agent.html#vcf_agent.bcftools_integration.run_bcftools_command">run_bcftools_command() (in module vcf_agent.bcftools_integration)</a>
+</li>
       <li><a href="vcf_agent.html#vcf_agent.gatk_integration.run_gatk_command">run_gatk_command() (in module vcf_agent.gatk_integration)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="S">S</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.search_by_embedding">search_by_embedding() (in module vcf_agent.lancedb_integration)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="vcf_agent.html#vcf_agent.config.SessionConfig">SessionConfig (class in vcf_agent.config)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.update_variant">update_variant() (in module vcf_agent.lancedb_integration)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -153,11 +271,22 @@
 </li>
       <li><a href="vcf_agent.html#vcf_agent.validation.validate_with_manufacturer_tool">validate_with_manufacturer_tool() (in module vcf_agent.validation)</a>
 </li>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.Variant">Variant (class in vcf_agent.lancedb_integration)</a>
+</li>
+      <li><a href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.Variant.variant_id">variant_id (vcf_agent.lancedb_integration.Variant attribute)</a>
+</li>
       <li>
     vcf_agent
 
       <ul>
         <li><a href="vcf_agent.html#module-vcf_agent">module</a>
+</li>
+      </ul></li>
+      <li>
+    vcf_agent.agent
+
+      <ul>
+        <li><a href="vcf_agent.html#module-vcf_agent.agent">module</a>
 </li>
       </ul></li>
       <li>
@@ -169,6 +298,13 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    vcf_agent.cli
+
+      <ul>
+        <li><a href="vcf_agent.html#module-vcf_agent.cli">module</a>
+</li>
+      </ul></li>
       <li>
     vcf_agent.config
 
@@ -184,12 +320,21 @@
 </li>
       </ul></li>
       <li>
+    vcf_agent.lancedb_integration
+
+      <ul>
+        <li><a href="lancedb_developer_guide.html#module-vcf_agent.lancedb_integration">module</a>
+</li>
+      </ul></li>
+      <li>
     vcf_agent.validation
 
       <ul>
         <li><a href="vcf_agent.html#module-vcf_agent.validation">module</a>
 </li>
       </ul></li>
+      <li><a href="vcf_agent.html#vcf_agent.bcftools_integration.vcf_compare">vcf_compare() (in module vcf_agent.bcftools_integration)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -220,6 +365,16 @@
     </div>
 </search>
 <script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="vcf_agent.html">vcf_agent package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vcf_agent.html#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">vcf_agent</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a></li>
+</ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
@@ -244,7 +399,7 @@
       &#169;2025, VCF Agent Team.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
     </div>

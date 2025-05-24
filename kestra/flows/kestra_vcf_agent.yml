@@ -1,0 +1,32 @@
+id: vcf-agent-ci
+namespace: vcf.agent
+
+# Kestra workflow for CI/CD: build, lint, test
+
+tasks:
+  - id: build-image
+    type: io.kestra.plugin.docker.Build
+    image: python:3.11-slim
+    dockerfile: Dockerfile
+    context: .
+    tags:
+      - build
+
+  - id: lint
+    type: io.kestra.plugin.scripts.python.Script
+    beforeCommands:
+      - pip install pre-commit
+      - pre-commit install
+    script: |
+      pre-commit run --all-files
+    tags:
+      - lint
+
+  - id: test
+    type: io.kestra.plugin.scripts.python.Script
+    beforeCommands:
+      - pip install pytest
+    script: |
+      pytest
+    tags:
+      - test 

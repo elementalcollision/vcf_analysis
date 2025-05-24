@@ -7,13 +7,14 @@
 
     <title>VCF Analysis Agent documentation &#8212; VCF Analysis Agent 1.0.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
-    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
     <script src="_static/documentation_options.js?v=8d563738"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="vcf_agent package" href="vcf_agent.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -37,6 +38,82 @@
 <a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html">reStructuredText</a>
 documentation for details.</p>
 <div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="vcf_agent.html">vcf_agent package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.agent">vcf_agent.agent module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.bcftools_integration">vcf_agent.bcftools_integration module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.cli">vcf_agent.cli module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.config">vcf_agent.config module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.gatk_integration">vcf_agent.gatk_integration module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.validation">vcf_agent.validation module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="vcf_agent.html#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#module-vcf_agent.lancedb_integration">API Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#cli-usage-guide">CLI Usage Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#concurrency-model">Concurrency Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#security-notes">Security Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#schema-definition">Schema Definition</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">vcf_agent</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html">vcf_agent package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="agent-integration-prompt-contracts-api-integration-and-testing">
+<h1>Agent Integration, Prompt Contracts, API Integration, and Testing<a class="headerlink" href="#agent-integration-prompt-contracts-api-integration-and-testing" title="Link to this heading">¶</a></h1>
+<p>The VCF Analysis Agent follows robust best practices for agent tool registration, prompt contract usage, API integration (with security), and onboarding/testing:</p>
+<ul class="simple">
+<li><p><strong>Tool Registration:</strong> Use decorators and schemas to register tools with clear input/output definitions. See <cite>src/vcf_agent/agent.py</cite>.</p></li>
+<li><p><strong>Prompt Contracts:</strong> Store versioned YAML contracts in <cite>prompts/</cite>, each with required fields, schemas, and test cases. See <cite>prompts/README.md</cite>.</p></li>
+<li><p><strong>API Integration &amp; Security:</strong> Use secure credential management, document endpoints and authentication, and enforce TLS. See <cite>src/vcf_agent/api_clients.py</cite>.</p></li>
+<li><p><strong>Onboarding &amp; Testing:</strong> Provide a clear checklist, document test types, use golden files, and automate CI/CD. See <cite>docs/DEVELOPER_GUIDE.md</cite>.</p></li>
+<li><p><strong>Open Source Standards:</strong> Reference frameworks like Strands, SuperAGI, and Relari Agent Contracts for structure and compliance.</p></li>
+</ul>
+<p>For full details and examples, see the ‘Agent Integration, Prompt Contracts, API Integration, and Testing’ section in the project README.</p>
+</section>
+<section id="containerization-docker-multi-arch-and-orbstack">
+<h1>Containerization: Docker, Multi-Arch, and OrbStack<a class="headerlink" href="#containerization-docker-multi-arch-and-orbstack" title="Link to this heading">¶</a></h1>
+<p>The VCF Analysis Agent is containerized for production, local development, and CI/CD, following best practices:</p>
+<ul class="simple">
+<li><p><strong>Multi-stage build:</strong> Builder and runtime stages for small, secure images</p></li>
+<li><p><strong>Pinned Python version:</strong> Ensures reproducibility</p></li>
+<li><p><strong>Non-root user:</strong> Improves security</p></li>
+<li><p><strong>Multi-arch builds:</strong> Use Docker Buildx for <cite>linux/amd64</cite> and <cite>linux/arm64</cite> (Apple Silicon, OrbStack, cloud ARM)</p></li>
+<li><p><strong>OrbStack compatibility:</strong> Fast local builds, volume mounts, and image debugging</p></li>
+<li><p><strong>Security:</strong> Only production dependencies included; use Trivy/Snyk for scanning</p></li>
+<li><p><strong>CI/CD:</strong> Buildx for reproducible builds, security scanning in pipeline</p></li>
+<li><p><strong>Troubleshooting:</strong> See README for cache, dependency, and architecture tips</p></li>
+<li><p><strong>.dockerignore:</strong> Ensures only necessary files are included</p></li>
+</ul>
+<p>See the ‘Containerization (Docker &amp; OrbStack)’ section in the README for full details, and consult the [OrbStack Docker documentation](<a class="reference external" href="https://docs.orbstack.dev/docker/images">https://docs.orbstack.dev/docker/images</a>).</p>
+</section>
+<section id="security-and-auditing">
+<h1>Security and Auditing<a class="headerlink" href="#security-and-auditing" title="Link to this heading">¶</a></h1>
+</section>
+<section id="lancedb-developer-guide">
+<h1>LanceDB Developer Guide<a class="headerlink" href="#lancedb-developer-guide" title="Link to this heading">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#module-vcf_agent.lancedb_integration">API Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#cli-usage-guide">CLI Usage Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#concurrency-model">Concurrency Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#security-notes">Security Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#schema-definition">Schema Definition</a></li>
+</ul>
+</li>
+</ul>
 </div>
 </section>
 
@@ -66,11 +143,22 @@ documentation for details.</p>
     </div>
 </search>
 <script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="vcf_agent.html">vcf_agent package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vcf_agent.html#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">vcf_agent</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a></li>
+</ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="vcf_agent.html" title="next chapter">vcf_agent package</a></li>
   </ul></li>
 </ul>
 </div>
@@ -90,7 +178,7 @@ documentation for details.</p>
       &#169;2025, VCF Agent Team.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
       |

@@ -30,3 +30,5 @@ virtualenv==20.31.2
 cyvcf2
 strands
 pandas
+kuzu
+# via vcf-analysis-agent (pyproject.toml)

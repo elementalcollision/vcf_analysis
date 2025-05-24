@@ -130,6 +130,22 @@ This project follows robust best practices for agent tool registration, prompt c
 
 For full details and examples, see the 'Agent Integration, Prompt Contracts, API Integration, and Testing' section in the project README.
 
+## 12. Containerization: Docker, Multi-Arch, and OrbStack
+
+The agent is containerized for production, local development, and CI/CD, following best practices:
+
+- **Multi-stage build:** Builder and runtime stages for small, secure images
+- **Pinned Python version:** Ensures reproducibility
+- **Non-root user:** Improves security
+- **Multi-arch builds:** Use Docker Buildx for `linux/amd64` and `linux/arm64` (Apple Silicon, OrbStack, cloud ARM)
+- **OrbStack compatibility:** Fast local builds, volume mounts, and image debugging
+- **Security:** Only production dependencies included; use Trivy/Snyk for scanning
+- **CI/CD:** Buildx for reproducible builds, security scanning in pipeline
+- **Troubleshooting:** See README for cache, dependency, and architecture tips
+- **.dockerignore:** Ensures only necessary files are included
+
+See the 'Containerization (Docker & OrbStack)' section in the README for full details, and consult the [OrbStack Docker documentation](https://docs.orbstack.dev/docker/images).
+
 ---
 
 **Tips for Clarity & Maintainability:**

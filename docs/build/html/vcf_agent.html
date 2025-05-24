@@ -7,13 +7,15 @@
 
     <title>vcf_agent package &#8212; VCF Analysis Agent 1.0.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
-    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
     <script src="_static/documentation_options.js?v=8d563738"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="LanceDB Developer Guide" href="lancedb_developer_guide.html" />
+    <link rel="prev" title="VCF Analysis Agent documentation" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -36,8 +38,63 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
 </section>
-<section id="vcf-agent-agent-module">
-<h2>vcf_agent.agent module<a class="headerlink" href="#vcf-agent-agent-module" title="Link to this heading">¶</a></h2>
+<section id="module-vcf_agent.agent">
+<span id="vcf-agent-agent-module"></span><h2>vcf_agent.agent module<a class="headerlink" href="#module-vcf_agent.agent" title="Link to this heading">¶</a></h2>
+<p>VCF Analysis Agent: Strands-based agent for VCF/BCF analysis, validation, and processing.</p>
+<ul class="simple">
+<li><p>Integrates bcftools and AI models for genomics workflows</p></li>
+<li><p>Provides CLI and API tools for validation and analysis</p></li>
+<li><p>Extensible with additional tools and models</p></li>
+</ul>
+<section id="output-mode-toggling-chain-of-thought-vs-raw-output">
+<h3>Output Mode Toggling (Chain-of-Thought vs. Raw Output):<a class="headerlink" href="#output-mode-toggling-chain-of-thought-vs-raw-output" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>The agent supports three ways to control output mode:</dt><dd><ol class="arabic simple">
+<li><p>Environment variable: VCF_AGENT_RAW_MODE (“1”, “true”, “yes” = raw output)</p></li>
+<li><p>CLI flag: –raw / –no-think (see cli.py)</p></li>
+<li><p>Session-based: SessionConfig(raw_mode=…) (see config.py)</p></li>
+</ol>
+</dd>
+</dl>
+<p>See the README for usage examples and details.</p>
+</section>
+<dl class="py function">
+<dt class="sig sig-object py" id="vcf_agent.agent.get_agent_with_session">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.agent.</span></span><span class="sig-name descname"><span class="pre">get_agent_with_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ollama'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.agent.get_agent_with_session" title="Link to this definition">¶</a></dt>
+<dd><p>Instantiate a VCF Analysis Agent with optional session-based configuration.</p>
+<dl class="simple">
+<dt>Output mode (CoT vs. raw) is determined in this order:</dt><dd><ol class="arabic simple">
+<li><p>session_config.raw_mode (if not None)</p></li>
+<li><p>VCF_AGENT_RAW_MODE env var (“1”, “true”, “yes” = raw)</p></li>
+<li><p>Default: chain-of-thought (CoT)</p></li>
+</ol>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>session_config</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="#vcf_agent.config.SessionConfig" title="vcf_agent.config.SessionConfig"><em>SessionConfig</em></a><em>]</em>) – Session configuration. If raw_mode is set, it overrides env/CLI.</p></li>
+<li><p><strong>model_provider</strong> (<em>str</em>) – The LLM provider to use: “ollama” (default), “openai”, or “cerebras”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Configured VCF Analysis Agent instance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Agent</p>
+</dd>
+</dl>
+<dl>
+<dt>Usage:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">vcf_agent.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionConfig</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">session_config</span> <span class="o">=</span> <span class="n">SessionConfig</span><span class="p">(</span><span class="n">raw_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">vcf_agent.agent</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_agent_with_session</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">agent</span> <span class="o">=</span> <span class="n">get_agent_with_session</span><span class="p">(</span><span class="n">session_config</span><span class="p">,</span> <span class="n">model_provider</span><span class="o">=</span><span class="s2">&quot;openai&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 <section id="module-vcf_agent.bcftools_integration">
 <span id="vcf-agent-bcftools-integration-module"></span><h2>vcf_agent.bcftools_integration module<a class="headerlink" href="#module-vcf_agent.bcftools_integration" title="Link to this heading">¶</a></h2>
@@ -95,6 +152,24 @@ Extensible for additional bcftools commands.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.bcftools_isec">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_isec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_isec" title="Link to this definition">¶</a></dt>
+<dd><p>Run bcftools isec to compare two VCF files.
+Returns paths to unique and common VCFs in a temp directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file1</strong> (<em>str</em>)</p></li>
+<li><p><strong>file2</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.bcftools_integration.bcftools_norm">
 <span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_norm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_norm" title="Link to this definition">¶</a></dt>
 <dd><p>Run bcftools norm with the given arguments.</p>
@@ -124,17 +199,17 @@ Extensible for additional bcftools commands.</p>
 <span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_query" title="Link to this definition">¶</a></dt>
 <dd><blockquote>
 <div><p>Run bcftools query with the given arguments.</p>
-<dl>
+<dl class="simple">
 <dt>Args:</dt><dd><p>args (List[str]): Arguments for bcftools query.
 input_data (Optional[bytes]): Optional bytes to pass to stdin.</p>
 </dd>
 <dt>Returns:</dt><dd><p>Tuple[int, str, str]: (returncode, stdout, stderr)</p>
 </dd>
-<dt>Example:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bcftools_query</span><span class="p">([</span><span class="s2">&quot;-f&quot;</span><span class="p">,</span> <span class="s2">&quot;%CHROM       %POS</span>
+</dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bcftools_query</span><span class="p">([</span><span class="s2">&quot;-f&quot;</span><span class="p">,</span> <span class="s2">&quot;%CHROM       %POS</span>
 </pre></div>
 </div>
-</dd>
-</dl>
 </div></blockquote>
 <dl class="simple">
 <dt>“, “sample_data/HG00098.vcf.gz”])</dt><dd><p>(0, ‘…’, ‘’)</p>
@@ -204,6 +279,27 @@ input_data (Optional[bytes]): Optional bytes to pass to stdin.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.count_variants_in_vcf">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">count_variants_in_vcf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vcf_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.count_variants_in_vcf" title="Link to this definition">¶</a></dt>
+<dd><p>Count the number of variant records in a VCF file (ignores header lines).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>vcf_path</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.parse_vcf_variants">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">parse_vcf_variants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vcf_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.parse_vcf_variants" title="Link to this definition">¶</a></dt>
+<dd><p>Parse a VCF file and return a list of variant dicts (CHROM, POS, REF, ALT).
+Skips header lines.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.bcftools_integration.run_bcftools_command">
 <span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">run_bcftools_command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.run_bcftools_command" title="Link to this definition">¶</a></dt>
 <dd><p>Run a bcftools command and capture output and errors.</p>
@@ -231,9 +327,60 @@ input_data (Optional[bytes]): Optional bytes to pass to stdin.</p>
 </div>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.vcf_compare">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">vcf_compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.vcf_compare" title="Link to this definition">¶</a></dt>
+<dd><p>Compare two VCF files using bcftools isec and return concordant/discordant/unique counts and lists.
+Returns a JSON-ready dict. Always returns all required fields, even on error.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file1</strong> (<em>str</em>)</p></li>
+<li><p><strong>file2</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
-<section id="vcf-agent-cli-module">
-<h2>vcf_agent.cli module<a class="headerlink" href="#vcf-agent-cli-module" title="Link to this heading">¶</a></h2>
+<section id="module-vcf_agent.cli">
+<span id="vcf-agent-cli-module"></span><h2>vcf_agent.cli module<a class="headerlink" href="#module-vcf_agent.cli" title="Link to this heading">¶</a></h2>
+<p>VCF Analysis Agent CLI Entrypoint</p>
+<ul class="simple">
+<li><p>Provides a command-line interface for interacting with the agent</p></li>
+<li><p>Accepts prompt strings for tool invocation (e.g., validation, echo)</p></li>
+<li><p>Supports mock response for testing</p></li>
+<li><p>Supports multiple model providers (Ollama, OpenAI, Cerebras)</p></li>
+<li><dl class="simple">
+<dt>Provides LanceDB integration commands:</dt><dd><ul>
+<li><p>init-lancedb: Initialize LanceDB table</p></li>
+<li><p>add-variant: Add a variant record</p></li>
+<li><p>search-embedding: Search by embedding vector</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<dl class="simple">
+<dt>Usage examples:</dt><dd><p>$ python -m vcf_agent.cli init-lancedb
+$ python -m vcf_agent.cli add-variant –variant_id rs123 –chrom 1 –pos 12345 –ref A –alt G –embedding 0.1,0.2,…
+$ python -m vcf_agent.cli search-embedding –embedding 0.1,0.2,…</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="vcf_agent.cli.main">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.cli.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.cli.main" title="Link to this definition">¶</a></dt>
+<dd><p>Command-line interface for the VCF Analysis Agent.</p>
+<p>Accepts a prompt string to invoke agent tools (e.g., validation, echo).
+Supports mock response for testing via the VCF_AGENT_CLI_MOCK_RESPONSE environment variable.
+Supports –raw / –no-think flag to disable chain-of-thought reasoning (raw output mode).
+Supports –model to select the model provider (ollama, openai, cerebras).
+Provides LanceDB integration commands.</p>
+</dd></dl>
+
 </section>
 <section id="module-vcf_agent.config">
 <span id="vcf-agent-config-module"></span><h2>vcf_agent.config module<a class="headerlink" href="#module-vcf_agent.config" title="Link to this heading">¶</a></h2>
@@ -258,6 +405,92 @@ manufacturer_tool (Optional[str]): Name of manufacturer-specific tool</p>
 </div>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="vcf_agent.config.SessionConfig">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">vcf_agent.config.</span></span><span class="sig-name descname"><span class="pre">SessionConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ollama'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credentials_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_fasta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.config.SessionConfig" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Session configuration for VCF Analysis Agent.</p>
+<p>Controls session-specific settings, including output mode toggling (chain-of-thought vs. raw output),
+model provider selection, and reference FASTA for normalization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>raw_mode</strong> (<em>bool</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>model_provider</strong> (<em>Literal</em><em>[</em><em>'ollama'</em><em>, </em><em>'openai'</em><em>, </em><em>'cerebras'</em><em>]</em>)</p></li>
+<li><p><strong>credentials_file</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>reference_fasta</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="vcf_agent.config.SessionConfig.raw_mode">
+<span class="sig-name descname"><span class="pre">raw_mode</span></span><a class="headerlink" href="#vcf_agent.config.SessionConfig.raw_mode" title="Link to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><p>True: disables chain-of-thought reasoning (raw output mode)</p></li>
+<li><p>False: enables chain-of-thought (CoT, default)</p></li>
+<li><p>None: uses environment variable or CLI flag (see README)</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[bool]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="vcf_agent.config.SessionConfig.model_provider">
+<span class="sig-name descname"><span class="pre">model_provider</span></span><a class="headerlink" href="#vcf_agent.config.SessionConfig.model_provider" title="Link to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><p>“ollama”: Use local Ollama models (default)</p></li>
+<li><p>“openai”: Use OpenAI API</p></li>
+<li><p>“cerebras”: Use Cerebras API</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="vcf_agent.config.SessionConfig.credentials_file">
+<span class="sig-name descname"><span class="pre">credentials_file</span></span><a class="headerlink" href="#vcf_agent.config.SessionConfig.credentials_file" title="Link to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><p>Path to JSON file with API credentials</p></li>
+<li><p>If None, will use environment variables</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="vcf_agent.config.SessionConfig.reference_fasta">
+<span class="sig-name descname"><span class="pre">reference_fasta</span></span><a class="headerlink" href="#vcf_agent.config.SessionConfig.reference_fasta" title="Link to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><p>Path to reference FASTA for normalization (required for some tools)</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl>
+<dt>Usage:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">vcf_agent.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionConfig</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">session_config</span> <span class="o">=</span> <span class="n">SessionConfig</span><span class="p">(</span><span class="n">raw_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">model_provider</span><span class="o">=</span><span class="s2">&quot;openai&quot;</span><span class="p">,</span> <span class="n">reference_fasta</span><span class="o">=</span><span class="s2">&quot;ref.fa&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">vcf_agent.agent</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_agent_with_session</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">agent</span> <span class="o">=</span> <span class="n">get_agent_with_session</span><span class="p">(</span><span class="n">session_config</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>See the README for details on all output mode toggling methods and model providers.</p>
 </dd></dl>
 
 </section>
@@ -530,6 +763,18 @@ Selects backend based on config or argument.</p>
 </ul>
 </section>
 </section>
+<section id="agent-integration-prompt-contracts-api-integration-and-testing">
+<h1>Agent Integration, Prompt Contracts, API Integration, and Testing<a class="headerlink" href="#agent-integration-prompt-contracts-api-integration-and-testing" title="Link to this heading">¶</a></h1>
+<p>The VCF Analysis Agent implements:</p>
+<ul class="simple">
+<li><p><strong>Tool Registration:</strong> Decorators and schemas for clear tool definitions (see <cite>src/vcf_agent/agent.py</cite>).</p></li>
+<li><p><strong>Prompt Contracts:</strong> Versioned YAML contracts with schemas and test cases (<cite>prompts/</cite>).</p></li>
+<li><p><strong>API Integration &amp; Security:</strong> Secure credential management, endpoint documentation, and TLS (<cite>src/vcf_agent/api_clients.py</cite>).</p></li>
+<li><p><strong>Onboarding &amp; Testing:</strong> Checklist, test types, golden files, and CI/CD (<cite>docs/DEVELOPER_GUIDE.md</cite>).</p></li>
+<li><p><strong>Open Source Standards:</strong> Structure and compliance inspired by Strands, SuperAGI, and Relari Agent Contracts.</p></li>
+</ul>
+<p>See the project README for full details and examples.</p>
+</section>
 
 
           </div>
@@ -557,11 +802,37 @@ Selects backend based on config or argument.</p>
     </div>
 </search>
 <script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">vcf_agent package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.agent">vcf_agent.agent module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.bcftools_integration">vcf_agent.bcftools_integration module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.cli">vcf_agent.cli module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.config">vcf_agent.config module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.gatk_integration">vcf_agent.gatk_integration module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.validation">vcf_agent.validation module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">vcf_agent</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">vcf_agent package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a></li>
+</ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">VCF Analysis Agent documentation</a></li>
+      <li>Next: <a href="lancedb_developer_guide.html" title="next chapter">LanceDB Developer Guide</a></li>
   </ul></li>
 </ul>
 </div>
@@ -581,7 +852,7 @@ Selects backend based on config or argument.</p>
       &#169;2025, VCF Agent Team.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
       |

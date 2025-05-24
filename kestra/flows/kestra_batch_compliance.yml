@@ -1,0 +1,48 @@
+id: vcf-batch-compliance
+namespace: vcf.agent
+
+# Kestra workflow for batch VCF/BCF compliance checking
+# - Generates edge-case files
+# - Runs compliance checks with bcftools and GATK
+# - Archives markdown reports
+# - Fails on compliance errors
+
+inputs: {}
+
+tasks:
+  - id: generate-edgecases
+    type: io.kestra.core.tasks.scripts.Python
+    description: Generate synthetic edge-case VCF files
+    script: |
+      python scripts/batch_compliance_check.py --generate-edgecases
+
+  - id: compliance-bcftools
+    type: io.kestra.core.tasks.scripts.Python
+    description: Run batch compliance check with bcftools
+    script: |
+      python scripts/batch_compliance_check.py -t bcftools -o compliance_bcftools.md
+    retry:
+      max: 1
+    errors:
+      - exitCode: 1
+        message: "Compliance check failed with bcftools"
+
+  - id: compliance-gatk
+    type: io.kestra.core.tasks.scripts.Python
+    description: Run batch compliance check with GATK
+    script: |
+      python scripts/batch_compliance_check.py -t gatk -o compliance_gatk.md
+    retry:
+      max: 1
+    errors:
+      - exitCode: 1
+        message: "Compliance check failed with GATK"
+
+  - id: archive-reports
+    type: io.kestra.core.tasks.storages.LocalFiles
+    description: Archive compliance markdown reports
+    files:
+      - compliance_bcftools.md
+      - compliance_gatk.md
+
+# End of workflow 
