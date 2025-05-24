@@ -70,9 +70,11 @@ def bcftools_query(args: List[str], input_data: Optional[bytes] = None) -> Tuple
     Returns:
         Tuple[int, str, str]: (returncode, stdout, stderr)
 
-    Example:
+    Example::
+
         >>> bcftools_query(["-f", "%CHROM\t%POS\n", "sample_data/HG00098.vcf.gz"])
         (0, '...', '')
+
     """
     return run_bcftools_command(["query"] + args, input_data)
 

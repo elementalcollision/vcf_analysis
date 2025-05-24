@@ -61,7 +61,7 @@ Module contents
    :show-inheritance:
 
 Agent Integration, Prompt Contracts, API Integration, and Testing
----------------------------------------------------------------
+==================================================================
 
 The VCF Analysis Agent implements:
 

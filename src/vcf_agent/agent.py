@@ -6,12 +6,14 @@ VCF Analysis Agent: Strands-based agent for VCF/BCF analysis, validation, and pr
 - Extensible with additional tools and models
 
 Output Mode Toggling (Chain-of-Thought vs. Raw Output):
-------------------------------------------------------
+-------------------------------------------------------
 The agent supports three ways to control output mode:
   1. Environment variable: VCF_AGENT_RAW_MODE ("1", "true", "yes" = raw output)
   2. CLI flag: --raw / --no-think (see cli.py)
   3. Session-based: SessionConfig(raw_mode=...) (see config.py)
+
 See the README for usage examples and details.
+
 """
 
 from strands import Agent, tools
