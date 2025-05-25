@@ -37,6 +37,9 @@ from .api_clients import OpenAIClient, CerebrasClient, APIClientError
 from .prompt_templates import get_prompt_for_task
 from . import graph_integration # Import the module
 from . import vcf_utils # Import the new function
+import time # For timing
+from . import metrics # Import metrics module
+import json # Added import
 
 # Output mode toggling: chain-of-thought (CoT) vs. raw output
 # 1. Environment variable: VCF_AGENT_RAW_MODE ("1", "true", "yes" = raw)
@@ -95,11 +98,32 @@ def validate_vcf(filepath: str) -> str:
         >>> validate_vcf('sample_data/HG00098.vcf.gz')
         'VALID: sample_data/HG00098.vcf.gz passed all checks.'
     """
-    is_valid, error = validate_vcf_file(filepath)
-    if is_valid:
-        return f"VALID: {filepath} passed all checks."
-    else:
-        return f"INVALID: {filepath} failed validation. Reason: {error}"
+    tool_name = "validate_vcf"
+    start_time = time.time()
+    status = "success"
+    error_type_str = None # Specific error type from validation logic
+    
+    try:
+        is_valid, error_msg = validate_vcf_file(filepath)
+        if is_valid:
+            result_str = f"VALID: {filepath} passed all checks."
+        else:
+            status = "error"
+            # Try to get a more specific error type if possible, else use a generic one
+            error_type_str = "ValidationError" # Generic, can be refined if error_msg has structure
+            result_str = f"INVALID: {filepath} failed validation. Reason: {error_msg}"
+        return result_str
+    except Exception as e: # Catch any unexpected exceptions during the tool's own logic
+        status = "error"
+        error_type_str = type(e).__name__
+        metrics.log.error("validate_vcf_tool_unexpected_error", tool_name=tool_name, filepath=filepath, error=str(e))
+        raise # Re-raise the exception after logging, Strands agent might handle it or log it further
+    finally:
+        duration = time.time() - start_time
+        metrics.VCF_AGENT_TOOL_DURATION_SECONDS.labels(tool_name=tool_name, status=status).observe(duration)
+        metrics.VCF_AGENT_TOOL_REQUESTS_TOTAL.labels(tool_name=tool_name, status=status).inc()
+        if status == "error" and error_type_str:
+            metrics.VCF_AGENT_TOOL_ERRORS_TOTAL.labels(tool_name=tool_name, error_type=error_type_str).inc()
 
 # Register the decorated tool directly
 @tools.tool(
@@ -682,20 +706,46 @@ def run_llm_analysis_task(
     **llm_kwargs
 ) -> str:
     """
-    Constructs a prompt and runs the LLM analysis task, returning the JSON response as a string.
-    Args:
-        task: The prompt contract/task name (e.g., 'vcf_summarization_v1')
-        file_paths: List of VCF file paths (1 or 2, depending on task)
-        extra_context: Optional dict for additional context
-        session_config: Optional SessionConfig for agent/model selection
-        model_provider: LLM provider to use
-        **llm_kwargs: Additional kwargs for the agent/model
-    Returns:
-        str: LLM response (should be valid JSON per contract)
+    Runs a specific LLM-based analysis task.
     """
     agent = get_agent_with_session(session_config, model_provider)
     prompt = get_prompt_for_task(task, file_paths, extra_context)
-    result = agent(prompt, **llm_kwargs)
-    return str(result)
+    
+    # Metrics instrumentation
+    start_time = time.time()
+    success = False
+    error_type_str = None
+    # Use the `task` parameter as the `endpoint_task` for metrics
+    endpoint_task_label = task 
+
+    metrics.VCF_AGENT_AI_CONCURRENT_REQUESTS.labels(model_provider=model_provider, endpoint_task=endpoint_task_label).inc()
+    try:
+        metrics.log.info("llm_analysis_task_started", task=task, model_provider=model_provider, files=file_paths)
+        response = agent.generate(prompt, **llm_kwargs)
+        success = True # Assume success if no exception
+        metrics.log.info("llm_analysis_task_completed", task=task, model_provider=model_provider)
+        # TODO: Add response validation if applicable, e.g., is it valid JSON?
+        return response
+    except APIClientError as e: # Specific error from our API clients
+        error_type_str = type(e).__name__
+        metrics.log.error("llm_analysis_api_client_error", task=task, model_provider=model_provider, error=str(e))
+        return json.dumps({"error": f"API Error during LLM analysis for task '{task}': {str(e)}"})
+    except Exception as e:
+        error_type_str = type(e).__name__
+        metrics.log.error("llm_analysis_task_error", task=task, model_provider=model_provider, error=str(e))
+        # Return a generic JSON error response
+        return json.dumps({"error": f"Error during LLM analysis for task '{task}': {str(e)}"})
+    finally:
+        duration = time.time() - start_time
+        metrics.VCF_AGENT_AI_CONCURRENT_REQUESTS.labels(model_provider=model_provider, endpoint_task=endpoint_task_label).dec()
+        metrics.observe_ai_interaction(
+            model_provider=model_provider,
+            endpoint_task=endpoint_task_label, # Use the task name here
+            duration_seconds=duration,
+            success=success,
+            error_type=error_type_str
+            # prompt_tokens, completion_tokens, total_tokens are not easily available here
+            # without changes to Strands or the underlying models.
+        )
 
 __all__ = ["agent", "SYSTEM_PROMPT", "get_agent_with_session"] 

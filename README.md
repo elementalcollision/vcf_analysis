@@ -152,6 +152,17 @@ docker buildx build --platform linux/amd64,linux/arm64 -t vcf-agent:latest .
 
 For more details, see the Dockerfile and `.dockerignore` in the repo, and consult the [OrbStack Docker documentation](https://docs.orbstack.dev/docker/images).
 
+## Monitoring with Prometheus
+
+The VCF Analysis Agent integrates with Prometheus for comprehensive monitoring of its operations, performance, and resource usage. This allows for real-time insights and alerting.
+
+Key features of the monitoring integration include:
+-   **Dedicated HTTP Endpoint**: Exposes metrics at `/metrics` for Prometheus scraping (configurable port via `VCF_AGENT_METRICS_PORT`).
+-   **Pushgateway Support**: For short-lived CLI commands or batch jobs, metrics are pushed to a Prometheus Pushgateway (configurable URL via `VCF_AGENT_PUSHGATEWAY_URL`).
+-   **Granular Metrics**: Covers CLI command execution, agent tool performance, BCFTools subprocess calls, and AI model interactions (requests, duration, errors, concurrency).
+
+For detailed information on configuring Prometheus, the list of available metrics, example PromQL queries, and guidance for developers on adding new metrics, please refer to the [Monitoring with Prometheus documentation](docs/source/monitoring_with_prometheus.md).
+
 ## Usage
 
 - The agent and its tools can be used via the CLI by providing a prompt string. For example:

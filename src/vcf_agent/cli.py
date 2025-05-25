@@ -21,6 +21,8 @@ import os
 from typing import Literal, cast
 import json
 import sys
+import time # For timing
+from vcf_agent import metrics # Import metrics module
 
 def main():
     """
@@ -113,6 +115,12 @@ def main():
     parser_filter.add_argument("--select_columns", type=str, default=None, help="Comma-separated list of columns to return (e.g., variant_id,chrom,pos)")
     parser_filter.add_argument("--limit", type=int, default=None, help="Maximum number of records to return")
 
+    # Kuzu: populate from VCF
+    parser_populate_kuzu = subparsers.add_parser("populate-kuzu-from-vcf", help="Populate Kuzu graph database from a VCF file.")
+    parser_populate_kuzu.add_argument("--vcf_file_path", type=str, required=True, help="Path to the VCF file.")
+    parser_populate_kuzu.add_argument("--kuzu_db_path", type=str, default="./kuzu_db", help="Path to Kuzu database directory.")
+    # Optionally, add --sample_name_override if needed for the CLI too
+
     args = parser.parse_args()
 
     # LanceDB integration commands
@@ -195,6 +203,59 @@ def main():
         print(f"Found {len(results_df)} variants matching filter:")
         print(results_df.to_string())
         return
+    elif args.command == "populate-kuzu-from-vcf":
+        from vcf_agent.graph_integration import get_kuzu_db_connection, create_schema
+        from vcf_agent.vcf_utils import populate_kuzu_from_vcf
+        import gc
+
+        command_name = "populate-kuzu-from-vcf"
+        status = "success"
+        start_time = time.time()
+        error_observed = None
+        # Ensure CLI metrics are defined; they are not auto-registered to http_registry in metrics.py
+        # For push, we collect their current state.
+        cli_duration = metrics.CLI_COMMAND_DURATION_SECONDS
+        cli_requests = metrics.CLI_COMMAND_REQUESTS_TOTAL
+        cli_errors = metrics.CLI_COMMAND_ERRORS_TOTAL
+
+        try:
+            kuzu_conn = None # Define kuzu_conn here to ensure it's in scope for finally
+            try:
+                kuzu_conn = get_kuzu_db_connection(db_path=args.kuzu_db_path)
+                create_schema(kuzu_conn) # Ensure schema exists
+                
+                metrics.log.info(f"Populating Kuzu graph at '{args.kuzu_db_path}' from VCF file '{args.vcf_file_path}'...")
+                counts = populate_kuzu_from_vcf(kuzu_conn=kuzu_conn, vcf_path=args.vcf_file_path)
+                metrics.log.info(f"Successfully populated Kuzu graph from VCF. Variants added: {counts.get('variants', 0)}, Samples added/found: {counts.get('samples', 0)}, Links created: {counts.get('links', 0)}. ")
+            except FileNotFoundError as e:
+                status = "error"
+                error_observed = e
+                metrics.log.error(f"Error: VCF file not found at '{args.vcf_file_path}'. Details: {e}", file=sys.stderr)
+            except Exception as e:
+                status = "error"
+                error_observed = e
+                metrics.log.error(f"Error during Kuzu population: {e}", file=sys.stderr)
+            finally:
+                if kuzu_conn:
+                    del kuzu_conn 
+                gc.collect() 
+        finally:
+            duration = time.time() - start_time
+            cli_duration.labels(command=command_name, status=status).observe(duration)
+            cli_requests.labels(command=command_name, status=status).inc()
+            
+            metrics_to_push_list = [cli_duration, cli_requests]
+
+            if status == "error" and error_observed:
+                error_type = type(error_observed).__name__
+                cli_errors.labels(command=command_name, error_type=error_type).inc()
+                metrics_to_push_list.append(cli_errors)
+            
+            metrics.push_job_metrics(job_name=command_name, metrics_to_push=metrics_to_push_list)
+
+            if error_observed: # Re-raise or exit after pushing metrics
+                 sys.exit(1)
+        return
 
     # Default: agent prompt
     if args.raw:
@@ -225,6 +286,10 @@ def main():
         print(response)
     else:
         parser.print_help()
+
+    # Potentially start metrics http server here if it's an agent session
+    if args.prompt: # Heuristic: if a prompt is given, it might be a longer session
+        metrics.start_metrics_http_server() 
 
 if __name__ == "__main__":
     main() 

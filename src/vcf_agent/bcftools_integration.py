@@ -8,6 +8,8 @@ import subprocess
 from typing import List, Optional, Tuple
 import tempfile
 import shutil
+import time # For timing
+from . import metrics # Import metrics module
 
 def run_bcftools_command(command: List[str], input_data: Optional[bytes] = None) -> Tuple[int, str, str]:
     """
@@ -28,6 +30,11 @@ def run_bcftools_command(command: List[str], input_data: Optional[bytes] = None)
         (0, '...', '')
     """
     full_cmd = ["bcftools"] + command
+    bcftools_subcommand = command[0] if command else "unknown_subcommand"
+    start_time = time.time()
+    status = "success" # Assume success initially
+    return_code = -1 # Default to -1 if subprocess.run fails before setting result.returncode
+
     try:
         result = subprocess.run(
             full_cmd,
@@ -36,9 +43,36 @@ def run_bcftools_command(command: List[str], input_data: Optional[bytes] = None)
             stderr=subprocess.PIPE,
             check=False
         )
+        return_code = result.returncode
+        if return_code != 0:
+            status = "error"
         return result.returncode, result.stdout.decode(), result.stderr.decode()
     except FileNotFoundError as e:
+        status = "error"
+        # Log specific error for bcftools not found, but metrics will capture generic command error
+        metrics.log.error("bcftools_not_found", command_used=full_cmd, error=str(e))
         raise FileNotFoundError("bcftools is not installed or not in PATH") from e
+    except Exception as e: # Catch any other unexpected errors during subprocess.run
+        status = "error"
+        metrics.log.error("bcftools_run_unexpected_error", command_used=full_cmd, error=str(e))
+        # Re-raise to allow higher-level handlers to deal with it, 
+        # but metrics will be recorded in finally.
+        raise
+    finally:
+        duration = time.time() - start_time
+        metrics.VCF_AGENT_BCFTOOLS_DURATION_SECONDS.labels(
+            bcftools_subcommand=bcftools_subcommand, status=status
+        ).observe(duration)
+        metrics.VCF_AGENT_BCFTOOLS_COMMANDS_TOTAL.labels(
+            bcftools_subcommand=bcftools_subcommand, status=status
+        ).inc()
+        
+        if status == "error":
+            # We use return_code !=0 as the primary indicator for bcftools errors for the metric
+            # FileNotFoundError and other exceptions during subprocess.run also result in status="error"
+            metrics.VCF_AGENT_BCFTOOLS_ERRORS_TOTAL.labels(
+                bcftools_subcommand=bcftools_subcommand
+            ).inc()
 
 
 def bcftools_view(args: List[str], input_data: Optional[bytes] = None) -> Tuple[int, str, str]:
