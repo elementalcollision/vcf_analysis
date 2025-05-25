@@ -17,6 +17,7 @@ documentation for details.
 
    vcf_agent
    lancedb_developer_guide
+   kuzu_developer_guide
    modules
 
 Agent Integration, Prompt Contracts, API Integration, and Testing

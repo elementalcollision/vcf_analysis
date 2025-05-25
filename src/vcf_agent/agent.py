@@ -441,13 +441,13 @@ def load_vcf_into_graph_db_tool(filepath: str, sample_name_override: Optional[st
         # Alternatively, robustly call get_managed_kuzu_connection() again.
         kuzu_conn = graph_integration.get_managed_kuzu_connection()
         if kuzu_conn is None:
-            return json.dumps({"error": "Kuzu connection not available. Initialization might have failed."}) 
+            return json.dumps({"error": "Kuzu connection not available. Initialization might have failed.", "status": "failed"})
 
         print(f"Loading VCF {filepath} into Kuzu. Override sample: {sample_name_override}")
         counts = vcf_utils.populate_kuzu_from_vcf(kuzu_conn, filepath, sample_name_override)
         return json.dumps({"status": "success", "message": f"VCF file {filepath} processed into Kuzu.", "counts": counts})
     except FileNotFoundError as fnf_error:
-        return json.dumps({"error": str(fnf_error), "status": "failed"})
+        return json.dumps({"error": f"FileNotFoundError: {fnf_error}", "status": "failed"})
     except Exception as e:
         # Log the full error for debugging
         print(f"Error loading VCF {filepath} into Kuzu: {e}")
@@ -659,6 +659,13 @@ def get_agent_with_session(
     ]
 
     agent = Agent(model=model, tools=available_tools)
+    # Attach each tool as an attribute for direct access (e.g., agent.load_vcf_into_graph_db_tool)
+    for tool_fn in available_tools:
+        # Use the function's __name__ (strip trailing _tool for consistency)
+        attr_name = tool_fn.__name__
+        setattr(agent, attr_name, tool_fn)
+    # Add a .tools dictionary for name-based lookup
+    agent.tools = {tool_fn.__name__: tool_fn for tool_fn in available_tools}
     # Store session_config on the agent if Strands allows, or manage separately.
     # agent.session_config = session_config # Example, if agent can hold custom attributes
     return agent

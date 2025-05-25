@@ -17,7 +17,7 @@ class MockVCFRecord:
         self.REF = REF
         self.ALT = ALT # List of strings
         self.ID = ID # Optional, can be None
-        self.gt_types = gt_types # Array-like, e.g., [0] for het for the first sample
+        self.genotypes = gt_types # RENAMED from gt_types to genotypes
 
 class TestVCFUtilsUnit:
     """Unit tests for vcf_utils.py"""
@@ -38,8 +38,8 @@ class TestVCFUtilsUnit:
         mock_vcf_reader = MagicMock()
         mock_vcf_reader.samples = ["test_sample_from_vcf"]
         
-        record1_het = MockVCFRecord(CHROM="chr1", POS=100, REF="A", ALT=["T"], gt_types=[0]) # 0 for HET
-        record2_hom = MockVCFRecord(CHROM="chr1", POS=200, REF="G", ALT=["C"], gt_types=[1]) # 1 for HOM_ALT
+        record1_het = MockVCFRecord(CHROM="chr1", POS=100, REF="A", ALT=["T"], gt_types=[[0,1,True]]) # Het
+        record2_hom = MockVCFRecord(CHROM="chr1", POS=200, REF="G", ALT=["C"], gt_types=[[1,1,True]]) # Hom Alt
         mock_vcf_reader.__iter__.return_value = iter([record1_het, record2_hom])
         mock_vcf_constructor.return_value = mock_vcf_reader
 
@@ -55,16 +55,16 @@ class TestVCFUtilsUnit:
 
         # 2. Variant additions
         expected_variant_calls = [
-            call(mock_kuzu_conn, {"variant_id": "chr1_100_A_T", "chrom": "chr1", "pos": 100, "ref": "A", "alt": "T"}),
-            call(mock_kuzu_conn, {"variant_id": "chr1_200_G_C", "chrom": "chr1", "pos": 200, "ref": "G", "alt": "C"})
+            call(mock_kuzu_conn, {"variant_id": "chr1-100-A-T", "chrom": "chr1", "pos": 100, "ref": "A", "alt": "T", "rs_id": None}),
+            call(mock_kuzu_conn, {"variant_id": "chr1-200-G-C", "chrom": "chr1", "pos": 200, "ref": "G", "alt": "C", "rs_id": None})
         ]
         mock_graph_integration.add_variant.assert_has_calls(expected_variant_calls)
         assert mock_graph_integration.add_variant.call_count == 2
 
         # 3. Link additions
         expected_link_calls = [
-            call(mock_kuzu_conn, "test_sample_from_vcf", "chr1_100_A_T", {"zygosity": "HET"}),
-            call(mock_kuzu_conn, "test_sample_from_vcf", "chr1_200_G_C", {"zygosity": "HOM_ALT"})
+            call(mock_kuzu_conn, "test_sample_from_vcf", "chr1-100-A-T", {"zygosity": "HET"}),
+            call(mock_kuzu_conn, "test_sample_from_vcf", "chr1-200-G-C", {"zygosity": "HOM_ALT"})
         ]
         mock_graph_integration.link_variant_to_sample.assert_has_calls(expected_link_calls)
         assert mock_graph_integration.link_variant_to_sample.call_count == 2
@@ -87,7 +87,9 @@ class TestVCFUtilsUnit:
         mock_vcf_reader = MagicMock()
         # samples in VCF will be ignored due to override
         mock_vcf_reader.samples = ["sample_in_vcf_ignored"]
-        record1 = MockVCFRecord(CHROM="chrX", POS=500, REF="C", ALT=["G"], gt_types=[0])
+        # For HET, gt_types could be e.g. [[0, 1, True]] (phased) or [[0, 1, False]] (unphased)
+        # Let's use [[0,1,True]] for consistency
+        record1 = MockVCFRecord(CHROM="chrX", POS=500, REF="C", ALT=["G"], gt_types=[[0,1,True]])
         mock_vcf_reader.__iter__.return_value = iter([record1])
         mock_vcf_constructor.return_value = mock_vcf_reader
 
@@ -99,12 +101,12 @@ class TestVCFUtilsUnit:
         )
         mock_graph_integration.add_variant.assert_called_once_with(
             mock_kuzu_conn, 
-            {"variant_id": "chrX_500_C_G", "chrom": "chrX", "pos": 500, "ref": "C", "alt": "G"}
+            {"variant_id": "chrX-500-C-G", "chrom": "chrX", "pos": 500, "ref": "C", "alt": "G", "rs_id": None}
         )
         mock_graph_integration.link_variant_to_sample.assert_called_once_with(
-            mock_kuzu_conn, 
-            override_sample_name, 
-            "chrX_500_C_G", 
+            mock_kuzu_conn,
+            override_sample_name,
+            "chrX-500-C-G",
             {"zygosity": "HET"}
         )
         assert counts == {"variants": 1, "samples": 1, "links": 1}
@@ -125,8 +127,9 @@ class TestVCFUtilsUnit:
         mock_isfile.assert_called_once_with(vcf_file_path)
 
     @patch('vcf_agent.vcf_utils.os.path.isfile', return_value=True)
+    @patch('vcf_agent.vcf_utils.graph_integration')
     @patch('vcf_agent.vcf_utils.VCF')
-    def test_populate_kuzu_from_vcf_no_samples_in_vcf(self, mock_vcf_constructor, mock_isfile):
+    def test_populate_kuzu_from_vcf_no_samples_in_vcf(self, mock_vcf_constructor, mock_graph_integration, mock_isfile):
         """Test VCF processing when VCF has no samples and no override is given."""
         mock_kuzu_conn = MagicMock()
         vcf_file_path = "no_samples.vcf"
@@ -137,15 +140,17 @@ class TestVCFUtilsUnit:
         mock_vcf_reader.__iter__.return_value = iter([]) 
         mock_vcf_constructor.return_value = mock_vcf_reader
 
-        with pytest.raises(IndexError) as excinfo: # Expect IndexError from vcf_reader.samples[0]
-            vcf_utils.populate_kuzu_from_vcf(mock_kuzu_conn, vcf_file_path)
+        # With no samples in VCF and no override, no samples should be processed,
+        # no records iterated, and thus no variants/links. No IndexError expected here.
+        counts = vcf_utils.populate_kuzu_from_vcf(mock_kuzu_conn, vcf_file_path)
         
-        # Check that the error message is what you'd expect from trying to access samples[0]
-        # This is a bit dependent on Python's default IndexError message for empty lists.
-        # A more robust check might be to ensure no graph operations were attempted.
-        # For now, checking the type is the primary goal.
-        assert "list index out of range" in str(excinfo.value).lower()
+        assert counts == {"variants": 0, "samples": 0, "links": 0}
+        # Ensure graph_integration calls were not made if no samples/records processed
         mock_vcf_constructor.assert_called_once_with(vcf_file_path)
+        mock_graph_integration.add_sample.assert_not_called()
+        mock_graph_integration.add_variant.assert_not_called()
+        mock_graph_integration.link_variant_to_sample.assert_not_called()
+        mock_isfile.assert_called_once_with(vcf_file_path)
 
     @patch('vcf_agent.vcf_utils.os.path.isfile', return_value=True)
     @patch('vcf_agent.vcf_utils.graph_integration')
@@ -159,8 +164,8 @@ class TestVCFUtilsUnit:
         mock_vcf_reader = MagicMock()
         mock_vcf_reader.samples = [sample_name]
         
-        # Record with two ALT alleles, only the first ('T') should be used
-        record_multi_alt = MockVCFRecord(CHROM="chr2", POS=300, REF="C", ALT=["T", "G"], gt_types=[0])
+        # Record with two ALT alleles, only the first ('T') should be used. Genotype is HET [0,1,True]
+        record_multi_alt = MockVCFRecord(CHROM="chr2", POS=300, REF="C", ALT=["T", "G"], gt_types=[[0,1,True]])
         mock_vcf_reader.__iter__.return_value = iter([record_multi_alt])
         mock_vcf_constructor.return_value = mock_vcf_reader
 
@@ -173,12 +178,12 @@ class TestVCFUtilsUnit:
         # Ensure variant_id and alt field in add_variant use only the first ALT allele ('T')
         mock_graph_integration.add_variant.assert_called_once_with(
             mock_kuzu_conn, 
-            {"variant_id": "chr2_300_C_T", "chrom": "chr2", "pos": 300, "ref": "C", "alt": "T"}
+            {"variant_id": "chr2-300-C-T", "chrom": "chr2", "pos": 300, "ref": "C", "alt": "T", "rs_id": None}
         )
         mock_graph_integration.link_variant_to_sample.assert_called_once_with(
-            mock_kuzu_conn, 
-            sample_name, 
-            "chr2_300_C_T", # Uses variant_id based on first ALT
+            mock_kuzu_conn,
+            sample_name,
+            "chr2-300-C-T", # Uses variant_id based on first ALT
             {"zygosity": "HET"}
         )
         assert counts == {"variants": 1, "samples": 1, "links": 1}

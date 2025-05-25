@@ -56,9 +56,29 @@ documentation for details.</p>
 <li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#module-vcf_agent.lancedb_integration">API Reference</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#cli-usage-guide">CLI Usage Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#data-flow-overview">Data Flow Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#schema-definition">Schema Definition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#variant-table-schema-er-diagram">Variant Table Schema (ER Diagram)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#concurrency-model">Concurrency Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#security-notes">Security Notes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#schema-definition">Schema Definition</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#core-module-src-vcf-agent-graph-integration">Core Module: <code class="docutils literal notranslate"><span class="pre">src.vcf_agent.graph_integration</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kuzu_developer_guide.html#src.vcf_agent.graph_integration.add_sample"><code class="docutils literal notranslate"><span class="pre">add_sample()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="kuzu_developer_guide.html#src.vcf_agent.graph_integration.add_variant"><code class="docutils literal notranslate"><span class="pre">add_variant()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="kuzu_developer_guide.html#src.vcf_agent.graph_integration.create_schema"><code class="docutils literal notranslate"><span class="pre">create_schema()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="kuzu_developer_guide.html#src.vcf_agent.graph_integration.execute_query"><code class="docutils literal notranslate"><span class="pre">execute_query()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="kuzu_developer_guide.html#src.vcf_agent.graph_integration.get_kuzu_db_connection"><code class="docutils literal notranslate"><span class="pre">get_kuzu_db_connection()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="kuzu_developer_guide.html#src.vcf_agent.graph_integration.get_managed_kuzu_connection"><code class="docutils literal notranslate"><span class="pre">get_managed_kuzu_connection()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="kuzu_developer_guide.html#src.vcf_agent.graph_integration.get_variant_context"><code class="docutils literal notranslate"><span class="pre">get_variant_context()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="kuzu_developer_guide.html#src.vcf_agent.graph_integration.link_variant_to_sample"><code class="docutils literal notranslate"><span class="pre">link_variant_to_sample()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="kuzu_developer_guide.html#key-functions">Key Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#schema-details">Schema Details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#usage-pattern-with-lancedb">Usage Pattern with LanceDB</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kuzu_developer_guide.html#example-conceptual">Example (Conceptual):</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">vcf_agent</a><ul>
@@ -108,9 +128,11 @@ documentation for details.</p>
 <li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#module-vcf_agent.lancedb_integration">API Reference</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#cli-usage-guide">CLI Usage Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#data-flow-overview">Data Flow Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#schema-definition">Schema Definition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#variant-table-schema-er-diagram">Variant Table Schema (ER Diagram)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#concurrency-model">Concurrency Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#security-notes">Security Notes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#schema-definition">Schema Definition</a></li>
 </ul>
 </li>
 </ul>
@@ -148,6 +170,10 @@ documentation for details.</p>
 <li class="toctree-l1"><a class="reference internal" href="vcf_agent.html">vcf_agent package</a></li>
 <li class="toctree-l1"><a class="reference internal" href="vcf_agent.html#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#core-module-src-vcf-agent-graph-integration">Core Module: <code class="docutils literal notranslate"><span class="pre">src.vcf_agent.graph_integration</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#schema-details">Schema Details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#usage-pattern-with-lancedb">Usage Pattern with LanceDB</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">vcf_agent</a></li>
 </ul>
 <ul>

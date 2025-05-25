@@ -156,7 +156,7 @@ def test_link_variant_to_sample(db_connection):
         graph_integration.add_sample(db_connection, {'sample_id': sample_id})
         
         # Link them
-        graph_integration.link_variant_to_sample(db_connection, variant_id, sample_id, link_properties)
+        graph_integration.link_variant_to_sample(db_connection, sample_id, variant_id, link_properties)
         
         # Verify by querying the relationship
         query = """
@@ -241,10 +241,10 @@ def test_get_variant_context(db_connection):
         graph_integration.add_sample(db_connection, {'sample_id': s1_id})
         graph_integration.add_sample(db_connection, {'sample_id': s2_id})
 
-        graph_integration.link_variant_to_sample(db_connection, v1_id, s1_id, {'zygosity': 'HET'})
-        graph_integration.link_variant_to_sample(db_connection, v2_id, s1_id, {'zygosity': 'HOM'})
-        graph_integration.link_variant_to_sample(db_connection, v1_id, s2_id, {'zygosity': 'HOM'})
-        graph_integration.link_variant_to_sample(db_connection, v3_id, s2_id, {'zygosity': 'HET'})
+        graph_integration.link_variant_to_sample(db_connection, s1_id, v1_id, {'zygosity': 'HET'})
+        graph_integration.link_variant_to_sample(db_connection, s1_id, v2_id, {'zygosity': 'HOM'})
+        graph_integration.link_variant_to_sample(db_connection, s2_id, v1_id, {'zygosity': 'HOM'})
+        graph_integration.link_variant_to_sample(db_connection, s2_id, v3_id, {'zygosity': 'HET'})
 
         # Test 1: Get context for variants linked to S1
         target_variant_ids = [v1_id, v2_id, v3_id, v4_id, "rs_non_existent"]

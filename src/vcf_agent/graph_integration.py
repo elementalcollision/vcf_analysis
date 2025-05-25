@@ -157,14 +157,14 @@ def add_sample(conn: kuzu.Connection, sample_data: Dict[str, Any]) -> None:
         print(f"Error adding sample {sample_data.get('sample_id', 'UNKNOWN')}: {e}")
         raise
 
-def link_variant_to_sample(conn: kuzu.Connection, variant_id: str, sample_id: str, properties: Dict[str, Any]) -> None:
+def link_variant_to_sample(conn: kuzu.Connection, sample_id: str, variant_id: str, properties: Dict[str, Any]) -> None:
     """
-    Creates an 'ObservedIn' relationship between a Variant and a Sample using parameterized queries.
+    Creates an 'ObservedIn' relationship between a Sample and a Variant using parameterized queries.
 
     Args:
         conn: Active Kuzu connection.
-        variant_id: ID of the Variant node.
         sample_id: ID of the Sample node.
+        variant_id: ID of the Variant node.
         properties: Dictionary of properties for the relationship (e.g., {'zygosity': 'HET'}).
     """
     try:
@@ -181,9 +181,9 @@ def link_variant_to_sample(conn: kuzu.Connection, variant_id: str, sample_id: st
             "zygosity": properties['zygosity']
         }
         conn.execute(query, parameters=params)
-        print(f"Linked variant {variant_id} to sample {sample_id} with properties: {properties}")
+        print(f"Linked sample {sample_id} to variant {variant_id} with properties: {properties}")
     except Exception as e:
-        print(f"Error linking variant {variant_id} to sample {sample_id}: {e}")
+        print(f"Error linking sample {sample_id} to variant {variant_id}: {e}")
         raise
 
 def execute_query(conn: kuzu.Connection, cypher_query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
@@ -218,7 +218,7 @@ def execute_query(conn: kuzu.Connection, cypher_query: str, params: Optional[Dic
         print(f"Error executing Cypher query '{cypher_query}': {e}")
         raise
 
-def get_variant_context(conn: kuzu.Connection, variant_ids: List[str]) -> Dict[str, Dict[str, Any]]:
+def get_variant_context(conn: kuzu.Connection, variant_ids: List[str]) -> Dict[str, List[Dict[str, Any]]]:
     """
     Fetches graph context (e.g., samples, relationships) for a list of variant IDs from Kuzu.
     This function is intended to be called after a vector search in LanceDB provides relevant variant_ids.
@@ -228,9 +228,9 @@ def get_variant_context(conn: kuzu.Connection, variant_ids: List[str]) -> Dict[s
         variant_ids: A list of variant IDs obtained from LanceDB vector search.
 
     Returns:
-        A dictionary where keys are variant_ids and values are dictionaries
+        A dictionary where keys are variant_ids and values are lists of dictionaries
         containing their graph context (e.g., associated samples and relationship properties).
-        Example: {'rs123': {'samples': [{'sample_id': 'S1', 'zygosity': 'HET'}]}}
+        Example: {'rs123': [{'sample_id': 'S1', 'zygosity': 'HET'}]}}
     """
     if not variant_ids:
         return {}
@@ -247,17 +247,12 @@ def get_variant_context(conn: kuzu.Connection, variant_ids: List[str]) -> Dict[s
     try:
         query_results = execute_query(conn, query, params=params)
         
-        context_map: Dict[str, Dict[str, Any]] = {v_id: {"samples": []} for v_id in variant_ids}
+        context_map: Dict[str, List[Dict[str, Any]]] = {v_id: [] for v_id in variant_ids}
         for row in query_results:
             v_id = row['variant_id']
             sample_info = {"sample_id": row['sample_id'], "zygosity": row['zygosity']}
             if v_id in context_map:
-                # Ensure samples list exists, though initialized above
-                if "samples" not in context_map[v_id]: # Should not happen due to initialization
-                    context_map[v_id]["samples"] = []
-                context_map[v_id]["samples"].append(sample_info)
-            # Else: variant_id from query not in initial list, or no samples linked - handled by init
-        
+                context_map[v_id].append(sample_info)
         print(f"Fetched context for {len(context_map)} variants from Kuzu.")
         return context_map
     except Exception as e:
@@ -281,9 +276,9 @@ if __name__ == '__main__':
     #     add_variant(db_connection, var_data2)
     #     add_sample(db_connection, samp_data1)
     #     add_sample(db_connection, samp_data2)
-    #     link_variant_to_sample(db_connection, 'rs123', 'SAMPLE001', {'zygosity': 'HET'})
-    #     link_variant_to_sample(db_connection, 'rs456', 'SAMPLE001', {'zygosity': 'HOM'})
-    #     link_variant_to_sample(db_connection, 'rs123', 'SAMPLE002', {'zygosity': 'HOM'})
+    #     link_variant_to_sample(db_connection, 'SAMPLE001', 'rs123', {'zygosity': 'HET'})
+    #     link_variant_to_sample(db_connection, 'SAMPLE001', 'rs456', {'zygosity': 'HOM'})
+    #     link_variant_to_sample(db_connection, 'SAMPLE002', 'rs123', {'zygosity': 'HOM'})
     #
     #     print("\nQuerying all ObservedIn relationships...")
     #     all_links = execute_query(db_connection, "MATCH (v:Variant)-[o:ObservedIn]->(s:Sample) RETURN v.variant_id, s.sample_id, o.zygosity")

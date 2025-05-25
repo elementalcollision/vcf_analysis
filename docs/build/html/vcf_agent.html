@@ -61,20 +61,12 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.agent.get_agent_with_session">
 <span class="sig-prename descclassname"><span class="pre">vcf_agent.agent.</span></span><span class="sig-name descname"><span class="pre">get_agent_with_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ollama'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.agent.get_agent_with_session" title="Link to this definition">¶</a></dt>
-<dd><p>Instantiate a VCF Analysis Agent with optional session-based configuration.</p>
-<dl class="simple">
-<dt>Output mode (CoT vs. raw) is determined in this order:</dt><dd><ol class="arabic simple">
-<li><p>session_config.raw_mode (if not None)</p></li>
-<li><p>VCF_AGENT_RAW_MODE env var (“1”, “true”, “yes” = raw)</p></li>
-<li><p>Default: chain-of-thought (CoT)</p></li>
-</ol>
-</dd>
-</dl>
+<dd><p>Factory function to create and configure a VCF Analysis Agent.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>session_config</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="#vcf_agent.config.SessionConfig" title="vcf_agent.config.SessionConfig"><em>SessionConfig</em></a><em>]</em>) – Session configuration. If raw_mode is set, it overrides env/CLI.</p></li>
-<li><p><strong>model_provider</strong> (<em>str</em>) – The LLM provider to use: “ollama” (default), “openai”, or “cerebras”</p></li>
+<li><p><strong>session_config</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="#vcf_agent.config.SessionConfig" title="vcf_agent.config.SessionConfig"><em>SessionConfig</em></a><em>]</em>) – Session-specific settings.</p></li>
+<li><p><strong>model_provider</strong> (<em>str</em>) – Model provider to use (‘ollama’, ‘openai’, ‘cerebras’).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -82,15 +74,6 @@
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Agent</p>
-</dd>
-</dl>
-<dl>
-<dt>Usage:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">vcf_agent.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionConfig</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">session_config</span> <span class="o">=</span> <span class="n">SessionConfig</span><span class="p">(</span><span class="n">raw_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">vcf_agent.agent</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_agent_with_session</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">agent</span> <span class="o">=</span> <span class="n">get_agent_with_session</span><span class="p">(</span><span class="n">session_config</span><span class="p">,</span> <span class="n">model_provider</span><span class="o">=</span><span class="s2">&quot;openai&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
 </dd>
 </dl>
 </dd></dl>
@@ -817,6 +800,10 @@ Selects backend based on config or argument.</p>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#core-module-src-vcf-agent-graph-integration">Core Module: <code class="docutils literal notranslate"><span class="pre">src.vcf_agent.graph_integration</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#schema-details">Schema Details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#usage-pattern-with-lancedb">Usage Pattern with LanceDB</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">vcf_agent</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">vcf_agent package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>

@@ -82,10 +82,10 @@ class TestLanceDBIntegrationUnit:
         """Test search_by_embedding when LanceDB returns an empty DataFrame."""
         mock_table = MagicMock()
 
-        # Configure LanceDB search to return an empty DataFrame (as it might come from to_df())
-        # The function being tested is responsible for adding 'kuzu_observed_samples' if it doesn't exist.
-        mock_empty_lancedb_df = pd.DataFrame({'variant_id': [], 'score': []}) # CHANGED
-        mock_table.search.return_value.limit.return_value.to_df.return_value = mock_empty_lancedb_df
+        # Configure LanceDB search to return an empty DataFrame
+        # mock_table.search.return_value.limit.return_value.to_df.return_value = pd.DataFrame() # Make it truly empty
+        mock_limit_obj = mock_table.search.return_value.limit.return_value
+        mock_limit_obj.to_df.return_value = pd.DataFrame() # More explicit mock for to_df
 
         result_df = lancedb_integration.search_by_embedding(
             table=mock_table,
@@ -108,14 +108,16 @@ class TestLanceDBIntegrationUnit:
         # If truly empty, this column would be all pd.NA, but result_df itself is empty.
         # So just checking for column existence is enough.
 
+    @patch('vcf_agent.lancedb_integration.logger')
     @patch('vcf_agent.lancedb_integration.graph_integration')
-    def test_search_by_embedding_lancedb_found_kuzu_empty_context(self, mock_graph_integration_module):
+    def test_search_by_embedding_lancedb_found_kuzu_empty_context(self, mock_graph_integration_module, mock_logger):
         """Test when LanceDB finds variants, but Kuzu returns no context for them."""
         mock_table = MagicMock()
 
         lancedb_results_data = {'variant_id': ['var3', 'var4'], 'score': [0.7, 0.6]}
         mock_lancedb_df = pd.DataFrame(lancedb_results_data)
-        mock_table.search.return_value.limit.return_value.to_df.return_value = mock_lancedb_df
+        mock_limit_obj = mock_table.search.return_value.limit.return_value
+        mock_limit_obj.to_df.return_value = mock_lancedb_df # More explicit
 
         mock_kuzu_conn = MagicMock()
         mock_graph_integration_module.get_managed_kuzu_connection.return_value = mock_kuzu_conn
@@ -137,6 +139,8 @@ class TestLanceDBIntegrationUnit:
             ['var3', 'var4']
         )
 
+        mock_logger.warning.assert_not_called()
+
         assert 'kuzu_observed_samples' in result_df.columns
         # Expect lists of empty lists, or lists of pd.NA, or just empty lists if no variants had context
         # The current implementation in search_by_embedding will result in empty lists for variants with no context
@@ -145,14 +149,16 @@ class TestLanceDBIntegrationUnit:
         
         assert result_df['variant_id'].tolist() == ['var3', 'var4']
 
+    @patch('vcf_agent.lancedb_integration.logger')
     @patch('vcf_agent.lancedb_integration.graph_integration')
-    def test_search_by_embedding_kuzu_partial_context(self, mock_graph_integration_module):
+    def test_search_by_embedding_kuzu_partial_context(self, mock_graph_integration_module, mock_logger):
         """Test when Kuzu returns context for a subset of LanceDB variants."""
         mock_table = MagicMock()
 
         lancedb_results_data = {'variant_id': ['var5', 'var6', 'var7'], 'score': [0.5, 0.4, 0.3]}
         mock_lancedb_df = pd.DataFrame(lancedb_results_data)
-        mock_table.search.return_value.limit.return_value.to_df.return_value = mock_lancedb_df
+        mock_limit_obj = mock_table.search.return_value.limit.return_value
+        mock_limit_obj.to_df.return_value = mock_lancedb_df # More explicit
 
         mock_kuzu_conn = MagicMock()
         mock_graph_integration_module.get_managed_kuzu_connection.return_value = mock_kuzu_conn
@@ -177,6 +183,8 @@ class TestLanceDBIntegrationUnit:
             ['var5', 'var6', 'var7']
         )
 
+        mock_logger.warning.assert_not_called()
+
         assert 'kuzu_observed_samples' in result_df.columns
         expected_kuzu_data = [
             [('sampleC', 'HOM')], # Context for var5
@@ -198,7 +206,8 @@ class TestLanceDBIntegrationUnit:
 
         lancedb_results_data = {'variant_id': ['var8'], 'score': [0.2]}
         mock_lancedb_df = pd.DataFrame(lancedb_results_data)
-        mock_table.search.return_value.limit.return_value.to_df.return_value = mock_lancedb_df
+        mock_limit_obj = mock_table.search.return_value.limit.return_value
+        mock_limit_obj.to_df.return_value = mock_lancedb_df # More explicit
 
         mock_kuzu_conn = MagicMock()
         mock_graph_integration_module.get_managed_kuzu_connection.return_value = mock_kuzu_conn

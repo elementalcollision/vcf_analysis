@@ -154,10 +154,15 @@ def populate_kuzu_from_vcf(kuzu_conn: kuzu.Connection, vcf_path: str, sample_nam
             if any(a > 0 for a in [allele1, allele2]): # Checks if any allele index is > 0 (i.e., an ALT)
                 try:
                     link_props = {'zygosity': zygosity}
-                    graph_integration.link_variant_to_sample(kuzu_conn, variant_id, current_sample_id, link_props)
+                    graph_integration.link_variant_to_sample(kuzu_conn, current_sample_id, variant_id, link_props)
                     counts["links_added"] += 1
                 except Exception as e:
                     print(f"Info: Could not link variant {variant_id} to sample {current_sample_id}: {e}")
     
     vcf_parser.close()
-    return counts 
+    # Return with keys matching test expectations
+    return {
+        "variants": counts["variants_added"],
+        "samples": counts["samples_added"],
+        "links": counts["links_added"]
+    } 

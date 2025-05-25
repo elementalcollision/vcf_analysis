@@ -77,7 +77,12 @@ class TestLoadVcfTool:
         filepath = "/test/dummy.vcf"
         sample_override = "sample_001"
         
-        result_json = agent_instance.load_vcf_into_graph_db_tool(filepath=filepath, sample_name_override=sample_override)
+        # Call using the function name
+        try:
+            result_json = agent_instance.load_vcf_into_graph_db_tool(filepath=filepath, sample_name_override=sample_override)
+        except AttributeError:
+            # Fallback: call via .tools dict
+            result_json = agent_instance.tools['load_vcf_into_graph_db_tool'](filepath=filepath, sample_name_override=sample_override)
         result = json.loads(result_json)
 
         mock_get_kuzu_conn.assert_called_once()
@@ -94,7 +99,10 @@ class TestLoadVcfTool:
         mock_populate_vcf.side_effect = FileNotFoundError("VCF not found")
         
         filepath = "/test/nonexistent.vcf"
-        result_json = agent_instance.load_vcf_into_graph_db_tool(filepath=filepath)
+        try:
+            result_json = agent_instance.load_vcf_into_graph_db_tool(filepath=filepath) # Call by function name
+        except AttributeError:
+            result_json = agent_instance.tools['load_vcf_into_graph_db_tool'](filepath=filepath)
         result = json.loads(result_json)
 
         mock_get_kuzu_conn.assert_called_once()
@@ -109,7 +117,10 @@ class TestLoadVcfTool:
         mock_get_kuzu_conn.return_value = None # Simulate Kuzu connection failure
         
         filepath = "/test/any.vcf"
-        result_json = agent_instance.load_vcf_into_graph_db_tool(filepath=filepath)
+        try:
+            result_json = agent_instance.load_vcf_into_graph_db_tool(filepath=filepath) # Call by function name
+        except AttributeError:
+            result_json = agent_instance.tools['load_vcf_into_graph_db_tool'](filepath=filepath)
         result = json.loads(result_json)
 
         mock_get_kuzu_conn.assert_called_once()
