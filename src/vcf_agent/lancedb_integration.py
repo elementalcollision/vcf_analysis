@@ -14,6 +14,12 @@ import pandas as pd # Ensure pandas is imported for DataFrame operations
 # Import Kuzu integration functions
 from . import graph_integration
 
+# Add import for sqlparse if available
+try:
+    import sqlparse  # type: ignore
+except ImportError:
+    sqlparse = None
+
 logger = logging.getLogger(__name__) # Added for error logging
 
 # Global lock for LanceDB write operations to ensure thread safety with local file-based DB
@@ -24,19 +30,84 @@ logger = logging.getLogger(__name__) # Added for error logging
 # database designed for high concurrency (like LanceDB Cloud) would be necessary.
 lancedb_write_lock = threading.Lock()
 
-# Helper function to mask string literals in SQL-like filter strings for safer logging
-def mask_sql_literals(sql_string: Optional[str]) -> Optional[str]:
+# Configurable list of sensitive column names
+SENSITIVE_COLUMNS = [
+    'patient_id', 'ssn', 'email', 'user_id', 'phone', 'dob', 'address', 'name', 'mrn', 'genotype', 'sample_id'
+]
+# Configurable regex patterns for sensitive data
+SENSITIVE_PATTERNS = [
+    re.compile(r'[\w\.-]+@[\w\.-]+'),  # Email addresses
+    re.compile(r'\b\d{3}[- ]?\d{2}[- ]?\d{4}\b'),  # SSN-like patterns
+    re.compile(r'\b\d{10,}\b'),  # Long numbers (IDs, phone numbers)
+    re.compile(r'\b(?:[A-Z][a-z]+ ){1,2}[A-Z][a-z]+\b'),  # Names (simple heuristic)
+]
+
+def mask_sensitive_sql(filter_sql: str, sensitive_columns=None, patterns=None) -> str:
     """
-    Masks string literals (single or double quoted) in a SQL-like string.
-    Example: "name = \'John Doe\' AND age > 30" -> "name = \'{MASKED_STRING}\' AND age > 30"
+    Mask sensitive data in SQL filter strings for logging.
+
+    Args:
+        filter_sql (str): The SQL filter string to mask.
+        sensitive_columns (list, optional): List of sensitive column names to mask. Defaults to SENSITIVE_COLUMNS.
+        patterns (list, optional): List of regex patterns to mask. Defaults to SENSITIVE_PATTERNS.
+
+    Returns:
+        str: The masked SQL string, or '[MASKED_SQL]' if ambiguous/unparseable.
+
+    Example:
+        >>> mask_sensitive_sql("email = 'john.doe@example.com' AND ssn = '123-45-6789'")
+        "email = '[MASKED]' AND ssn = '[MASKED]'"
     """
-    if sql_string is None:
-        return None
-    # Mask single-quoted strings
-    masked_sql = re.sub(r"'(?:\\\'|[^'])*'", "'{MASKED_STRING}'", sql_string)
-    # Mask double-quoted strings (though less common in SQL, good to cover)
-    masked_sql = re.sub(r'"(?:\\"|[^"])*"', '"{MASKED_STRING}"', masked_sql)
-    return masked_sql
+    if not filter_sql or not isinstance(filter_sql, str):
+        return '[MASKED_SQL]'
+    sensitive_columns = sensitive_columns or SENSITIVE_COLUMNS
+    patterns = patterns or SENSITIVE_PATTERNS
+
+    # Try to parse with sqlparse if available
+    if sqlparse:
+        try:
+            parsed = sqlparse.parse(filter_sql)
+            if not parsed:
+                raise ValueError('Empty parse result')
+            tokens = list(parsed[0].flatten())
+            masked_tokens = []
+            last_col = None
+            for t in tokens:
+                # Mask string/numeric literals
+                if t.ttype in sqlparse.tokens.Literal.String.Single or t.ttype in sqlparse.tokens.Literal.Number:
+                    masked_tokens.append("'[MASKED]'")
+                # Mask values after sensitive column names
+                elif last_col and t.value.strip() in ('=', '==', '!=', '<>', 'LIKE'):
+                    masked_tokens.append(t.value)
+                    last_col = last_col  # Keep for next token
+                elif last_col:
+                    masked_tokens.append("'[MASKED]'")
+                    last_col = None
+                elif t.ttype is sqlparse.tokens.Name and t.value.lower() in sensitive_columns:
+                    masked_tokens.append(t.value)
+                    last_col = t.value.lower()
+                else:
+                    masked_tokens.append(t.value)
+                    last_col = None
+            return ''.join(masked_tokens)
+        except Exception:
+            pass  # Fallback to regex masking
+
+    # Regex-based masking for common sensitive patterns
+    masked = filter_sql
+    for pat in patterns:
+        masked = pat.sub('[MASKED]', masked)
+
+    # Regex masking for sensitive columns: mask value after sensitive_column = ...
+    for col in sensitive_columns:
+        # Handles: col = 'value', col = value, col=123, col = "value"
+        # Use non-greedy match for value, allow optional whitespace, single/double quotes, or unquoted
+        masked = re.sub(rf'({col}\s*=\s*)([\'\"]?)[^\s\'\"]+\2', rf'\1[MASKED]', masked, flags=re.IGNORECASE)
+
+    # If the result is still too revealing (e.g., contains long numbers or emails), redact
+    if any(pat.search(masked) for pat in patterns):
+        return '[MASKED_SQL]'
+    return masked
 
 # LanceDB/Pydantic best practice: use Annotated for vector fields to specify dimension
 # See: https://lancedb.github.io/lancedb/python/pydantic/
@@ -174,13 +245,13 @@ def search_by_embedding(table: LanceTable, query_embedding, limit: int = 10, fil
         >>> df = search_by_embedding(table, [0.1]*1024, limit=5)
     """
     embedding_summary = f"shape: {len(query_embedding)}x{len(query_embedding[0])}" if isinstance(query_embedding, list) and query_embedding and isinstance(query_embedding[0], list) else f"length: {len(query_embedding)}" if isinstance(query_embedding, list) else "opaque_embedding"
-    masked_filter_sql = mask_sql_literals(filter_sql) # Mask SQL literals for logging
+    masked_filter_sql = mask_sensitive_sql(filter_sql or "") # Mask SQL literals for logging
     logger.info(f"Attempting to search table '{table.name}' with embedding ({embedding_summary}), limit: {limit}, filter_sql: '{masked_filter_sql}'.")
     try:
         q = table.search(query_embedding, vector_column_name='embedding').limit(limit)
         if filter_sql:
             q = q.where(filter_sql)
-        results_df = q.to_df()
+        results_df = q.to_pandas()
         logger.info(f"Search in table '{table.name}' completed. Found {len(results_df)} results for limit: {limit}, filter_sql: '{masked_filter_sql}'.")
 
         # Always add the 'kuzu_observed_samples' column, even if empty
@@ -282,7 +353,7 @@ def delete_variants(table: LanceTable, filter_sql: str):
     Example:
         >>> delete_variants(table, "variant_id = 'chr1-123-A-G'")
     """
-    masked_filter_sql = mask_sql_literals(filter_sql) # Mask SQL literals for logging
+    masked_filter_sql = mask_sensitive_sql(filter_sql or "") # Mask SQL literals for logging
     logger.info(f"Attempting to delete variants from table '{table.name}' matching filter: '{masked_filter_sql}'.")
     # TODO: Security Review: filter_sql is logged directly. If filter_sql could contain sensitive PII
     # (e.g., filtering on a direct identifier that is PII), it should be masked or summarized
@@ -359,11 +430,18 @@ def filter_variants_by_metadata(table: LanceTable, filter_sql: str, select_colum
     Example:
         >>> df = filter_variants_by_metadata(table, "chrom = '1' AND pos > 1000")
     """
-    masked_filter_sql = mask_sql_literals(filter_sql) # Mask SQL literals for logging
+    masked_filter_sql = mask_sensitive_sql(filter_sql or "") # Mask SQL literals for logging
     logger.info(f"Attempting to filter variants from table '{table.name}' using filter: '{masked_filter_sql}', select_columns: {select_columns}, limit: {limit}.")
     if not filter_sql: # Original filter_sql used for logic, masked_filter_sql for logging.
         logger.error(f"filter_variants_by_metadata called for table '{table.name}' with an empty filter_sql. This would return all rows (if not for safety checks).")
         raise ValueError("filter_sql cannot be empty for metadata filtering operations.")
+
+    # Basic check for trivial SQL injection patterns like OR '1'='1'
+    # This is a simple heuristic and not a comprehensive SQLi prevention mechanism.
+    # More robust solutions would involve parsing the SQL or using parameterized queries if supported.
+    if "'1'='1'" in filter_sql.lower() or " or 1=1" in filter_sql.lower():
+        logger.error(f"Potentially unsafe SQL filter detected in table '{table.name}': '{masked_filter_sql}'. Rejecting query.")
+        raise ValueError("Potentially unsafe SQL filter detected. Query rejected.")
 
     try:
         # logger.debug(f"Table object in filter_variants_by_metadata: type={{type(table)}}, dir={{dir(table)}}") # DEBUG LINE # Kept for potential future debugging
@@ -391,3 +469,8 @@ def filter_variants_by_metadata(table: LanceTable, filter_sql: str, select_colum
 # Example usage (conceptual, actual embedding generation and Pydantic model would be needed)
 # from pydantic import BaseModel
 # ... existing code ... 
+
+__all__ = [
+    'mask_sensitive_sql',
+    # ... add other public functions/classes as needed ...
+] 

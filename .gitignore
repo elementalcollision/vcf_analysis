@@ -78,4 +78,6 @@ test_credentials.json
 docs/build/
 
 # If you want to version canonical test VCFs in sample_test_data/
-!sample_test_data/*.vcf.gz 
+!sample_test_data/*.vcf.gz
+
+kuzu_bug_report.md 

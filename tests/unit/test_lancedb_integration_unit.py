@@ -6,10 +6,12 @@ focusing on Kuzu enrichment aspects.
 import pytest
 import pandas as pd
 from unittest.mock import patch, MagicMock, call
+import re
 
 # Import the module to be tested
 from vcf_agent import lancedb_integration
 from vcf_agent import graph_integration # For mocking
+from vcf_agent.lancedb_integration import mask_sensitive_sql
 
 class TestLanceDBIntegrationUnit:
     """Unit tests for lancedb_integration.py Kuzu enrichment."""
@@ -250,3 +252,45 @@ class TestLanceDBIntegrationUnit:
     #   - Variants found in LanceDB, but Kuzu returns no context for them
     #   - Kuzu returns context for a subset of variants
     #   - Error during Kuzu connection/query (e.g., graph_integration.get_variant_context raises an exception) 
+
+class TestMaskSensitiveSQL:
+    """Unit tests for mask_sensitive_sql utility function."""
+
+    def test_mask_email_and_ssn(self):
+        s = "email = 'john.doe@example.com' AND ssn = '123-45-6789'"
+        masked = mask_sensitive_sql(s)
+        assert "[MASKED]" in masked
+        assert masked.count("[MASKED]") >= 2
+
+    def test_mask_long_number(self):
+        s = "user_id = 12345678901"
+        masked = mask_sensitive_sql(s)
+        assert "[MASKED]" in masked or masked == '[MASKED_SQL]'
+
+    def test_mask_name_heuristic(self):
+        s = "name = 'John Smith'"
+        masked = mask_sensitive_sql(s)
+        assert "[MASKED]" in masked or masked == '[MASKED_SQL]'
+
+    def test_mask_sensitive_column_value(self):
+        s = "patient_id = 'abc123' AND genotype = 'A/B'"
+        masked = mask_sensitive_sql(s)
+        assert masked.count("[MASKED]") >= 2
+
+    def test_unparseable_returns_masked_sql(self):
+        s = None
+        masked = mask_sensitive_sql(s)
+        assert masked == '[MASKED_SQL]'
+        s = 12345
+        masked = mask_sensitive_sql(s)
+        assert masked == '[MASKED_SQL]'
+
+    def test_no_masking_for_non_sensitive(self):
+        s = "chrom = '1' AND pos > 1000"
+        masked = mask_sensitive_sql(s)
+        assert masked == s
+
+    def test_custom_sensitive_columns_and_patterns(self):
+        s = "foo = 'bar' AND secret = 'baz'"
+        masked = mask_sensitive_sql(s, sensitive_columns=['secret'], patterns=[re.compile(r'baz')])
+        assert '[MASKED]' in masked or masked == '[MASKED_SQL]' 

@@ -172,6 +172,14 @@ This will return the echoed text from the agent.
 
 You can invoke any registered tool by using the tool name followed by a colon and its argument(s).
 
+## Data Flow Overview
+
+A typical workflow with the VCF Analysis Agent involves the following steps:
+1. **Ingestion**: VCF data is processed. Variant information and AI-generated embeddings are stored in LanceDB. Genomic relationships (e.g., variant-to-sample observations) are stored in Kuzu.
+2. **AI Enrichment (Optional)**: Variants can be further enriched using AI models for annotation, clinical significance prediction, etc. (This is an area of ongoing development).
+3. **Querying**: Users can query LanceDB for similar variants using embeddings or filter by metadata. Kuzu can be queried for contextual information about variants and samples.
+4. **Analysis**: The combined data from LanceDB, Kuzu, and AI enrichment steps enables comprehensive variant analysis.
+
 ## LanceDB Integration and Usage Examples
 
 The agent supports LanceDB as a vector database for storing and searching variant embeddings. You can use the following CLI commands to interact with LanceDB:
@@ -199,74 +207,66 @@ python -m vcf_agent.cli update-variant --variant_id rs123 --updates '{"clinical_
 
 ### Delete Variant Records
 ```bash
-python -m vcf_agent.cli delete-variants --filter_sql "variant_id = 'rs123'"
-# or, for more complex deletions:
 python -m vcf_agent.cli delete-variants --filter_sql "chrom = '1' AND pos < 10000 AND clinical_significance = 'Uncertain'"
 ```
 - The `--filter_sql` argument uses SQL-like syntax to specify which records to delete.
 
-- The `--embedding` argument should be a comma-separated list of floats matching your embedding dimension (e.g., 1024).
-
-See the [Implementation Plan](.context/tasks/active/TASK-005-01.md) and [LanceDB Decision Record](.context/decisions/2025-05-24-lancedb-integration.md) for more details on schema and integration best practices.
-
-### Deleting Variants
-
-To delete variants matching a SQL filter:
-
+### Create Scalar Index
 ```bash
-python -m src.vcf_agent.cli delete-variants --db_path ./my_lancedb --table_name my_variants_table --filter_sql "clinical_significance = 'Uncertain significance'"
+python -m vcf_agent.cli create-lancedb-index --db_path ./lancedb --table_name variants --column chrom --index_type BTREE --replace
 ```
+Creates a scalar index on a column (e.g., `chrom`, `pos`, `clinical_significance`) to improve filter performance.
 
-### Creating Scalar Indexes
-
-To create a scalar index on a column (e.g., `clinical_significance`) to potentially speed up filtered queries:
-
+### Filter by Metadata
 ```bash
-python -m src.vcf_agent.cli create-lancedb-index --db_path ./my_lancedb --table_name my_variants_table --column clinical_significance
+python -m vcf_agent.cli filter-lancedb --db_path ./lancedb --table_name variants --filter_sql "chrom = '1' AND pos > 1000" --select_columns variant_id,chrom,pos --limit 10
 ```
+Returns variants matching the metadata filter, with options to select specific columns and limit results.
 
-To create a specific type of scalar index (e.g., BITMAP) and replace it if it already exists:
+- The `--embedding` argument (for `add-variant` and `search-embedding`) should be a comma-separated list of floats matching your embedding dimension (e.g., 1024).
 
+See the [LanceDB Decision Record](.context/decisions/2025-05-24-lancedb-integration.md) for more details on schema and integration best practices.
+
+## Kuzu Graph Database Integration
+
+The agent also integrates with Kuzu, a high-performance graph database, to store and query relationships between variants, samples, and other genomic entities. This allows for more complex contextual queries.
+
+### Kuzu Schema
+The Kuzu database uses a schema involving `Variant` nodes, `Sample` nodes, and `ObservedIn` relationships:
+- **Variant Node**: `variant_id` (primary key), `chrom`, `pos`, `ref`, `alt`, `rs_id`.
+- **Sample Node**: `sample_id` (primary key).
+- **ObservedIn Relationship**: Connects `Variant` to `Sample`, with a `zygosity` property.
+
+### Kuzu CLI Commands
+
+#### Initialize Kuzu Database and Schema
 ```bash
-python -m src.vcf_agent.cli create-lancedb-index --db_path ./my_lancedb --table_name my_variants_table --column chrom --index_type BITMAP --replace
+python -m vcf_agent.cli init-kuzu --db_path ./kuzu_db
 ```
+This command creates the necessary node and relationship tables in the Kuzu database.
 
-### Advanced Filtering by Metadata
-
-To filter variants based on complex SQL-like conditions on metadata fields:
-
+#### Populate Kuzu from VCF
 ```bash
-python -m src.vcf_agent.cli filter-lancedb --db_path ./my_lancedb --table_name my_variants_table --filter_sql "chrom = '1' AND pos > 10000 AND clinical_significance = 'Pathogenic'"
+python -m vcf_agent.cli populate-kuzu-from-vcf --vcf_file sample_data/your_sample.vcf.gz --kuzu_db_path ./kuzu_db
 ```
+This command parses a VCF file and populates the Kuzu graph with `Variant` nodes, `Sample` nodes (derived from the VCF header), and `ObservedIn` relationships.
 
-To select specific columns and limit the number of results:
-
+#### Get Variant Context from Kuzu
 ```bash
-python -m src.vcf_agent.cli filter-lancedb --db_path ./my_lancedb --table_name my_variants_table --filter_sql "pos < 50000" --select_columns variant_id,chrom,pos --limit 5
+python -m vcf_agent.cli get-variant-context --variant_ids "chr1-123-A-G,chrX-456-C-T" --kuzu_db_path ./kuzu_db
 ```
+Retrieves sample and zygosity information for the specified variant IDs from the Kuzu graph.
 
-### Important Security Considerations for LanceDB
+## End-to-End (E2E) Testing Status
 
-While LanceDB provides powerful local vector storage, when dealing with sensitive VCF data and its embeddings, several security aspects require careful attention, especially since the Python client for local LanceDB relies heavily on the security of the underlying system and application-level practices. The VCF Agent has a defined [Auditable Security Framework for LanceDB Integration](.context/decisions/2025-05-24-lancedb-security-framework.md) which outlines comprehensive strategies. Key areas to be mindful of during deployment and operation include:
+The VCF Analysis Agent now includes a comprehensive suite of End-to-End (E2E) tests located in `tests/integration/e2e/`. These tests validate:
+- Core VCF ingestion workflows via both CLI and API.
+- AI-driven enrichment placeholders (further implementation pending).
+- Querying capabilities for both LanceDB (vector search, metadata filtering) and Kuzu (graph context retrieval).
+- Robust error handling for scenarios such as database unavailability (LanceDB, Kuzu), read-only filesystems, unreadable input files, and malformed CLI arguments.
+- Security checks, including basic SQL injection prevention for LanceDB queries.
 
-*   **Filesystem Auditing, ACLs, and RBAC:**
-    *   **Access Control (ACLs):** LanceDB data is stored as files (e.g., in the `./lancedb` directory by default). It is critical to implement strict Access Control Lists (ACLs) on this directory and its contents. Only the VCF Agent service account/user should have read/write permissions. Unauthorized access to these files could lead to data breaches or tampering.
-    *   **Filesystem Auditing:** Enable OS-level audit logging (e.g., `auditd` on Linux, or similar tools on macOS/Windows) for the LanceDB data directory. This helps track all access (reads, writes, permission changes) and aids in forensic analysis if an incident occurs.
-    *   **Role-Based Access Control (RBAC):** For the VCF Agent application itself, ensure that any user-facing interfaces or APIs that trigger LanceDB operations enforce appropriate RBAC, so users can only perform actions and access data they are authorized for. Direct file-level access is not a substitute for application-level RBAC if multiple users or roles interact with the agent.
-
-*   **Masking Sensitive Data in Logs and Queries:**
-    *   **Logging:** The VCF Agent aims to log LanceDB operations. While parameters like `variant_id` or counts are logged, avoid logging full embedding vectors or potentially sensitive details from `filter_sql` clauses or `updates` dictionaries directly if they might contain PII or other sensitive identifiers. The application logging has been enhanced to summarize or log keys for such parameters. However, `filter_sql` parameters are logged and marked with a TODO for potential masking in production if they contain PII.
-    *   **Query Construction:** Be cautious when constructing `filter_sql` strings, especially if they incorporate user-supplied input, to prevent injection-like vulnerabilities if the query language were more expressive (though LanceDB's SQL dialect is limited, caution is always good practice).
-
-*   **Vulnerability Scanning and SBOM:**
-    *   **Dependency Scanning:** Regularly scan all project dependencies, including `lancedb` itself and its transitive dependencies (like `pyarrow`), for known vulnerabilities using tools like `pip-audit`, Snyk, or Trivy. Keep dependencies updated.
-    *   **Software Bill of Materials (SBOM):** Maintain an SBOM for the VCF Agent. This helps in tracking all components and quickly identifying if a newly discovered vulnerability in a dependency affects the agent.
-    *   **Host OS:** Ensure the host operating system running the VCF Agent and LanceDB is also regularly scanned and patched.
-
-*   **Encryption:**
-    *   As outlined in the security framework, data at rest should be protected using filesystem-level encryption (e.g., LUKS, BitLocker, APFS encryption). This is crucial for local LanceDB deployments.
-
-Implementing these measures, as detailed in the full security framework, is essential for maintaining the confidentiality, integrity, and availability of genomic data managed by the VCF Agent with LanceDB.
+The E2E tests ensure the reliability and resilience of the agent across its key functionalities and integrations.
 
 ## Developer Documentation
 
@@ -314,6 +314,37 @@ This project is under active development. See the [Project Requirements Document
    ```bash
    pytest
    ```
+
+### Setting up for Development
+```bash
+# (Ensure you have followed installation steps above)
+
+# Activate virtual environment
+source .venv/bin/activate
+
+# Install development dependencies (if any, specified in pyproject.toml dev group)
+# uv pip install -e .[dev] # If you have a [project.optional-dependencies] dev group
+```
+
+### Running Tests
+```bash
+pytest
+```
+This will run all unit and integration tests. For E2E tests specifically:
+```bash
+pytest tests/integration/e2e/
+```
+
+### Code Formatting and Linting
+(Details about Black, Ruff, etc., if used, would go here. Assuming basic setup for now.)
+
+## Known Issues and Workarounds
+
+### Kuzu QueryResult Lifetime
+A potential segmentation fault can occur with the Kuzu Python bindings if `QueryResult` objects are not explicitly deleted (`del query_result`) before their parent `Connection` or `Database` object is closed or goes out of scope. This is due to a suspected use-after-free issue in the Kuzu C++ layer.
+
+**Workaround:** Always ensure `del` is called on `QueryResult` objects, followed by `gc.collect()`, as soon as they are no longer needed, especially in test fixtures and long-running processes.
+**Details:** See the [Kuzu Bug Report](kuzu_bug_report.md) for a more detailed explanation and a reproducible example. The issue is tracked on GitHub at [kuzudb/kuzu#5457](https://github.com/kuzudb/kuzu/issues/5457).
 
 ## License
 

@@ -110,4 +110,50 @@ Example (Conceptual):
 
 This guide provides a developer-focused overview of Kuzu integration. For
 more detailed API documentation, refer to the auto-generated module documentation
-and the docstrings within ``src/vcf_agent/graph_integration.py``. 
+and the docstrings within ``src/vcf_agent/graph_integration.py``.
+
+Security and Auditing
+---------------------
+
+For comprehensive details on security best practices, credential management, data handling (including for Kuzu database files), and auditing strategies, please refer to the main project documentation:
+
+- :doc:`security`
+- :doc:`audit`
+
+Key security considerations specific to Kuzu local file-based usage include:
+
+- **Filesystem Permissions & ACLs**: Strict access controls must be applied to the Kuzu data directory (e.g., `./kuzu_db`). Only the agent process should have read/write access.
+- **Data Encryption**: Utilize filesystem-level encryption for the directory storing Kuzu data to protect data at rest.
+- **Logging & Auditing**: OS-level filesystem auditing should be enabled for the Kuzu data directory. Application-level logging of Kuzu operations is handled by the agent.
+
+Refer to the main :doc:`security` and :doc:`audit` documents for the complete framework governing all components of the VCF Analysis Agent.
+
+Known Issues and Workarounds
+---------------------------
+
+**Segmentation Faults with QueryResult Lifetime**
+
+When using the Kuzu Python bindings, segmentation faults may occur if `QueryResult` objects are garbage collected after their parent `Connection` or `Database` is closed. This is due to use-after-free in the underlying C++ code.
+
+**Workaround:**
+- Always explicitly delete (`del`) all `QueryResult` objects before closing their parent `Connection` or `Database`.
+- Immediately call `gc.collect()` after deletion to force cleanup.
+- Ensure all test helpers and business logic follow this pattern.
+
+**Example:**
+
+.. code-block:: python
+
+   result = conn.execute("MATCH ...")
+   # Use result
+   del result
+   gc.collect()
+   conn.close()
+   db.close()
+
+**Status:**
+This is a known issue with the Kuzu Python bindings as of 2025-05-25. See `kuzu_bug_report.md` in the project root for a full technical report and a minimal reproducible example. The issue is also tracked publicly on GitHub: [kuzudb/kuzu#5457](https://github.com/kuzudb/kuzu/issues/5457).
+
+**General Guidance:**
+- When using C++-backed Python libraries, always manage object lifetimes explicitly if segfaults or memory errors occur.
+- Document all such workarounds in both code comments and developer documentation. 

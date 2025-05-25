@@ -8,7 +8,7 @@ using Cypher.
 import kuzu
 import pandas as pd # Added for DataFrame conversion
 import pyarrow as pa # Ensure pyarrow is imported
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
 
 # Default path for the Kuzu database
 DEFAULT_KUZU_DB_PATH = "./kuzu_db"
@@ -98,7 +98,8 @@ def create_schema(conn: kuzu.Connection) -> None:
     try:
         for query in schema_queries:
             print(f"Executing schema query: {query}")
-            conn.execute(query)
+            qr = conn.execute(query)
+            if qr: del qr # Explicitly delete QueryResult
         print("Kuzu schema created/verified successfully.")
     except Exception as e:
         print(f"Error creating Kuzu schema: {e}")
@@ -133,7 +134,8 @@ def add_variant(conn: kuzu.Connection, variant_data: Dict[str, Any]) -> None:
             "alt": variant_data['alt'],
             "rs_id": variant_data.get('rs_id', '') # Ensure rs_id is provided, even if empty
         }
-        conn.execute(query, parameters=params)
+        qr = conn.execute(query, parameters=params)
+        if qr: del qr # Explicitly delete QueryResult
         print(f"Added variant: {variant_data['variant_id']}")
     except Exception as e:
         print(f"Error adding variant {variant_data.get('variant_id', 'UNKNOWN')}: {e}")
@@ -151,7 +153,8 @@ def add_sample(conn: kuzu.Connection, sample_data: Dict[str, Any]) -> None:
     try:
         query = "CREATE (s:Sample {sample_id: $sample_id})"
         params = {"sample_id": sample_data['sample_id']}
-        conn.execute(query, parameters=params)
+        qr = conn.execute(query, parameters=params)
+        if qr: del qr # Explicitly delete QueryResult
         print(f"Added sample: {sample_data['sample_id']}")
     except Exception as e:
         print(f"Error adding sample {sample_data.get('sample_id', 'UNKNOWN')}: {e}")
@@ -180,51 +183,65 @@ def link_variant_to_sample(conn: kuzu.Connection, sample_id: str, variant_id: st
             "s_id": sample_id,
             "zygosity": properties['zygosity']
         }
-        conn.execute(query, parameters=params)
+        qr = conn.execute(query, parameters=params)
+        if qr: del qr # Explicitly delete QueryResult
         print(f"Linked sample {sample_id} to variant {variant_id} with properties: {properties}")
     except Exception as e:
         print(f"Error linking sample {sample_id} to variant {variant_id}: {e}")
         raise
 
 def execute_query(conn: kuzu.Connection, cypher_query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-    """
-    Executes a given Cypher query using parameterized queries and returns the results
-    as a list of dictionaries by converting to a Kuzu Arrow Table, then to a Pandas DataFrame.
-
-    Args:
-        conn: Active Kuzu connection.
-        cypher_query: The Cypher query string to execute.
-        params: Optional dictionary of parameters for the query. Keys should not include '$'.
-
-    Returns:
-        A list of dictionaries, where each dictionary represents a row in the result.
-    """
+    query_result_union: Optional[Union[kuzu.query_result.QueryResult, List[kuzu.query_result.QueryResult]]] = None
     try:
         print(f"Executing Cypher query: {cypher_query} with params: {params}")
-        query_result = conn.execute(cypher_query, parameters=params if params else {})
-
-        # Convert Kuzu QueryResult directly to Pandas DataFrame
-        df = query_result.get_as_df()
+        query_result_union = conn.execute(cypher_query, parameters=params if params else {})
         
+        single_query_result: Optional[kuzu.query_result.QueryResult] = None
+        if isinstance(query_result_union, list):
+            if not query_result_union: # Empty list of results
+                return []
+            # Assuming we process the first QueryResult if a list is returned for some reason by Kuzu
+            if isinstance(query_result_union[0], kuzu.query_result.QueryResult):
+                single_query_result = query_result_union[0]
+            else:
+                raise TypeError(f"Kuzu conn.execute returned a list containing non-QueryResult: {query_result_union[0]}")
+        elif isinstance(query_result_union, kuzu.query_result.QueryResult):
+            single_query_result = query_result_union
+        elif query_result_union is None: # Should not happen if execute always returns something or raises
+             return [] # Or raise error
+        else:
+            raise TypeError(f"Kuzu conn.execute returned unexpected type: {type(query_result_union)}")
+
+        if not single_query_result: # If somehow it's still None
+            return []
+
+        df = single_query_result.get_as_df()
         if not isinstance(df, pd.DataFrame):
-            # This case should ideally not be hit if get_as_df() works as expected.
             print(f"Warning: Expected Pandas DataFrame, but got {type(df)}.")
             raise TypeError(f"Conversion to DataFrame failed or returned unexpected type: {type(df)}.")
-
         results = df.to_dict(orient='records')
         print(f"Query returned {len(results)} results as dictionaries via DataFrame.")
         return results
     except Exception as e:
         print(f"Error executing Cypher query '{cypher_query}': {e}")
         raise
+    finally:
+        # Attempt to delete the union type or its components if they exist
+        if query_result_union:
+            if isinstance(query_result_union, list):
+                for item in query_result_union:
+                    if item: del item
+            elif query_result_union: # It's a single QueryResult
+                 del query_result_union
+    return []  # Explicit return for linter
 
-def get_variant_context(conn: kuzu.Connection, variant_ids: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+def get_variant_context(conn: Optional[kuzu.Connection], variant_ids: List[str]) -> Dict[str, List[Dict[str, Any]]]:
     """
     Fetches graph context (e.g., samples, relationships) for a list of variant IDs from Kuzu.
     This function is intended to be called after a vector search in LanceDB provides relevant variant_ids.
 
     Args:
-        conn: Active Kuzu connection.
+        conn: Optional active Kuzu connection. If None, uses the managed global connection.
         variant_ids: A list of variant IDs obtained from LanceDB vector search.
 
     Returns:
@@ -235,6 +252,14 @@ def get_variant_context(conn: kuzu.Connection, variant_ids: List[str]) -> Dict[s
     if not variant_ids:
         return {}
 
+    active_conn = conn
+    if active_conn is None:
+        active_conn = get_managed_kuzu_connection()
+        if active_conn is None: # Should be caught by get_managed_kuzu_connection raising an error
+            print("Error: Managed Kuzu connection is not available for get_variant_context.")
+            # Return empty or raise, depending on desired strictness. For now, let's be strict.
+            raise RuntimeError("Managed Kuzu connection could not be established for get_variant_context.")
+
     # Using UNWIND for efficient batch lookup if Kuzu supports it well for MATCH clauses.
     # Alternatively, loop and query one by one if UNWIND performance is not optimal for this pattern.
     query = """
@@ -244,20 +269,47 @@ def get_variant_context(conn: kuzu.Connection, variant_ids: List[str]) -> Dict[s
     """
     params = {"v_ids": variant_ids}
     
+    query_result_union_ctx: Optional[Union[kuzu.query_result.QueryResult, List[kuzu.query_result.QueryResult]]] = None
     try:
-        query_results = execute_query(conn, query, params=params)
+        query_result_union_ctx = active_conn.execute(query, parameters=params)
         
+        single_query_result_ctx: Optional[kuzu.query_result.QueryResult] = None
+        if isinstance(query_result_union_ctx, list):
+            if not query_result_union_ctx: return {}
+            if isinstance(query_result_union_ctx[0], kuzu.query_result.QueryResult):
+                single_query_result_ctx = query_result_union_ctx[0]
+            else:
+                raise TypeError(f"Kuzu active_conn.execute returned list with non-QueryResult: {query_result_union_ctx[0]}")
+        elif isinstance(query_result_union_ctx, kuzu.query_result.QueryResult):
+            single_query_result_ctx = query_result_union_ctx
+        elif query_result_union_ctx is None: 
+            return {}
+        else:
+            raise TypeError(f"Kuzu active_conn.execute returned unexpected type: {type(query_result_union_ctx)}")
+
+        if not single_query_result_ctx: return {}
+
+        df = single_query_result_ctx.get_as_df()
+        # Initialize context_map with all requested variant_ids to ensure they are all present in the output
         context_map: Dict[str, List[Dict[str, Any]]] = {v_id: [] for v_id in variant_ids}
-        for row in query_results:
-            v_id = row['variant_id']
-            sample_info = {"sample_id": row['sample_id'], "zygosity": row['zygosity']}
-            if v_id in context_map:
-                context_map[v_id].append(sample_info)
-        print(f"Fetched context for {len(context_map)} variants from Kuzu.")
+        for record in df.to_dict(orient='records'):
+            v_id = record['variant_id']
+            # The v_id from the database record should always be in the initialized context_map if it was in variant_ids
+            # If it's not (e.g. Kuzu query returned an ID not in the input list, though unlikely with UNWIND),
+            # we could choose to ignore it or add it. Current logic assumes it will be present from initialization.
+            context_map[v_id].append({'sample_id': record['sample_id'], 'zygosity': record['zygosity']})
         return context_map
     except Exception as e:
-        print(f"Error fetching variant context from Kuzu: {e}")
+        print(f"Error in get_variant_context for variant_ids {variant_ids}: {e}")
         raise
+    finally:
+        if query_result_union_ctx:
+            if isinstance(query_result_union_ctx, list):
+                for item_ctx in query_result_union_ctx:
+                    if item_ctx: del item_ctx
+            elif query_result_union_ctx:
+                del query_result_union_ctx
+    return {}  # Explicit return for linter
 
 if __name__ == '__main__':
     # Example Usage (illustrative, to be updated for get_variant_context)

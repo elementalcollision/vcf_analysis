@@ -20,6 +20,7 @@ import argparse
 import os
 from typing import Literal, cast
 import json
+import sys
 
 def main():
     """
@@ -155,13 +156,18 @@ def main():
             if not isinstance(updates, dict):
                 raise ValueError("Updates must be a valid JSON object (dictionary).")
         except json.JSONDecodeError as e:
-            print(f"Error: Invalid JSON string for updates: {e}")
-            return
+            print(f"Error: Invalid JSON string for updates: {e}", file=sys.stderr)
+            sys.exit(1)
         except ValueError as e:
-            print(f"Error: {e}")
-            return
-        update_variant(table, args.variant_id, updates)
-        print(f"Update command processed for variant {args.variant_id}.")
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
+        
+        try:
+            update_variant(table, args.variant_id, updates)
+            print(f"Update command processed for variant {args.variant_id}.")
+        except Exception as e:
+            print(f"Error during variant update: {e}", file=sys.stderr)
+            sys.exit(1)
         return
     elif args.command == "delete-variants":
         from vcf_agent.lancedb_integration import get_db, get_or_create_table, delete_variants
