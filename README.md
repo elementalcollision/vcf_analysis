@@ -152,16 +152,151 @@ docker buildx build --platform linux/amd64,linux/arm64 -t vcf-agent:latest .
 
 For more details, see the Dockerfile and `.dockerignore` in the repo, and consult the [OrbStack Docker documentation](https://docs.orbstack.dev/docker/images).
 
-## Monitoring with Prometheus
+## Observability Stack
 
-The VCF Analysis Agent integrates with Prometheus for comprehensive monitoring of its operations, performance, and resource usage. This allows for real-time insights and alerting.
+The VCF Analysis Agent includes a comprehensive observability stack that provides monitoring, metrics collection, distributed tracing, and visualization capabilities. This stack consists of:
 
-Key features of the monitoring integration include:
--   **Dedicated HTTP Endpoint**: Exposes metrics at `/metrics` for Prometheus scraping (configurable port via `VCF_AGENT_METRICS_PORT`).
--   **Pushgateway Support**: For short-lived CLI commands or batch jobs, metrics are pushed to a Prometheus Pushgateway (configurable URL via `VCF_AGENT_PUSHGATEWAY_URL`).
--   **Granular Metrics**: Covers CLI command execution, agent tool performance, BCFTools subprocess calls, and AI model interactions (requests, duration, errors, concurrency).
+- **OpenTelemetry (OTel)**: Distributed tracing and metrics collection
+- **Prometheus**: Metrics storage and querying  
+- **Grafana**: Metrics visualization and dashboards
+- **Jaeger**: Distributed trace visualization and analysis
 
-For detailed information on configuring Prometheus, the list of available metrics, example PromQL queries, and guidance for developers on adding new metrics, please refer to the [Monitoring with Prometheus documentation](docs/source/monitoring_with_prometheus.md).
+### Quick Start
+
+To run the complete observability stack locally:
+
+```bash
+# Start all services (Prometheus, Grafana, Jaeger)
+docker-compose up -d
+
+# Run the VCF agent (metrics will be automatically collected)
+python -m vcf_agent.cli ask "What are the basic stats for sample_data/minimal.vcf.gz?"
+
+# Access the UIs:
+# - Grafana: http://localhost:3000 (admin/admin)
+# - Prometheus: http://localhost:9090
+# - Jaeger: http://localhost:16686
+# - Agent Metrics: http://localhost:8000/metrics
+```
+
+### Key Features
+
+- **Automatic Instrumentation**: OpenTelemetry automatically traces HTTP requests, logging, and asyncio operations
+- **Custom Metrics**: Detailed metrics for AI interactions, tool usage, BCFtools operations, and CLI commands
+- **Structured Logging**: JSON logs with trace context for correlation
+- **Real-time Dashboards**: Pre-built Grafana dashboards for monitoring AI performance
+- **Distributed Tracing**: End-to-end request tracing through Jaeger
+
+### Metrics Collection
+
+The agent exposes metrics in two ways:
+
+1. **HTTP Endpoint**: Real-time metrics at `http://localhost:8000/metrics` for Prometheus scraping
+2. **Pushgateway**: For short-lived CLI commands, metrics are pushed to Prometheus Pushgateway
+
+**Key Metrics Categories:**
+- **AI Interactions**: Request rates, response times, error rates, token usage
+- **Tool Usage**: Performance and error tracking for all agent tools
+- **BCFtools Operations**: Subprocess execution metrics
+- **CLI Commands**: Command execution duration and success rates
+
+**Environment Variables:**
+- `VCF_AGENT_METRICS_PORT`: Metrics HTTP server port (default: 8000)
+- `VCF_AGENT_PUSHGATEWAY_URL`: Pushgateway URL for CLI metrics
+
+### Distributed Tracing
+
+OpenTelemetry provides end-to-end tracing of requests through the system:
+
+- **Automatic Spans**: HTTP requests, database operations, external API calls
+- **Custom Spans**: Tool executions, AI model interactions, VCF processing
+- **Trace Context**: Propagated through logs for correlation
+
+**Environment Variables:**
+- `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`: Jaeger collector endpoint (default: http://localhost:4317)
+- `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`: Protocol (grpc or http/protobuf)
+- `OTEL_PYTHON_LOG_LEVEL`: Set to "debug" for detailed OTel logging
+
+### Developer Guide
+
+#### Adding Custom Metrics
+
+```python
+from vcf_agent.metrics import http_registry
+from prometheus_client import Counter
+
+# Define a new metric
+my_custom_counter = Counter(
+    'my_custom_operations_total',
+    'Description of my custom metric',
+    ['operation_type', 'status'],
+    registry=http_registry
+)
+
+# Use the metric
+my_custom_counter.labels(operation_type='validation', status='success').inc()
+```
+
+#### Adding Custom Tracing
+
+```python
+from vcf_agent.tracing import init_tracer
+
+# Get a tracer instance
+tracer = init_tracer("my-service")
+
+# Create custom spans
+with tracer.start_as_current_span("my_operation") as span:
+    span.set_attribute("operation.type", "validation")
+    span.set_attribute("file.path", "/path/to/file.vcf")
+    # Your operation code here
+    span.set_attribute("operation.result", "success")
+```
+
+#### Observing AI Interactions
+
+The agent automatically tracks AI interactions, but you can also manually record them:
+
+```python
+from vcf_agent.metrics import observe_ai_interaction
+
+# Record an AI interaction
+observe_ai_interaction(
+    model_provider="ollama",
+    endpoint_task="vcf_analysis", 
+    duration_seconds=2.5,
+    prompt_tokens=150,
+    completion_tokens=75,
+    success=True
+)
+```
+
+### Configuration Files
+
+The observability stack is configured through several files:
+
+- **`docker-compose.yml`**: Defines all observability services
+- **`prometheus.yml`**: Prometheus scraping configuration
+- **`config/grafana/dashboards/`**: Pre-built Grafana dashboards
+
+### Troubleshooting
+
+**No metrics in Prometheus:**
+- Check that the agent metrics server is running on port 8000
+- Verify Prometheus can reach `host.docker.internal:8000/metrics`
+- Check Docker networking configuration
+
+**No traces in Jaeger:**
+- Verify Jaeger collector is running on port 4317
+- Check `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` environment variable
+- Enable debug logging with `OTEL_PYTHON_LOG_LEVEL=debug`
+
+**Grafana dashboard issues:**
+- Ensure Prometheus data source is configured correctly
+- Import dashboard JSON from `config/grafana/dashboards/`
+- Check that metrics are being generated by running agent commands
+
+For detailed information on configuring and using the observability stack, see the [complete observability documentation](docs/source/monitoring_with_prometheus.md).
 
 ## Usage
 
@@ -288,14 +423,15 @@ Comprehensive developer documentation is available in the Sphinx docs, including
 - Concurrency model (with Mermaid diagrams)
 - Security framework summary
 - Variant schema and LanceDB table structure
+- Complete observability stack documentation
 
 **To build the docs:**
 ```bash
 cd docs
-sphinx-build -b html source build/html
+make html
 # Open docs/build/html/index.html in your browser
 ```
-See `docs/source/lancedb_developer_guide.rst` for the LanceDB developer guide. Mermaid diagrams are supported via `sphinxcontrib-mermaid`.
+See `docs/source/lancedb_developer_guide.rst` for the LanceDB developer guide and `docs/source/monitoring_with_prometheus.md` for observability documentation. Mermaid diagrams are supported via `sphinxcontrib-mermaid`.
 
 ## CI/CD Workflows
 
@@ -306,8 +442,6 @@ To add new workflows, place your YAML files in `kestra/flows/`.
 ## Development
 
 This project is under active development. See the [Project Requirements Document](PRD%20-%20VCF%20Analysis%20Agent.md) for detailed information about the project scope and roadmap.
-
-**Full developer documentation and API guide:** See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)
 
 ### Development Setup
 
@@ -375,90 +509,4 @@ This project is currently in active development. See the Projects tab for curren
 
 ## Project Structure
 
-The codebase follows modern Python best practices for maintainability and extensibility:
-
-## Agent Integration, Prompt Contracts, API Integration, and Testing
-
-This project follows robust, open-source-aligned best practices for agent tool registration, prompt contract usage, API integration (with security), and onboarding/testing. Below is a summary of the framework and examples:
-
-### 1. Agent Tool Registration
-- Use the `@tool` decorator to register tools with clear docstrings and type hints.
-- Document each tool's name, description, input/output schema, version, and dependencies.
-- For complex tools, define a `TOOL_SPEC` dictionary with input schema and metadata.
-- Register tools in a central list (see `src/vcf_agent/agent.py`).
-- Reference: [Strands SDK Tool Registration](https://github.com/strands-agents/docs/blob/main/docs/user-guide/concepts/tools/tools_overview.md)
-
-**Example:**
-```python
-from strands import Agent, tool
-
-@tool
-def echo(text: str) -> str:
-    """Echoes the input text back to the user."""
-    return f"Echo: {text}"
-
-agent = Agent(tools=[echo])
-```
-
-### 2. Prompt Contract Usage
-- Store prompt contracts as versioned YAML files in `prompts/`.
-- Each contract includes: `id`, `version`, `compliance`, `changelog`, `role`, `context`, `instructions`, `constraints`, `evaluation`, `test_cases`, `json_schema`.
-- Document contract structure and provide usage examples in `prompts/README.md`.
-- Use the loader utility in `src/vcf_agent/prompt_templates.py` to render prompts.
-- Require all AI outputs to match the contract's JSON schema for determinism and testability.
-- Test contracts using pytest (see `tests/prompt_contracts/`).
-
-**Example YAML:**
-```yaml
-id: vcf_analysis_summary_v1
-version: 1.0.0
-role: "Genomics Analyst"
-context: "Summarize VCF for quality and compliance"
-instructions: "Return only valid JSON matching the schema."
-json_schema: {...}
-test_cases:
-  - input: sample_data/HG00098.vcf.gz
-    expected_output: tests/golden/vcf_summary_HG00098.json
-```
-
-### 3. API Integration & Security
-- Use secure credential management (env vars, JSON files; never hardcode keys).
-- Document API endpoints, authentication methods, and required headers.
-- Enforce TLS for all network communication.
-- Rate-limit API calls and log all access for auditability.
-- Provide code examples for API usage (see `src/vcf_agent/api_clients.py`).
-
-**Example:**
-```python
-from vcf_agent.api_clients import OpenAIClient
-client = OpenAIClient(api_key="sk-...")
-response = client.chat_completion(messages=[...])
-```
-
-### 4. Onboarding & Testing Strategy
-- Provide a clear onboarding checklist (see `docs/DEVELOPER_GUIDE.md`):
-  - Environment setup, dependency installation, running tests, reviewing docstrings.
-- Document test types: unit, integration, contract, edge case, and UAT.
-- Use golden files and property-based tests for regression and compliance.
-- Automate test runs in CI/CD (see Kestra workflow in `.context/ci/`).
-- Document how to add new tools, prompt contracts, and tests.
-
-**Example Checklist:**
-```markdown
-- [ ] Clone repo and set up Python environment
-- [ ] Install dependencies (`uv pip install -r requirements.txt`)
-- [ ] Run all tests (`pytest`)
-- [ ] Review prompt contracts and schemas
-- [ ] Add new tools using @tool decorator and update docs
-```
-
-### 5. Open Source & Community Standards
-- Reference open-source agent frameworks (Strands, SuperAGI, Superagent, Relari Agent Contracts) for structure and compliance.
-- Use semantic versioning and changelogs for all contracts and tools.
-- Encourage contributions with clear guidelines and code examples.
-
-For more details, see:
-- `prompts/README.md` for prompt contract structure and examples
-- `src/vcf_agent/agent.py` and `src/vcf_agent/prompt_templates.py` for tool and prompt integration
-- `docs/DEVELOPER_GUIDE.md` for onboarding and extension guidelines
-- [Strands Agents SDK Documentation](https://github.com/strands-agents/docs)
+The codebase follows modern Python best practices for maintainability and extensibility.

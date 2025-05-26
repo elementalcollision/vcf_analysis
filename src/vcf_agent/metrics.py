@@ -1,10 +1,143 @@
 """
-metrics.py
-Central module for Prometheus metrics and structured logging for the VCF Analysis Agent.
-- Uses structlog for JSON logs.
-- Uses prometheus_client for metrics.
-- Exposes an HTTP /metrics endpoint for Prometheus scraping.
-- Provides functionality for pushing metrics to a Prometheus Pushgateway for batch/CLI jobs.
+Prometheus Metrics and Structured Logging for VCF Analysis Agent
+
+This module provides comprehensive observability capabilities including:
+- Prometheus metrics collection and exposure
+- Structured JSON logging with OpenTelemetry trace context
+- HTTP metrics endpoint for real-time scraping
+- Pushgateway support for short-lived CLI operations
+
+## Key Components
+
+### Metrics Categories
+- **AI Interactions**: Request rates, response times, error rates, token usage
+- **Tool Usage**: Performance and error tracking for all agent tools  
+- **BCFtools Operations**: Subprocess execution metrics
+- **CLI Commands**: Command execution duration and success rates
+
+### Registries
+- `http_registry`: Default registry for metrics exposed via HTTP endpoint
+- Custom registries can be created for specific use cases (e.g., Pushgateway)
+
+### Structured Logging
+- JSON-formatted logs with automatic OpenTelemetry trace context injection
+- Configurable log levels via LOG_LEVEL environment variable
+- Correlation between logs and distributed traces
+
+## Usage Examples
+
+### Adding Custom Metrics
+```python
+from vcf_agent.metrics import http_registry
+from prometheus_client import Counter, Histogram
+
+# Define a new counter metric
+my_operations = Counter(
+    'vcf_agent_my_operations_total',
+    'Total number of my custom operations',
+    ['operation_type', 'status'],
+    registry=http_registry
+)
+
+# Use the metric
+my_operations.labels(operation_type='validation', status='success').inc()
+
+# Define a histogram for timing
+my_duration = Histogram(
+    'vcf_agent_my_operation_duration_seconds',
+    'Duration of my custom operations',
+    ['operation_type'],
+    registry=http_registry
+)
+
+# Time an operation
+with my_duration.labels(operation_type='validation').time():
+    # Your operation code here
+    pass
+```
+
+### Recording AI Interactions
+```python
+from vcf_agent.metrics import observe_ai_interaction
+
+# Automatically record AI interaction metrics
+observe_ai_interaction(
+    model_provider="ollama",
+    endpoint_task="vcf_analysis",
+    duration_seconds=2.5,
+    prompt_tokens=150,
+    completion_tokens=75,
+    success=True
+)
+
+# Record failed interaction
+observe_ai_interaction(
+    model_provider="openai",
+    endpoint_task="variant_annotation",
+    duration_seconds=1.2,
+    success=False,
+    error_type="rate_limit"
+)
+```
+
+### Using Structured Logging
+```python
+from vcf_agent.metrics import log
+
+# Basic logging with automatic trace context
+log.info("Processing VCF file", file_path="/path/to/file.vcf", variant_count=1234)
+
+# Error logging with context
+log.error("Failed to process variant", 
+          variant_id="chr1-123-A-G", 
+          error="Invalid format",
+          file_path="/path/to/file.vcf")
+```
+
+### Pushing Metrics for CLI Commands
+```python
+from vcf_agent.metrics import push_job_metrics, CLI_COMMAND_REQUESTS_TOTAL
+
+# For short-lived CLI commands, push metrics to Pushgateway
+metrics_to_push = [CLI_COMMAND_REQUESTS_TOTAL]
+push_job_metrics(
+    job_name="vcf_validation",
+    metrics_to_push=metrics_to_push,
+    instance_name="cli-worker-1"
+)
+```
+
+## Environment Variables
+
+- `VCF_AGENT_METRICS_PORT`: HTTP metrics server port (default: 8000)
+- `VCF_AGENT_PUSHGATEWAY_URL`: Pushgateway URL for CLI metrics
+- `LOG_LEVEL`: Logging level (DEBUG, INFO, WARNING, ERROR)
+
+## Integration with OpenTelemetry
+
+This module automatically integrates with OpenTelemetry tracing:
+- Trace and span IDs are automatically added to all log entries
+- Service name is extracted from span resources when available
+- Logs can be correlated with distributed traces in observability platforms
+
+## Best Practices
+
+1. **Metric Naming**: Follow Prometheus naming conventions (snake_case, descriptive)
+2. **Labels**: Use consistent label names across related metrics
+3. **Cardinality**: Avoid high-cardinality labels (e.g., user IDs, timestamps)
+4. **Registry Usage**: Use `http_registry` for long-running metrics, custom registries for specific needs
+5. **Error Handling**: Always record both success and failure metrics
+6. **Documentation**: Document custom metrics with clear descriptions
+
+## Performance Considerations
+
+- Metrics collection has minimal overhead (~microseconds per operation)
+- HTTP server runs in a separate daemon thread
+- Pushgateway operations are asynchronous where possible
+- Log formatting is optimized for JSON output
+
+For more information, see the observability documentation at:
+docs/source/monitoring_with_prometheus.md
 """
 
 import structlog

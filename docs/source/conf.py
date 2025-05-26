@@ -23,6 +23,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
     'sphinxcontrib.mermaid',
+    'myst_parser',
 ]
 
 templates_path = ['_templates']
@@ -32,6 +33,19 @@ language = 'en'
 
 autosummary_generate = True
 autodoc_typehints = 'description'
+
+# MyST parser configuration
+myst_enable_extensions = [
+    "colon_fence",
+    "deflist",
+    "html_admonition",
+    "html_image",
+    "linkify",
+    "replacements",
+    "smartquotes",
+    "substitution",
+    "tasklist",
+]
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
