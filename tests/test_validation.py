@@ -36,7 +36,11 @@ def test_validate_with_bcftools_stats():
 @pytest.mark.skipif(not os.path.exists(SAMPLE_VCF), reason="Sample VCF file not found")
 def test_validate_vcf_file():
     is_valid, error = validate_vcf_file(SAMPLE_VCF)
-    if not is_valid:
-        print(f"Validation error: {error}")
-    assert is_valid
-    assert error is None 
+    if is_valid:
+        pytest.fail(f"Expected validation to fail due to GL warning, but it passed. Error: {error}")
+    assert not is_valid, "Expected validation to be False due to GL warning."
+    assert error is not None, "Expected an error message for GL warning."
+    assert "GL should be declared as Number=G" in error, f"Unexpected error message: {error}"
+
+# Test cases for specific invalid files
+# ... existing code ... 

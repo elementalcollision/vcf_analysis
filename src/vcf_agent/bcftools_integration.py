@@ -73,6 +73,10 @@ def run_bcftools_command(command: List[str], input_data: Optional[bytes] = None)
             metrics.VCF_AGENT_BCFTOOLS_ERRORS_TOTAL.labels(
                 bcftools_subcommand=bcftools_subcommand
             ).inc()
+    
+    # This return statement should never be reached since all code paths above 
+    # either return or raise an exception, but it's here to satisfy the linter
+    return return_code, "", ""
 
 
 def bcftools_view(args: List[str], input_data: Optional[bytes] = None) -> Tuple[int, str, str]:
@@ -206,14 +210,26 @@ def bcftools_isec(file1: str, file2: str) -> dict:
 
 def count_variants_in_vcf(vcf_path: str) -> int:
     """
-    Count the number of variant records in a VCF file (ignores header lines).
+    Count the number of variant records in a VCF file using bcftools view.
+    This is generally more robust than manual parsing.
     """
-    count = 0
-    with open(vcf_path, "r") as f:
-        for line in f:
-            if not line.startswith("#"):
-                count += 1
-    return count
+    # Uses bcftools view to count non-header lines.
+    # The -I option means "exclude header lines" / "print variants only"
+    cmd = ["view", "-I", vcf_path]
+    rc, stdout, stderr = run_bcftools_command(cmd)
+
+    if rc != 0:
+        # Log the error details if bcftools view fails
+        # Avoid direct import of metrics at top level if not already there for other reasons
+        from . import metrics as local_metrics # Use a local import or pass logger
+        local_metrics.log.error("count_variants_view_failed", vcf_file=vcf_path, stderr=stderr, rc=rc)
+        raise ValueError(f"Failed to count variants in {vcf_path} using bcftools view. RC: {rc}. Stderr: {stderr}")
+    
+    # stdout will be the variant lines, or empty if none.
+    # Each variant is one line. If stdout is empty or only whitespace, there are no variants.
+    if not stdout.strip():
+        return 0
+    return len(stdout.splitlines()) # splitlines() handles various newline chars and doesn't create empty strings for trailing newlines
 
 def parse_vcf_variants(vcf_path):
     """

@@ -20,7 +20,7 @@ from strands import Agent, tools
 from strands.tools import tool
 from strands.models.ollama import OllamaModel
 from strands.models.litellm import LiteLLMModel
-from typing import Any, Optional, Dict, List, cast, Union, Literal
+from typing import Any, Optional, Dict, List as PyList, cast, Union, Literal
 from .validation import validate_vcf_file
 from .bcftools_integration import (
     bcftools_view as _bcftools_view,
@@ -162,16 +162,19 @@ def validate_vcf(filepath: str) -> str:
         "name": "bcftools_view_tool",
         "description": "Run bcftools view with the given arguments.",
         "parameters": {
-            "args": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Arguments for bcftools view (e.g., ['-h', 'file.vcf'])"
-            }
-        },
-        "required": ["args"]
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Arguments for bcftools view (e.g., ['-h', 'file.vcf'])"
+                }
+            },
+            "required": ["args"]
+        }
     }
 )
-def bcftools_view_tool(args: list) -> str:
+def bcftools_view_tool(args: PyList[str]) -> str:
     """
     Run bcftools view with the given arguments.
 
@@ -188,16 +191,19 @@ def bcftools_view_tool(args: list) -> str:
         "name": "bcftools_query_tool",
         "description": "Run bcftools query with the given arguments.",
         "parameters": {
-            "args": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Arguments for bcftools query."
-            }
-        },
-        "required": ["args"]
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Arguments for bcftools query."
+                }
+            },
+            "required": ["args"]
+        }
     }
 )
-def bcftools_query_tool(args: list) -> str:
+def bcftools_query_tool(args: PyList[str]) -> str:
     """
     Run bcftools query with the given arguments.
 
@@ -214,16 +220,19 @@ def bcftools_query_tool(args: list) -> str:
         "name": "bcftools_filter_tool",
         "description": "Run bcftools filter with the given arguments.",
         "parameters": {
-            "args": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Arguments for bcftools filter."
-            }
-        },
-        "required": ["args"]
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Arguments for bcftools filter."
+                }
+            },
+            "required": ["args"]
+        }
     }
 )
-def bcftools_filter_tool(args: list) -> str:
+def bcftools_filter_tool(args: PyList[str]) -> str:
     """
     Run bcftools filter with the given arguments.
 
@@ -240,16 +249,19 @@ def bcftools_filter_tool(args: list) -> str:
         "name": "bcftools_norm_tool",
         "description": "Run bcftools norm with the given arguments.",
         "parameters": {
-            "args": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Arguments for bcftools norm."
-            }
-        },
-        "required": ["args"]
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Arguments for bcftools norm."
+                }
+            },
+            "required": ["args"]
+        }
     }
 )
-def bcftools_norm_tool(args: list) -> str:
+def bcftools_norm_tool(args: PyList[str]) -> str:
     """
     Run bcftools norm with the given arguments.
 
@@ -266,16 +278,19 @@ def bcftools_norm_tool(args: list) -> str:
         "name": "bcftools_stats_tool",
         "description": "Run bcftools stats with the given arguments.",
         "parameters": {
-            "args": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Arguments for bcftools stats."
-            }
-        },
-        "required": ["args"]
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Arguments for bcftools stats."
+                }
+            },
+            "required": ["args"]
+        }
     }
 )
-def bcftools_stats_tool(args: list) -> str:
+def bcftools_stats_tool(args: PyList[str]) -> str:
     """
     Run bcftools stats with the given arguments.
 
@@ -292,16 +307,19 @@ def bcftools_stats_tool(args: list) -> str:
         "name": "bcftools_annotate_tool",
         "description": "Run bcftools annotate with the given arguments.",
         "parameters": {
-            "args": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Arguments for bcftools annotate."
-            }
-        },
-        "required": ["args"]
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Arguments for bcftools annotate."
+                }
+            },
+            "required": ["args"]
+        }
     }
 )
-def bcftools_annotate_tool(args: list) -> str:
+def bcftools_annotate_tool(args: PyList[str]) -> str:
     """
     Run bcftools annotate with the given arguments.
 
@@ -345,10 +363,13 @@ def vcf_comparison_tool(file1: str, file2: str, reference: str) -> str:
         # Normalize and decompose both VCFs
         def norm_vcf(input_vcf, ref):
             normed = tempfile.NamedTemporaryFile(delete=False, suffix='.vcf.gz')
-            cmd = [
+            cmd_norm = [
                 'bcftools', 'norm', '-m-any', '-f', ref, '-Oz', '-o', normed.name, input_vcf
             ]
-            subprocess.run(cmd, check=True)
+            subprocess.run(cmd_norm, check=True)
+            # Index the newly created normalized VCF
+            cmd_index = ['bcftools', 'index', normed.name]
+            subprocess.run(cmd_index, check=True)
             return normed.name
         normed1 = norm_vcf(file1, reference)
         normed2 = norm_vcf(file2, reference)
@@ -513,12 +534,6 @@ tools_list = [
     echo,
     validate_vcf,
     bcftools_view_tool,
-    bcftools_query_tool,
-    bcftools_filter_tool,
-    bcftools_norm_tool,
-    bcftools_stats_tool,
-    bcftools_annotate_tool,
-    vcf_comparison_tool,  # Register the new tool
 ]
 
 # Setup OpenAI model adapter for Strands using LiteLLM
@@ -701,19 +716,18 @@ def get_agent_with_session(
         echo,
         validate_vcf,
         bcftools_view_tool,
-        bcftools_query_tool,
-        bcftools_filter_tool,
-        bcftools_norm_tool,
-        bcftools_stats_tool,
+        bcftools_query_tool, 
+        bcftools_filter_tool, 
+        bcftools_norm_tool, 
+        bcftools_stats_tool, 
         bcftools_annotate_tool,
         vcf_comparison_tool,
         vcf_analysis_summary_tool, 
         vcf_summarization_tool,
-        load_vcf_into_graph_db_tool, # Add the new tool
-        # Add future tools here, e.g., the Kuzu ingestion tool
+        load_vcf_into_graph_db_tool,
     ]
 
-    agent = Agent(model=model, tools=cast(List[Any], available_tools))
+    agent = Agent(model=model, tools=cast(PyList[Any], available_tools))
     # Attach each tool as an attribute for direct access (e.g., agent.load_vcf_into_graph_db_tool)
     for tool_fn in available_tools:
         # Use the function's __name__ (strip trailing _tool for consistency)
@@ -802,6 +816,7 @@ def run_llm_analysis_task(
                         # Now try to parse the extracted string as JSON
                         json.loads(response_text_for_json) 
                         span.set_attribute("llm.response.format", "valid_json")
+                        result_json_string = response_text_for_json # Assign successful response
                     except json.JSONDecodeError as je:
                         status_metric = "error"
                         error_type_for_metric_label = "JSONDecodeError"
@@ -836,7 +851,8 @@ def run_llm_analysis_task(
         duration = time.time() - start_time
         metrics.VCF_AGENT_AI_RESPONSE_SECONDS.labels(
             model_provider=model_provider, 
-            endpoint_task=task
+            endpoint_task=task,
+            status=status_metric  # Added status_metric
         ).observe(duration)
         metrics.VCF_AGENT_AI_REQUESTS_TOTAL.labels(
             model_provider=model_provider, 

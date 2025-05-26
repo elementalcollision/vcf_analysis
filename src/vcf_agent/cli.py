@@ -243,12 +243,23 @@ def main():
         return
     elif args.command == "filter-lancedb":
         from vcf_agent.lancedb_integration import get_db, get_or_create_table, filter_variants_by_metadata
-        db = get_db(args.db_path)
-        table = get_or_create_table(db, args.table_name)
-        select_cols_list = args.select_columns.split(',') if args.select_columns else None
-        results_df = filter_variants_by_metadata(table, args.filter_sql, select_columns=select_cols_list, limit=args.limit)
-        print(f"Found {len(results_df)} variants matching filter:")
-        print(results_df.to_string())
+        try:
+            db = get_db(args.db_path)
+            table = get_or_create_table(db, args.table_name)
+            select_cols_list = args.select_columns.split(',') if args.select_columns else None
+            results_df = filter_variants_by_metadata(table, args.filter_sql, select_columns=select_cols_list, limit=args.limit)
+            print(f"Found {len(results_df)} variants matching filter:")
+            print(results_df.to_string())
+        except ValueError as ve:
+            # Check if it's our specific unsafe SQL error
+            if "Unsafe SQL filter detected" in str(ve):
+                print(f"Error: {ve}", file=sys.stderr) # Ensure the exact message is printed
+                sys.exit(1)
+            else:
+                raise # Re-raise other ValueErrors
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}", file=sys.stderr)
+            sys.exit(1)            
         return
     elif args.command == "populate-kuzu-from-vcf":
         with cli_tracer.start_as_current_span("cli.populate_kuzu_from_vcf") as populate_span:

@@ -2,15 +2,34 @@
 name = "vcf_analysis_agent"
 version = "0.1.0"
 description = "VCF Analysis Agent using bcftools, strands, and AI."
-authors = ["elementalcollision <your-email@example.com>"]
+authors = [
+  { name = "elementalcollision", email = "your-email@example.com" }
+]
 requires-python = ">=3.11"
 dependencies = [
     "pytest",
+    "pytest-cov",
     "pre-commit",
     # "bcftools",  # Python wrapper, if available on PyPI
     # "strands",   # If available on PyPI
 ]
 
+
 [build-system]
-requires = ["uv"]
-build-backend = "uv.build" 
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+# backend-path is not strictly necessary if setup.py is not used and pyproject.toml has all info
+# but can be kept for clarity or future use with setup.cfg/setup.py
+# backend-path = ["."]
+
+[tool.coverage.run]
+source = ["src/vcf_agent"]
+
+[tool.coverage.paths]
+metrics_file_rename = [
+    "src/vcf_agent/metrics.py",       # New, correct path for reporting
+    "src/vcf_agent/logging_metrics.py"  # Old path present in .coverage data
+]
+
+[tool.pytest.ini_options]
+# ... existing code ... 

@@ -6,10 +6,10 @@ import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 from vcf_agent import vcf_utils
 
-SAMPLE_DIR = os.path.join(os.path.dirname(__file__), '..', 'sample_data')
+SAMPLE_DIR = os.path.join(os.path.dirname(__file__), '..', 'sample_test_data')
 
-MINIMAL_VCF = os.path.abspath(os.path.join(SAMPLE_DIR, 'edgecase_minimal.vcf'))
-MULTIALLELIC_VCF = os.path.abspath(os.path.join(SAMPLE_DIR, 'edgecase_multiallelic.vcf'))
+MINIMAL_VCF = os.path.abspath(os.path.join(SAMPLE_DIR, 'edgecase_minimal.vcf.gz'))
+MULTIALLELIC_VCF = os.path.abspath(os.path.join(SAMPLE_DIR, 'edgecase_multiallelic.vcf.gz'))
 
 
 def test_extract_variant_summary_minimal():

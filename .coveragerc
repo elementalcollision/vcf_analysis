@@ -1,0 +1,4 @@
+[paths]
+source_map_metrics = 
+    /Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/metrics.py
+    /Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/logging_metrics.py 

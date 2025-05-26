@@ -436,12 +436,17 @@ def filter_variants_by_metadata(table: LanceTable, filter_sql: str, select_colum
         logger.error(f"filter_variants_by_metadata called for table '{table.name}' with an empty filter_sql. This would return all rows (if not for safety checks).")
         raise ValueError("filter_sql cannot be empty for metadata filtering operations.")
 
-    # Basic check for trivial SQL injection patterns like OR '1'='1'
-    # This is a simple heuristic and not a comprehensive SQLi prevention mechanism.
-    # More robust solutions would involve parsing the SQL or using parameterized queries if supported.
-    if "'1'='1'" in filter_sql.lower() or " or 1=1" in filter_sql.lower():
+    # Enhanced check for potentially unsafe SQL patterns
+    unsafe_patterns = [
+        "'1'='1'", " or 1=1", # Trivial true conditions
+        ";",                   # Statement separator
+        "--",                  # Comment
+        "drop ", "delete ", "insert ", "update ", "alter " # DML/DDL keywords typically not expected in a simple filter
+    ]
+    filter_sql_lower = filter_sql.lower()
+    if any(pattern in filter_sql_lower for pattern in unsafe_patterns):
         logger.error(f"Potentially unsafe SQL filter detected in table '{table.name}': '{masked_filter_sql}'. Rejecting query.")
-        raise ValueError("Potentially unsafe SQL filter detected. Query rejected.")
+        raise ValueError(f"Unsafe SQL filter detected: Query rejected. Filter was: {masked_filter_sql}")
 
     try:
         # logger.debug(f"Table object in filter_variants_by_metadata: type={{type(table)}}, dir={{dir(table)}}") # DEBUG LINE # Kept for potential future debugging

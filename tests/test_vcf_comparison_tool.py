@@ -8,14 +8,16 @@ import time
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 from vcf_agent.agent import vcf_comparison_tool
 
-SAMPLE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../sample_data'))
+# Define the sample directory relative to this test file
+# Assumes sample VCFs are in a 'sample_data' directory parallel to 'tests'
+SAMPLE_DIR = os.path.join(os.path.dirname(__file__), '..', 'sample_test_data')
 
 # Example VCFs for different test cases
-MINIMAL_VCF = os.path.abspath(os.path.join(SAMPLE_DIR, 'edgecase_minimal.vcf.gz'))
-MULTIALLELIC_VCF = os.path.abspath(os.path.join(SAMPLE_DIR, 'edgecase_multiallelic.vcf.gz'))
-EMPTY_ALT_VCF = os.path.abspath(os.path.join(SAMPLE_DIR, 'edgecase_empty_alt.vcf.gz'))
-INCONSISTENT_FORMAT_VCF = os.path.abspath(os.path.join(SAMPLE_DIR, 'edgecase_inconsistent_format.vcf.gz'))
-BAD_INFO_VCF = os.path.abspath(os.path.join(SAMPLE_DIR, 'edgecase_bad_info.vcf.gz'))
+MINIMAL_VCF = os.path.abspath(os.path.join(SAMPLE_DIR, 'minimal.vcf.gz'))
+MULTIALLELIC_VCF = os.path.abspath(os.path.join(SAMPLE_DIR, 'multiallelic.vcf.gz'))
+EMPTY_ALT_VCF = os.path.abspath(os.path.join(SAMPLE_DIR, 'empty_alt.vcf.gz'))
+INCONSISTENT_FORMAT_VCF = os.path.abspath(os.path.join(SAMPLE_DIR, 'inconsistent_format.vcf.gz'))
+BAD_INFO_VCF = os.path.abspath(os.path.join(SAMPLE_DIR, 'bad_info.vcf.gz'))
 
 # Placeholder for gold-standard benchmarking (replace with real files if available)
 GOLD_STANDARD_VCF = MINIMAL_VCF

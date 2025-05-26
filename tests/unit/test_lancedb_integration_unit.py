@@ -32,7 +32,9 @@ class TestLanceDBIntegrationUnit:
             'score': [0.9, 0.85],
         }
         mock_lancedb_df = pd.DataFrame(lancedb_results_data)
-        mock_table.search.return_value.limit.return_value.to_df.return_value = mock_lancedb_df
+        # Mock the .to_pandas() method call
+        mock_q_object = mock_table.search.return_value.limit.return_value
+        mock_q_object.to_pandas.return_value = mock_lancedb_df
 
         # Mock Kuzu connection and context
         mock_kuzu_conn = MagicMock()
@@ -84,10 +86,9 @@ class TestLanceDBIntegrationUnit:
         """Test search_by_embedding when LanceDB returns an empty DataFrame."""
         mock_table = MagicMock()
 
-        # Configure LanceDB search to return an empty DataFrame
-        # mock_table.search.return_value.limit.return_value.to_df.return_value = pd.DataFrame() # Make it truly empty
-        mock_limit_obj = mock_table.search.return_value.limit.return_value
-        mock_limit_obj.to_df.return_value = pd.DataFrame() # More explicit mock for to_df
+        mock_empty_df = pd.DataFrame() # Explicitly create an empty DataFrame
+        mock_q_object = mock_table.search.return_value.limit.return_value
+        mock_q_object.to_pandas.return_value = mock_empty_df # Return the actual empty DataFrame
 
         result_df = lancedb_integration.search_by_embedding(
             table=mock_table,
@@ -95,20 +96,15 @@ class TestLanceDBIntegrationUnit:
             limit=3
         )
 
-        # Assertions for LanceDB part
         mock_table.search.assert_called_once_with([0.2]*1024, vector_column_name='embedding')
         mock_table.search.return_value.limit.assert_called_once_with(3)
 
-        # Assertions for Kuzu part - should NOT be called
         mock_graph_integration_module.get_managed_kuzu_connection.assert_not_called()
         mock_graph_integration_module.get_variant_context.assert_not_called()
 
-        # Assertions for DataFrame result
         assert result_df.empty
-        # The function search_by_embedding ensures this column is added and initialized with pd.NA
-        assert 'kuzu_observed_samples' in result_df.columns 
-        # If truly empty, this column would be all pd.NA, but result_df itself is empty.
-        # So just checking for column existence is enough.
+        # search_by_embedding adds this column even to an empty DataFrame
+        assert 'kuzu_observed_samples' in result_df.columns
 
     @patch('vcf_agent.lancedb_integration.logger')
     @patch('vcf_agent.lancedb_integration.graph_integration')
@@ -118,8 +114,8 @@ class TestLanceDBIntegrationUnit:
 
         lancedb_results_data = {'variant_id': ['var3', 'var4'], 'score': [0.7, 0.6]}
         mock_lancedb_df = pd.DataFrame(lancedb_results_data)
-        mock_limit_obj = mock_table.search.return_value.limit.return_value
-        mock_limit_obj.to_df.return_value = mock_lancedb_df # More explicit
+        mock_q_object = mock_table.search.return_value.limit.return_value
+        mock_q_object.to_pandas.return_value = mock_lancedb_df
 
         mock_kuzu_conn = MagicMock()
         mock_graph_integration_module.get_managed_kuzu_connection.return_value = mock_kuzu_conn
@@ -159,8 +155,8 @@ class TestLanceDBIntegrationUnit:
 
         lancedb_results_data = {'variant_id': ['var5', 'var6', 'var7'], 'score': [0.5, 0.4, 0.3]}
         mock_lancedb_df = pd.DataFrame(lancedb_results_data)
-        mock_limit_obj = mock_table.search.return_value.limit.return_value
-        mock_limit_obj.to_df.return_value = mock_lancedb_df # More explicit
+        mock_q_object = mock_table.search.return_value.limit.return_value
+        mock_q_object.to_pandas.return_value = mock_lancedb_df
 
         mock_kuzu_conn = MagicMock()
         mock_graph_integration_module.get_managed_kuzu_connection.return_value = mock_kuzu_conn
@@ -208,8 +204,8 @@ class TestLanceDBIntegrationUnit:
 
         lancedb_results_data = {'variant_id': ['var8'], 'score': [0.2]}
         mock_lancedb_df = pd.DataFrame(lancedb_results_data)
-        mock_limit_obj = mock_table.search.return_value.limit.return_value
-        mock_limit_obj.to_df.return_value = mock_lancedb_df # More explicit
+        mock_q_object = mock_table.search.return_value.limit.return_value
+        mock_q_object.to_pandas.return_value = mock_lancedb_df
 
         mock_kuzu_conn = MagicMock()
         mock_graph_integration_module.get_managed_kuzu_connection.return_value = mock_kuzu_conn

@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 from vcf_agent import prompt_templates
 
 PROMPT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../prompts'))
-SAMPLE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../sample_data'))
+SAMPLE_DIR = os.path.join(os.path.dirname(__file__), '..', 'sample_test_data')
 
 MINIMAL_VCF = os.path.join(SAMPLE_DIR, 'edgecase_minimal.vcf')
 MULTIALLELIC_VCF = os.path.join(SAMPLE_DIR, 'edgecase_multiallelic.vcf')

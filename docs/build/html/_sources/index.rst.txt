@@ -23,6 +23,7 @@ Core functionalities include:
    vcf_agent
    lancedb_developer_guide
    kuzu_developer_guide
+   monitoring_with_prometheus
    security
    audit
    modules

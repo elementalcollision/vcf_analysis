@@ -78,6 +78,25 @@
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="vcf_agent.agent.run_llm_analysis_task">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.agent.</span></span><span class="sig-name descname"><span class="pre">run_llm_analysis_task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">task</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ollama'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">llm_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.agent.run_llm_analysis_task" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>task</strong> (<em>str</em>)</p></li>
+<li><p><strong>file_paths</strong> (<em>list</em>)</p></li>
+<li><p><strong>extra_context</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>session_config</strong> (<a class="reference internal" href="#vcf_agent.config.SessionConfig" title="vcf_agent.config.SessionConfig"><em>SessionConfig</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>model_provider</strong> (<em>Literal</em><em>[</em><em>'ollama'</em><em>, </em><em>'openai'</em><em>, </em><em>'cerebras'</em><em>]</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 <section id="module-vcf_agent.bcftools_integration">
 <span id="vcf-agent-bcftools-integration-module"></span><h2>vcf_agent.bcftools_integration module<a class="headerlink" href="#module-vcf_agent.bcftools_integration" title="Link to this heading">¶</a></h2>
@@ -392,7 +411,7 @@ manufacturer_tool (Optional[str]): Name of manufacturer-specific tool</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="vcf_agent.config.SessionConfig">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">vcf_agent.config.</span></span><span class="sig-name descname"><span class="pre">SessionConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ollama'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credentials_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_fasta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.config.SessionConfig" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">vcf_agent.config.</span></span><span class="sig-name descname"><span class="pre">SessionConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ollama'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credentials_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_fasta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ollama_model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'qwen:4b'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.config.SessionConfig" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Session configuration for VCF Analysis Agent.</p>
 <p>Controls session-specific settings, including output mode toggling (chain-of-thought vs. raw output),
@@ -404,6 +423,7 @@ model provider selection, and reference FASTA for normalization.</p>
 <li><p><strong>model_provider</strong> (<em>Literal</em><em>[</em><em>'ollama'</em><em>, </em><em>'openai'</em><em>, </em><em>'cerebras'</em><em>]</em>)</p></li>
 <li><p><strong>credentials_file</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>reference_fasta</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>ollama_model_name</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -806,6 +826,7 @@ Selects backend based on config or argument.</p>
 <li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#usage-pattern-with-lancedb">Usage Pattern with LanceDB</a></li>
 <li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#security-and-auditing">Security and Auditing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#known-issues-and-workarounds">Known Issues and Workarounds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="monitoring_with_prometheus.html">Observability Stack</a></li>
 <li class="toctree-l1"><a class="reference internal" href="security.html">Security</a></li>
 <li class="toctree-l1"><a class="reference internal" href="audit.html">Auditing</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">vcf_agent</a><ul class="current">

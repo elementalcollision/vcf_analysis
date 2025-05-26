@@ -86,7 +86,7 @@ def test_vcf_ingestion_into_kuzu(enrichment_test_env, vcf_agent_cli_runner):
     print(f"Populate Kuzu stdout: {result_populate.stdout}")
     print(f"Populate Kuzu stderr: {result_populate.stderr}")
     assert result_populate.returncode == 0, f"CLI 'populate-kuzu-from-vcf' failed. Stderr: {result_populate.stderr}"
-    assert "Successfully populated Kuzu graph from VCF" in result_populate.stdout # Or similar success message
+    assert "Successfully populated Kuzu graph from VCF" in result_populate.stderr # Changed to stderr
 
     # Step 3: Validate data in Kuzu using direct connection
     from vcf_agent.graph_integration import get_kuzu_db_connection, create_schema
@@ -188,7 +188,7 @@ def test_mock_embedding_and_lancedb_storage(enrichment_test_env, vcf_agent_cli_r
     ]
     result_populate_kuzu = vcf_agent_cli_runner(populate_args)
     assert result_populate_kuzu.returncode == 0, f"CLI 'populate-kuzu-from-vcf' failed for LanceDB test. Stderr: {result_populate_kuzu.stderr}"
-    assert "Successfully populated Kuzu graph from VCF" in result_populate_kuzu.stdout
+    assert "Successfully populated Kuzu graph from VCF" in result_populate_kuzu.stderr # Changed to stderr
 
     # Step 2: Initialize LanceDB (using the CLI command)
     init_lancedb_args = ["init-lancedb", "--db_path", str(lancedb_path)]

@@ -229,13 +229,13 @@ VCF_AGENT_AI_REQUESTS_TOTAL = Counter(
 VCF_AGENT_AI_RESPONSE_SECONDS = Histogram(
     'vcf_agent_ai_response_seconds', 
     'AI agent response time (seconds) for various models.', 
-    ['model_provider', 'endpoint_task'],
+    ['model_provider', 'endpoint_task', 'status'],
     registry=http_registry
 )
 VCF_AGENT_AI_TOKENS_TOTAL = Counter(
     'vcf_agent_ai_tokens_total', 
     'Total tokens processed (e.g., prompt + completion) by the AI agent.', 
-    ['model_provider', 'endpoint_task', 'token_type'], # token_type: "prompt", "completion", "total"
+    ['model_provider', 'endpoint_task', 'token_type', 'status'], # Added 'status'
     registry=http_registry
 )
 VCF_AGENT_AI_ERRORS_TOTAL = Counter(
@@ -402,19 +402,26 @@ def observe_ai_interaction(
     success: bool = True, 
     error_type: Optional[str] = None
 ):
-    status = "success" if success else "error"
-    VCF_AGENT_AI_REQUESTS_TOTAL.labels(model_provider=model_provider, endpoint_task=endpoint_task, status=status).inc()
-    VCF_AGENT_AI_RESPONSE_SECONDS.labels(model_provider=model_provider, endpoint_task=endpoint_task).observe(duration_seconds)
-    
-    if prompt_tokens is not None:
-        VCF_AGENT_AI_TOKENS_TOTAL.labels(model_provider=model_provider, endpoint_task=endpoint_task, token_type="prompt").inc(prompt_tokens)
-    if completion_tokens is not None:
-        VCF_AGENT_AI_TOKENS_TOTAL.labels(model_provider=model_provider, endpoint_task=endpoint_task, token_type="completion").inc(completion_tokens)
-    if total_tokens is not None and not (prompt_tokens or completion_tokens): # Avoid double counting if specific tokens given
-         VCF_AGENT_AI_TOKENS_TOTAL.labels(model_provider=model_provider, endpoint_task=endpoint_task, token_type="total").inc(total_tokens)
+    # Increment request and error counters
+    status_str = "success" if success else "error"
+    VCF_AGENT_AI_REQUESTS_TOTAL.labels(model_provider=model_provider, endpoint_task=endpoint_task, status=status_str).inc()
 
     if not success and error_type:
         VCF_AGENT_AI_ERRORS_TOTAL.labels(model_provider=model_provider, endpoint_task=endpoint_task, error_type=error_type).inc()
+    
+    # Observe response time
+    VCF_AGENT_AI_RESPONSE_SECONDS.labels(model_provider=model_provider, endpoint_task=endpoint_task, status=status_str).observe(duration_seconds)
+    
+    # Record token usage
+    if prompt_tokens is not None:
+        VCF_AGENT_AI_TOKENS_TOTAL.labels(model_provider=model_provider, endpoint_task=endpoint_task, token_type="prompt", status=status_str).inc(prompt_tokens)
+    if completion_tokens is not None:
+        VCF_AGENT_AI_TOKENS_TOTAL.labels(model_provider=model_provider, endpoint_task=endpoint_task, token_type="completion", status=status_str).inc(completion_tokens)
+    if total_tokens is not None and not (prompt_tokens or completion_tokens): # Avoid double counting if specific tokens given
+         VCF_AGENT_AI_TOKENS_TOTAL.labels(model_provider=model_provider, endpoint_task=endpoint_task, token_type="total", status=status_str).inc(total_tokens)
+
+    # Decrement concurrent requests gauge
+    VCF_AGENT_AI_CONCURRENT_REQUESTS.labels(model_provider=model_provider, endpoint_task=endpoint_task).dec()
 
 # Note: Concurrent requests gauge would be incremented/decremented around the actual call.
 

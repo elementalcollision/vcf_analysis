@@ -123,15 +123,29 @@ http://localhost:8000/metrics
 
 #### AI Interaction Metrics
 - `vcf_agent_ai_requests_total`: Total number of AI requests (counter)
-  - Labels: `status` (success/error), `error_type`, `model_provider`
-- `vcf_agent_ai_response_duration_seconds`: AI response time (histogram)
-  - Labels: `status`, `model_provider`
+  - Labels: `model_provider`, `endpoint_task`, `status`
+- `vcf_agent_ai_response_seconds`: AI response time (histogram)
+  - Labels: `model_provider`, `endpoint_task`, `status`
+- `vcf_agent_ai_tokens_total`: Total tokens processed (e.g., prompt + completion) by the AI agent (counter)
+  - Labels: `model_provider`, `endpoint_task`, `token_type`, `status`
+- `vcf_agent_ai_errors_total`: Total errors by type during AI model interactions (counter)
+  - Labels: `model_provider`, `endpoint_task`, `error_type`
 
 #### Tool Usage Metrics
-- `vcf_agent_bcftools_commands_total`: Total bcftools command executions (counter)
-  - Labels: `command_type`, `status`
-- `vcf_agent_tool_invocations_total`: Total tool invocations (counter)
+- `vcf_agent_tool_requests_total`: Total tool invocations (counter)
   - Labels: `tool_name`, `status`
+- `vcf_agent_tool_duration_seconds`: Duration of agent tool execution in seconds (histogram)
+  - Labels: `tool_name`, `status`
+- `vcf_agent_tool_errors_total`: Total errors during agent tool execution (counter)
+  - Labels: `tool_name`, `error_type`
+
+#### BCFTools Integration Metrics
+- `vcf_agent_bcftools_commands_total`: Total bcftools command executions (counter)
+  - Labels: `bcftools_subcommand`, `status`
+- `vcf_agent_bcftools_duration_seconds`: Duration of bcftools subprocess calls in seconds (histogram)
+  - Labels: `bcftools_subcommand`, `status`
+- `vcf_agent_bcftools_errors_total`: Total errors from bcftools invocations (non-zero return codes) (counter)
+  - Labels: `bcftools_subcommand`
 
 #### System Metrics
 - Standard Prometheus client metrics (process CPU, memory, etc.)

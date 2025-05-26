@@ -255,27 +255,27 @@ def test_get_variant_context(db_connection):
 
         # Check context for v1_id
         assert v1_id in contexts
-        assert len(contexts[v1_id]['samples']) == 2
-        assert {'sample_id': s1_id, 'zygosity': 'HET'} in contexts[v1_id]['samples']
-        assert {'sample_id': s2_id, 'zygosity': 'HOM'} in contexts[v1_id]['samples']
+        assert len(contexts[v1_id]) == 2
+        assert {'sample_id': s1_id, 'zygosity': 'HET'} in contexts[v1_id]
+        assert {'sample_id': s2_id, 'zygosity': 'HOM'} in contexts[v1_id]
 
         # Check context for v2_id
         assert v2_id in contexts
-        assert len(contexts[v2_id]['samples']) == 1
-        assert {'sample_id': s1_id, 'zygosity': 'HOM'} in contexts[v2_id]['samples']
+        assert len(contexts[v2_id]) == 1
+        assert {'sample_id': s1_id, 'zygosity': 'HOM'} in contexts[v2_id]
 
         # Check context for v3_id (linked to S2 but not S1, included in query)
         assert v3_id in contexts
-        assert len(contexts[v3_id]['samples']) == 1
-        assert {'sample_id': s2_id, 'zygosity': 'HET'} in contexts[v3_id]['samples']
+        assert len(contexts[v3_id]) == 1
+        assert {'sample_id': s2_id, 'zygosity': 'HET'} in contexts[v3_id]
 
         # Check context for v4_id (no links)
         assert v4_id in contexts
-        assert len(contexts[v4_id]['samples']) == 0
+        assert len(contexts[v4_id]) == 0
 
         # Check context for non_existent_variant
         assert "rs_non_existent" in contexts
-        assert len(contexts["rs_non_existent"]['samples']) == 0
+        assert len(contexts["rs_non_existent"]) == 0
         print("test_get_variant_context passed.")
 
         # Test 2: Empty list of variant IDs

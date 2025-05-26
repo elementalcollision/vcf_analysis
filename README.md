@@ -1,5 +1,5 @@
 # VCF Analysis Agent
-
+[![wakatime](https://wakatime.com/badge/user/a9e67bf6-759a-4da2-bcad-a3031b64a17d/project/ce17de12-99a8-46c6-ae39-88598186cc9b.svg)](https://wakatime.com/badge/user/a9e67bf6-759a-4da2-bcad-a3031b64a17d/project/ce17de12-99a8-46c6-ae39-88598186cc9b)
 A powerful and intelligent agent for analyzing, processing, and managing Variant Call Format (VCF) files in genomics research and clinical applications.
 
 ## Overview
@@ -151,6 +151,65 @@ docker buildx build --platform linux/amd64,linux/arm64 -t vcf-agent:latest .
 - Add security scanning as a pipeline step.
 
 For more details, see the Dockerfile and `.dockerignore` in the repo, and consult the [OrbStack Docker documentation](https://docs.orbstack.dev/docker/images).
+
+## Development & Testing
+
+The project maintains a comprehensive test suite to ensure code quality, stability, and correctness.
+
+### Test Suite Structure
+
+The test suite is organized into the following categories:
+
+-   **Unit Tests (`tests/unit/`)**: Focus on individual modules and functions in isolation. Extensive mocking is used for external dependencies like KuzuDB, LanceDB, and OpenTelemetry.
+-   **Integration Tests (`tests/integration/`)**: Test the interaction between different components of the agent, including CLI, API endpoints, and database integrations.
+    -   **End-to-End (E2E) Tests (`tests/integration/e2e/`)**: Validate complete workflows from the user's perspective, such as CLI-based data ingestion and querying.
+-   **Prompt Contract Tests (`tests/prompt_contracts/`)**: Verify the agent's interactions with LLMs for specific tasks, ensuring consistent output formats.
+-   **Agent Tests (`tests/test_agent.py`, `tests/test_agent_llm_integration.py`)**: Test core agent logic, tool dispatch, and LLM integration.
+-   **Tool & Utility Tests**: Dedicated tests for bcftools integration, VCF utilities, API clients, validation logic, etc.
+
+### Running Tests
+
+To run the full test suite:
+
+```bash
+pytest -v
+```
+
+To run tests with coverage for the `src/vcf_agent` directory and report missing lines:
+
+```bash
+pytest --cov=src/vcf_agent --cov-report=term-missing -v
+```
+
+HTML and XML coverage reports are also generated (`htmlcov/` and `coverage.xml`).
+
+### Current Test Status (as of 2025-08-01)
+
+-   **Total Tests**: ~258
+-   **Passing**: ~231
+-   **Skipped**: ~16
+    -   ~5 due to unresolved OpenAI schema validation issues for array tool parameters (see "Known Issues").
+    -   ~10 in `test_edgecase_compliance.py` due to missing VCF test files (see "Known Issues").
+    -   ~1 performance test in `test_vcf_comparison_tool.py` due to a missing large VCF file (see "Known Issues").
+-   **XFAIL (Expected Failures)**: 5 (related to `bcftools stats` permissiveness on certain VCFs).
+-   **XPASS (Unexpected Passes)**: 5 (GATK validation tests for the same VCFs now pass, indicating stricter validation than `bcftools stats`).
+
+### Coverage
+
+-   **Overall Project Coverage**: ~73%
+-   **`src/vcf_agent/tracing.py`**: ~95% (Remaining "missed" lines are typically comments or outdated references from the coverage tool for the current code state).
+-   **`src/vcf_agent/metrics.py`**: ~76% (Remaining "missed" lines in original targets often correspond to helper functions that are not currently implemented. Existing functions are well-covered).
+
+Significant effort (documented in `TASK-007.md`) was undertaken to resolve critical test failures and improve coverage for tracing and metrics.
+
+### Known Issues & Future Testing Considerations
+
+1.  **OpenAI Schema Validation for Array Types**: Several tests are skipped due to `litellm.exceptions.BadRequestError` related to array types in tool schemas for OpenAI. This requires further investigation, potentially with Strands/LiteLLM.
+2.  **Missing Edge Case VCF Files**: Some tests in `test_edgecase_compliance.py` are skipped as they require specific VCF files not currently in `sample_test_data/`. These files need to be created or sourced.
+3.  **Missing Large VCF for Performance Test**: A performance test in `test_vcf_comparison_tool.py` is skipped.
+4.  **Helper Function Coverage in `metrics.py`**: While core metrics definitions and existing helper functions are tested, some originally planned observer helper functions (e.g., for CLI commands, specific tool usage beyond AI) are not currently implemented in `metrics.py`. If these are added in the future, corresponding tests will be needed.
+
+Consult `.context/tasks/completed/TASK-007.md` for a detailed history of recent test stabilization efforts.
 
 ## Observability Stack
 

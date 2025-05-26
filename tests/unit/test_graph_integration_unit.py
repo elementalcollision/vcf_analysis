@@ -6,6 +6,7 @@ import pytest
 from unittest.mock import patch, MagicMock, call, ANY
 import pandas as pd
 import kuzu
+from kuzu import QueryResult # Import QueryResult directly
 
 # Import the module to be tested
 from vcf_agent import graph_integration
@@ -194,49 +195,6 @@ class TestGraphIntegrationUnit:
         }
         mock_conn.execute.assert_called_once_with(expected_query, parameters=expected_params_dict)
 
-    def test_execute_query_with_params(self):
-        """Test execute_query with parameters."""
-        mock_conn = MagicMock()
-        mock_query_result = MagicMock()
-        # mock_df should be a real DataFrame instance for isinstance check
-        expected_result_list = [{"colA": 1, "colB": "val1"}, {"colA": 2, "colB": "val2"}]
-        mock_df_instance = pd.DataFrame(expected_result_list) # Create a real DataFrame
-
-        mock_conn.execute.return_value = mock_query_result
-        mock_query_result.get_as_df.return_value = mock_df_instance # Return the real DataFrame
-        # mock_df.to_dict.return_value = expected_result_list # No longer needed if mock_df_instance is used directly
-
-        test_query = "MATCH (n) WHERE n.prop = $param RETURN n.prop AS colA, n.other AS colB"
-        test_params = {"param": "test_value"}
-
-        result = graph_integration.execute_query(mock_conn, test_query, test_params)
-
-        mock_conn.execute.assert_called_once_with(test_query, parameters=test_params)
-        mock_query_result.get_as_df.assert_called_once()
-        # The function itself calls .to_dict(orient='records') on the DataFrame
-        assert result == expected_result_list
-
-    def test_execute_query_no_params(self):
-        """Test execute_query without parameters."""
-        mock_conn = MagicMock()
-        mock_query_result = MagicMock()
-        # mock_df should be a real DataFrame instance
-        expected_result_list = [{"colA": 3, "colB": "val3"}]
-        mock_df_instance = pd.DataFrame(expected_result_list) # Create a real DataFrame
-
-        mock_conn.execute.return_value = mock_query_result
-        mock_query_result.get_as_df.return_value = mock_df_instance # Return the real DataFrame
-        # mock_df.to_dict.return_value = expected_result_list
-
-        test_query = "MATCH (n) RETURN n.prop AS colA, n.other AS colB"
-
-        result = graph_integration.execute_query(mock_conn, test_query)
-
-        mock_conn.execute.assert_called_once_with(test_query, parameters={})
-        mock_query_result.get_as_df.assert_called_once()
-        # The function itself calls .to_dict(orient='records') on the DataFrame
-        assert result == expected_result_list
-
     @patch('vcf_agent.graph_integration.execute_query')
     def test_get_variant_context(self, mock_execute_query):
         """Test the get_variant_context function."""
@@ -272,4 +230,77 @@ class TestGraphIntegrationUnit:
         expected_params = {"v_ids": variant_ids}
         
         mock_execute_query.assert_called_once_with(mock_conn, expected_query_text, params=expected_params)
+        assert result_map == expected_context_map
+
+    def test_execute_query_with_params(self):
+        """Test execute_query with parameters."""
+        mock_conn = MagicMock()
+        mock_query_result = MagicMock(spec=QueryResult)
+        expected_result_list = [{"colA": 1, "colB": "val1"}, {"colA": 2, "colB": "val2"}]
+        mock_df_instance = pd.DataFrame(expected_result_list)
+
+        mock_conn.execute.return_value = mock_query_result
+        mock_query_result.get_as_df.return_value = mock_df_instance
+
+        test_query = "MATCH (n) WHERE n.prop = $param RETURN n.prop AS colA, n.other AS colB"
+        test_params = {"param": "test_value"}
+
+        result = graph_integration.execute_query(mock_conn, test_query, test_params)
+
+        mock_conn.execute.assert_called_once_with(test_query, parameters=test_params)
+        mock_query_result.get_as_df.assert_called_once()
+        assert result == expected_result_list
+
+    def test_execute_query_no_params(self):
+        """Test execute_query without parameters."""
+        mock_conn = MagicMock()
+        mock_query_result = MagicMock(spec=QueryResult)
+        expected_result_list = [{"colA": 3, "colB": "val3"}]
+        mock_df_instance = pd.DataFrame(expected_result_list)
+
+        mock_conn.execute.return_value = mock_query_result
+        mock_query_result.get_as_df.return_value = mock_df_instance
+
+        test_query = "MATCH (n) RETURN n.prop AS colA, n.other AS colB"
+
+        result = graph_integration.execute_query(mock_conn, test_query)
+
+        mock_conn.execute.assert_called_once_with(test_query, parameters={})
+        mock_query_result.get_as_df.assert_called_once()
+        assert result == expected_result_list
+
+    @patch('vcf_agent.graph_integration.get_managed_kuzu_connection')
+    def test_get_variant_context(self, mock_get_managed_kuzu_connection):
+        """Test the get_variant_context function."""
+        mock_actual_conn = MagicMock(spec=kuzu.Connection)
+        mock_get_managed_kuzu_connection.return_value = mock_actual_conn
+        
+        # Configure mock_actual_conn.execute to return a mock QueryResult
+        mock_kuzu_query_result = MagicMock(spec=QueryResult)
+        mock_actual_conn.execute.return_value = mock_kuzu_query_result
+
+        variant_ids = ["var1", "var2"]
+        
+        # This is what the DataFrame from mock_kuzu_query_result.get_as_df() should produce
+        # The function get_variant_context itself calls .to_dict(orient='records')
+        simulated_df_data = [
+            {"variant_id": "var1", "sample_id": "sampleA", "zygosity": "HOM"},
+            {"variant_id": "var1", "sample_id": "sampleB", "zygosity": "HET"},
+            {"variant_id": "var2", "sample_id": "sampleA", "zygosity": "HET"}
+        ]
+        mock_simulated_df = pd.DataFrame(simulated_df_data)
+        mock_kuzu_query_result.get_as_df.return_value = mock_simulated_df
+    
+        expected_context_map = {
+            "var1": [
+                {"sample_id": "sampleA", "zygosity": "HOM"},
+                {"sample_id": "sampleB", "zygosity": "HET"}
+            ],
+            "var2": [
+                {"sample_id": "sampleA", "zygosity": "HET"}
+            ]
+        }
+
+        result_map = graph_integration.get_variant_context(mock_actual_conn, variant_ids)
+
         assert result_map == expected_context_map

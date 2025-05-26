@@ -311,6 +311,22 @@ def get_variant_context(conn: Optional[kuzu.Connection], variant_ids: List[str])
                 del query_result_union_ctx
     return {}  # Explicit return for linter
 
+def close_kuzu_connection(db_path: str = DEFAULT_KUZU_DB_PATH):
+    """
+    Closes the Kuzu database connection.
+
+    Args:
+        db_path: Path to the Kuzu database directory.
+    """
+    try:
+        print(f"Closing Kuzu connection to: {db_path}")
+        conn = get_kuzu_db_connection(db_path)
+        conn.close()
+        print("Kuzu connection closed successfully.")
+    except Exception as e:
+        print(f"Error closing Kuzu connection to {db_path}: {e}")
+        raise
+
 if __name__ == '__main__':
     # Example Usage (illustrative, to be updated for get_variant_context)
     # db_connection = None
