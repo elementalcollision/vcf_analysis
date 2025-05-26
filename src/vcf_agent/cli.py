@@ -26,7 +26,6 @@ from vcf_agent import metrics # Import metrics module
 
 # OpenTelemetry Imports
 from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider as SdkTracerProvider
 from .tracing import init_tracer, setup_auto_instrumentation
 
 # Initialize OpenTelemetry Tracer for the CLI
@@ -336,18 +335,7 @@ def main():
     # This means args.command MUST be "ask" to reach here
     # (or other future agent-related subcommands)
     
-    if prompt_to_run: # This will be true if command is 'ask'
-        # --- MINIMAL OTEL TEST WAS HERE ---
-        # print("[CLI] Starting MINIMAL OTEL TEST.")
-        # with cli_tracer.start_as_current_span("cli.minimal_otel_test_span") as test_span:
-        #     test_span.set_attribute("test.attribute", "hello_jaeger")
-        #     print(f"[CLI] Minimal test span created: trace_id={test_span.get_span_context().trace_id:x}, span_id={test_span.get_span_context().span_id:x}")
-        #     time.sleep(1) # Give a moment for things to happen
-        # print("[CLI] Minimal test span ended.")
-        # --- END MINIMAL OTEL TEST ---
-
-        # UNCOMMENT THE REST OF THE 'ask' LOGIC FOR THIS TEST
-        # """ # Remove this line to uncomment
+    if prompt_to_run:
         if args.raw:
             os.environ["VCF_AGENT_RAW_MODE"] = "1"
 
@@ -374,12 +362,9 @@ def main():
             prompt_span.set_attribute("agent.model_provider", model_provider)
             prompt_span.set_attribute("agent.raw_mode", args.raw if args.raw else False)
             
-            current_span_obj_before_agent = trace.get_current_span()
-            current_ctx_before_agent = current_span_obj_before_agent.get_span_context()
-            if current_ctx_before_agent and current_ctx_before_agent.is_valid:
-                print(f"[CLI] Before agent call. Current span: trace_id={hex(current_ctx_before_agent.trace_id)}, span_id={hex(current_ctx_before_agent.span_id)}")
-            else:
-                print("[CLI] Before agent call. No valid current span or context.")
+            ai_interaction_start_time = time.time()
+            ai_status_metric = "success"
+            ai_error_type_for_metric = None # Placeholder for actual error type if one occurs
 
             try:
                 raw_agent_response = agent_instance(prompt_to_run)
@@ -399,28 +384,56 @@ def main():
                 prompt_span.set_status(trace.StatusCode.OK)
                 print(output_text)
             except Exception as e:
+                ai_status_metric = "error"
+                ai_error_type_for_metric = type(e).__name__
                 prompt_span.record_exception(e)
                 prompt_span.set_status(trace.StatusCode.ERROR, str(e))
                 print(f"Error during agent execution: {e}", file=sys.stderr)
-                sys.exit(1) # Exit with error after logging
+                # Re-raise or handle as appropriate; for now, we'll let it propagate if it's critical
+                # For metrics, we capture the error. If we sys.exit(1) here, finally might not run as expected in all cases.
+                # However, the original code did sys.exit(1)
+                raise # Re-raising to ensure original exit behavior if this was unhandled.
+            finally:
+                ai_duration = time.time() - ai_interaction_start_time
+                # Using "cli_ask" as a generic endpoint_task for metrics from this CLI interaction.
+                # Token counts are not readily available here without deeper parsing of Strands agent internals.
+                metrics.VCF_AGENT_AI_RESPONSE_SECONDS.labels(
+                    model_provider=model_provider, 
+                    endpoint_task="cli_ask" # Generic task for CLI 'ask'
+                ).observe(ai_duration)
+                metrics.VCF_AGENT_AI_REQUESTS_TOTAL.labels(
+                    model_provider=model_provider, 
+                    endpoint_task="cli_ask", 
+                    status=ai_status_metric 
+                ).inc()
+                if ai_status_metric == "error" and ai_error_type_for_metric:
+                    metrics.VCF_AGENT_AI_ERRORS_TOTAL.labels(
+                        model_provider=model_provider, 
+                        endpoint_task="cli_ask", 
+                        error_type=ai_error_type_for_metric
+                    ).inc()
         
         # Metrics server start - consider if this should only be for 'ask'
         metrics.start_metrics_http_server() 
-        # """ # Remove this line to uncomment
-        # After the command has executed, force flush any pending spans
-        current_provider = trace.get_tracer_provider()
-        if isinstance(current_provider, SdkTracerProvider):
-            print("[CLI] Forcing flush of OTel spans...")
-            try:
-                current_provider.force_flush(timeout_millis=5000) # 5 second timeout
-                print("[CLI] OTel spans flushed.")
-            except Exception as e:
-                print(f"[CLI] Error during OTel span flush: {e}")
-        else:
-            print("[CLI] No SDK TracerProvider found, skipping flush.")
-            
+
+    # TEST: Keep alive for metrics scraping
+    print("\n[CLI] Test: Keeping metrics server alive for 60 seconds before flushing spans...")
+    time.sleep(60)
+    print("[CLI] Test: 60 second delay finished.")
+
+    # Ensure OTel spans are flushed before exit (this logic might already be present or adapted)
+    # Based on previous versions, the OTel flush was here.
+    current_provider = trace.get_tracer_provider()
+    from opentelemetry.sdk.trace import TracerProvider as SdkTracerProvider # Ensure import if not global
+    if isinstance(current_provider, SdkTracerProvider):
+        print("\n[CLI] Forcing flush of OTel spans...")
+        try:
+            current_provider.force_flush(timeout_millis=5000) # 5 second timeout
+            print("[CLI] OTel spans flushed.")
+        except Exception as e:
+            print(f"[CLI] Error during OTel span flush: {e}")
     else:
-        parser.print_help()
+        print("\n[CLI] No SDK TracerProvider found, skipping flush.")
 
 if __name__ == "__main__":
     main() 

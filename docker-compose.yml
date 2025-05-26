@@ -1,5 +1,8 @@
 version: '3.8'
 
+volumes:
+  grafana_data: {}
+
 services:
   jaeger:
     image: jaegertracing/all-in-one:latest # Using the latest version, consider pinning to a specific version for stability
@@ -43,3 +46,23 @@ services:
     # Or add depends_on if Prometheus should wait for Jaeger (though not strictly necessary for scraping)
     # depends_on:
     #   - jaeger 
+
+  grafana:
+    image: grafana/grafana-oss:latest # Using latest OSS version
+    container_name: grafana_vcf_agent
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      # You can also mount provisioning files for data sources and dashboards here
+      # - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      # - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+    environment:
+      # GF_SECURITY_ADMIN_USER: admin # Default is admin
+      # GF_SECURITY_ADMIN_PASSWORD: admin # Default is admin, will be asked to change on first login
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning # If using provisioning
+      # GF_AUTH_ANONYMOUS_ENABLED: true # If anonymous access is desired for viewing
+      # GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    restart: unless-stopped
+    depends_on:
+      - prometheus # Grafana depends on Prometheus for its data source 
