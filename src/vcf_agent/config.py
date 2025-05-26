@@ -63,12 +63,14 @@ class SessionConfig:
         raw_mode: Optional[bool] = None,
         model_provider: Literal["ollama", "openai", "cerebras"] = "ollama",
         credentials_file: Optional[str] = None,
-        reference_fasta: Optional[str] = None
+        reference_fasta: Optional[str] = None,
+        ollama_model_name: Optional[str] = "qwen:4b"  # Default to qwen:4b
     ):
         self.raw_mode = raw_mode
         self.model_provider = model_provider
         self.credentials_file = credentials_file
         self.reference_fasta = reference_fasta
+        self.ollama_model_name = ollama_model_name # Store it
 
     def __repr__(self) -> str:
         """String representation of the session config."""
@@ -76,5 +78,6 @@ class SessionConfig:
             f"SessionConfig(raw_mode={self.raw_mode}, "
             f"model_provider='{self.model_provider}', "
             f"credentials_file={repr(self.credentials_file)}, "
-            f"reference_fasta={repr(self.reference_fasta)})"
+            f"reference_fasta={repr(self.reference_fasta)}, "
+            f"ollama_model_name='{self.ollama_model_name}')"
         ) 

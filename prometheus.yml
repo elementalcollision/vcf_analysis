@@ -2,7 +2,14 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'jaeger'
+    static_configs:
+      - targets: ['jaeger:16687']
+
   - job_name: 'vcf_agent'
     static_configs:
-      - targets: ['192.168.0.84:8000']  # Agent metrics endpoint
-# If running the agent on a different host or container, update the IP/port as needed.
+      - targets: ['host.docker.internal:8000']

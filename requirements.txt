@@ -28,7 +28,56 @@ pyyaml==6.0.2
 virtualenv==20.31.2
     # via pre-commit
 cyvcf2
-strands
+# strands # Temporarily commented out due to build issues
 pandas
 kuzu
 # via vcf-analysis-agent (pyproject.toml)
+opentelemetry-api==1.33.1
+opentelemetry-sdk==1.33.1
+opentelemetry-exporter-otlp==1.33.1
+opentelemetry-instrumentation-requests==0.54b1
+opentelemetry-instrumentation-logging==0.54b1
+opentelemetry-instrumentation-asyncio
+structlog
+prometheus-client
+deprecated
+wrapt
+importlib-metadata
+opentelemetry-semantic-conventions==0.54b1
+opentelemetry-exporter-otlp-proto-grpc==1.33.1
+grpcio
+opentelemetry-exporter-otlp-proto-common==1.33.1
+opentelemetry-proto==1.33.1
+opentelemetry-exporter-otlp-proto-http==1.33.1
+protobuf
+googleapis-common-protos
+typing-extensions
+numpy
+pytz
+python-dateutil
+six
+pyarrow
+requests
+opentelemetry-instrumentation==0.54b1
+urllib3
+idna
+charset-normalizer
+certifi
+opentelemetry-util-http
+# strands # This was the incorrect one
+strands-agents
+strands-agents-tools
+docstring-parser
+pydantic
+pydantic-core
+typing-inspection
+annotated-types
+boto3
+botocore
+jmespath
+watchdog
+ollama
+httpx
+httpcore
+h11
+litellm

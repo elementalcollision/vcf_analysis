@@ -41,6 +41,13 @@ import time # For timing
 from . import metrics # Import metrics module
 import json # Added import
 
+# OpenTelemetry Imports
+from opentelemetry import trace
+from .tracing import init_tracer # Assuming setup_auto_instrumentation is called by CLI
+
+# Initialize OpenTelemetry Tracer for the agent
+agent_tracer = init_tracer(service_name="vcf-agent-core")
+
 # Output mode toggling: chain-of-thought (CoT) vs. raw output
 # 1. Environment variable: VCF_AGENT_RAW_MODE ("1", "true", "yes" = raw)
 # 2. CLI flag: --raw / --no-think (see cli.py)
@@ -50,9 +57,13 @@ RAW_MODE = True  # Always use raw output mode (no chain-of-thought, no <think> b
 
 SYSTEM_PROMPT = (
     "You are the VCF Analysis Agent. You analyze, validate, and process VCF files for genomics workflows.\n"
-    "For all analysis tasks, you MUST respond with ONLY valid JSON matching the provided schema.\n"
-    "Do NOT include any explanation, markdown, <think> blocks, or extra text—output must be pure JSON.\n"
-    "If you cannot perform the task, return a valid JSON object with an 'error' field and no other fields.\n"
+    "To use a tool, you MUST respond with ONLY a single JSON object formatted as follows:\n"
+    "{\"tool_name\": \"<name_of_tool>\", \"tool_args\": {\"arg_name1\": \"value1\", \"arg_name2\": \"value2\", ...}}"
+    "Do NOT include any explanation, markdown, <think> blocks, or any other text outside this JSON structure.\n"
+    "The available tools are: echo, validate_vcf, bcftools_view_tool, bcftools_query_tool, bcftools_filter_tool, "
+    "bcftools_norm_tool, bcftools_stats_tool, bcftools_annotate_tool, vcf_comparison_tool, "
+    "vcf_analysis_summary_tool, vcf_summarization_tool, load_vcf_into_graph_db_tool.\n"
+    "If you cannot perform the task or the query is not a tool request, return a JSON object with an 'error' field and no other fields, or a direct textual answer if appropriate for a simple query not requiring a tool.\n"
     "/no_think"  # Always disable chain-of-thought
 )
 
@@ -87,43 +98,63 @@ def echo(text: str) -> str:
 def validate_vcf(filepath: str) -> str:
     """
     Validates a VCF/BCF file for existence, format, index, and bcftools stats.
-
     Args:
         filepath (str): Path to the VCF/BCF file.
-
     Returns:
         str: Validation result as a string (valid/invalid and error message if any).
-
-    Example:
-        >>> validate_vcf('sample_data/HG00098.vcf.gz')
-        'VALID: sample_data/HG00098.vcf.gz passed all checks.'
     """
     tool_name = "validate_vcf"
-    start_time = time.time()
-    status = "success"
-    error_type_str = None # Specific error type from validation logic
-    
-    try:
-        is_valid, error_msg = validate_vcf_file(filepath)
-        if is_valid:
-            result_str = f"VALID: {filepath} passed all checks."
-        else:
-            status = "error"
-            # Try to get a more specific error type if possible, else use a generic one
-            error_type_str = "ValidationError" # Generic, can be refined if error_msg has structure
-            result_str = f"INVALID: {filepath} failed validation. Reason: {error_msg}"
-        return result_str
-    except Exception as e: # Catch any unexpected exceptions during the tool's own logic
-        status = "error"
-        error_type_str = type(e).__name__
-        metrics.log.error("validate_vcf_tool_unexpected_error", tool_name=tool_name, filepath=filepath, error=str(e))
-        raise # Re-raise the exception after logging, Strands agent might handle it or log it further
-    finally:
-        duration = time.time() - start_time
-        metrics.VCF_AGENT_TOOL_DURATION_SECONDS.labels(tool_name=tool_name, status=status).observe(duration)
-        metrics.VCF_AGENT_TOOL_REQUESTS_TOTAL.labels(tool_name=tool_name, status=status).inc()
-        if status == "error" and error_type_str:
-            metrics.VCF_AGENT_TOOL_ERRORS_TOTAL.labels(tool_name=tool_name, error_type=error_type_str).inc()
+    print(f"[TOOL {tool_name}] Entered. Filepath: {filepath}")
+
+    # Metrics
+    metrics_status = "success"
+    error_type_str = None
+    result_str_to_return = "INTERNAL_ERROR: Validation result not set" # Initialize with a default error
+
+    with agent_tracer.start_as_current_span(f"tool.{tool_name}") as tool_span:
+        tool_span.set_attribute("tool.name", tool_name)
+        tool_span.set_attribute("tool.args.filepath", filepath)
+        tool_span.add_event("tool.execution.start")
+
+        start_time = time.time()
+        try:
+            # --- Actual validation logic --- 
+            is_valid, error_msg = validate_vcf_file(filepath)
+            if is_valid:
+                result_str_to_return = f"VALID: {filepath} passed all checks."
+                tool_span.set_status(trace.StatusCode.OK)
+            else:
+                metrics_status = "error"
+                error_type_str = "ValidationError"
+                result_str_to_return = f"INVALID: {filepath} failed validation. Reason: {error_msg}"
+                tool_span.set_attribute("tool.error", error_msg if error_msg else "Unknown validation error")
+                tool_span.set_status(trace.StatusCode.ERROR, f"Validation failed: {error_msg if error_msg else 'Unknown'}")
+            
+            tool_span.add_event("tool.execution.end")
+        
+        except Exception as e:
+            metrics_status = "error"
+            error_type_str = type(e).__name__
+            result_str_to_return = f"ERROR: Unexpected error during {tool_name} for {filepath}. Error: {str(e)}"
+            metrics.log.error(f"{tool_name}_unexpected_error", tool_name=tool_name, filepath=filepath, error=str(e))
+            
+            tool_span.record_exception(e)
+            tool_span.set_status(trace.StatusCode.ERROR, f"Unexpected error: {str(e)}")
+            tool_span.add_event("tool.execution.failed", attributes={"error": True, "exception": str(e)})
+        
+        finally:
+            duration = time.time() - start_time
+            metrics.VCF_AGENT_TOOL_DURATION_SECONDS.labels(tool_name=tool_name, status=metrics_status).observe(duration)
+            metrics.VCF_AGENT_TOOL_REQUESTS_TOTAL.labels(tool_name=tool_name, status=metrics_status).inc()
+            if metrics_status == "error" and error_type_str:
+                metrics.VCF_AGENT_TOOL_ERRORS_TOTAL.labels(tool_name=tool_name, error_type=error_type_str).inc()
+            
+            # Set these attributes here, after result_str_to_return is finalized
+            tool_span.set_attribute("result.length", len(result_str_to_return))
+            tool_span.set_attribute("tool.call.parameters", json.dumps({"vcf_file_path": filepath}))
+            print(f"[TOOL {tool_name}] Exiting. Result: {result_str_to_return}")
+
+    return result_str_to_return # Single return point
 
 # Register the decorated tool directly
 @tools.tool(
@@ -490,12 +521,6 @@ tools_list = [
     vcf_comparison_tool,  # Register the new tool
 ]
 
-# Configure Ollama model
-ollama_model = OllamaModel(
-    host="http://127.0.0.1:11434",
-    model_id="Qwen3:4b"
-)
-
 # Setup OpenAI model adapter for Strands using LiteLLM
 def get_openai_model(credential_manager=None):
     """
@@ -653,9 +678,15 @@ def get_agent_with_session(
     # Initialize model and agent
     model = None
     if model_provider == "ollama":
-        # Ensure OLLAMA_HOST is set in environment if not using default http://127.0.0.1:11434
-        # Default model can be specified here or rely on Ollama's default.
-        model = OllamaModel(host=os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434"), model_id="mistral") # Or a more specific default model_id
+        ollama_model_id = "mistral" # Default if not in session_config
+        if session_config and session_config.ollama_model_name:
+            ollama_model_id = session_config.ollama_model_name
+        
+        model = OllamaModel(
+            host=os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434"), 
+            model_id=ollama_model_id
+        )
+        print(f"Using Ollama model: {ollama_model_id} from session_config or default.")
     elif model_provider == "openai":
         # LiteLLM will use OPENAI_API_KEY environment variable.
         model = LiteLLMModel(model_id="gpt-4o") # Pass model name as model_id
@@ -682,14 +713,12 @@ def get_agent_with_session(
         # Add future tools here, e.g., the Kuzu ingestion tool
     ]
 
-    agent = Agent(model=model, tools=available_tools)
+    agent = Agent(model=model, tools=cast(List[Any], available_tools))
     # Attach each tool as an attribute for direct access (e.g., agent.load_vcf_into_graph_db_tool)
     for tool_fn in available_tools:
         # Use the function's __name__ (strip trailing _tool for consistency)
         attr_name = tool_fn.__name__
         setattr(agent, attr_name, tool_fn)
-    # Add a .tools dictionary for name-based lookup
-    agent.tools = {tool_fn.__name__: tool_fn for tool_fn in available_tools}
     # Store session_config on the agent if Strands allows, or manage separately.
     # agent.session_config = session_config # Example, if agent can hold custom attributes
     return agent
@@ -697,6 +726,7 @@ def get_agent_with_session(
 # Default agent instance (uses env/CLI for RAW_MODE)
 agent = get_agent_with_session()
 
+@agent_tracer.start_as_current_span("agent.run_llm_analysis_task")
 def run_llm_analysis_task(
     task: str,
     file_paths: list,
@@ -705,47 +735,121 @@ def run_llm_analysis_task(
     model_provider: Literal["ollama", "openai", "cerebras"] = "ollama",
     **llm_kwargs
 ) -> str:
-    """
-    Runs a specific LLM-based analysis task.
-    """
-    agent = get_agent_with_session(session_config, model_provider)
-    prompt = get_prompt_for_task(task, file_paths, extra_context)
+    # Initialize a default return value
+    result_json_string = json.dumps({"error": "Internal error: Result not set before return"}, indent=2)
+
+    span = trace.get_current_span() # Get the current span created by the decorator
+    span.set_attribute("llm.task", task)
+    span.set_attribute("llm.file_paths", file_paths if file_paths else [])
+    span.set_attribute("llm.model_provider", model_provider)
+    if extra_context:
+        try:
+            context_str = json.dumps(extra_context)
+            if len(context_str) > 1024: 
+                context_str = context_str[:1024] + "... (truncated)"
+            span.set_attribute("llm.extra_context", context_str)
+        except TypeError: 
+            span.set_attribute("llm.extra_context", "<non-serializable>")
+    if llm_kwargs:
+        try:
+            kwargs_str = json.dumps(llm_kwargs)
+            if len(kwargs_str) > 1024:
+                kwargs_str = kwargs_str[:1024] + "... (truncated)"
+            span.set_attribute("llm.kwargs", kwargs_str)
+        except TypeError:
+            span.set_attribute("llm.kwargs", "<non-serializable>")
+
+    start_time = time.time() 
+    status_metric = "success" # Initialize status_metric before try block
+    error_type_for_metric_label = "UnknownError" # Initialize for metrics
+
+    try: # Main try block for the function's operations
+        """
+        Runs a specific LLM-based analysis task on VCF data.
+        """
+        agent_instance = get_agent_with_session(session_config, model_provider)
+        prompt = get_prompt_for_task(task, file_paths, extra_context)
+        
+        if prompt:
+            metrics.log.info("llm_analysis_task_started", task=task, model_provider=model_provider)
+            try: # Inner try for the agent call and JSON processing
+                # Use agent_instance as a callable, similar to cli.py
+                agent_result = agent_instance(prompt, **llm_kwargs) 
+                
+                # Extract string response from agent_result for JSON processing
+                response_text_for_json = ""
+                if isinstance(agent_result, str):
+                    response_text_for_json = agent_result
+                elif hasattr(agent_result, 'response') and isinstance(getattr(agent_result, 'response'), str):
+                    response_text_for_json = getattr(agent_result, 'response')
+                elif hasattr(agent_result, 'text') and isinstance(getattr(agent_result, 'text'), str):
+                    response_text_for_json = getattr(agent_result, 'text')
+                elif agent_result is not None: # Fallback if no known attribute but not None
+                    response_text_for_json = str(agent_result)
+                # If agent_result is None or extraction failed, response_text_for_json remains ""
+
+                if not response_text_for_json:
+                    status_metric = "error"
+                    error_type_for_metric_label = "EmptyLLMResponse"
+                    metrics.log.error("llm_analysis_empty_response_string", task=task, agent_result_type=type(agent_result).__name__)
+                    span.set_attribute("llm.response.format", "empty_string_from_agent")
+                    span.set_attribute("error.message", "LLM response string was empty after extraction from agent result.")
+                    span.set_attribute("error.type", error_type_for_metric_label)
+                    span.set_attribute("llm.status", status_metric)
+                    result_json_string = json.dumps({"error": "LLM response string was empty."}, indent=2)
+                else:
+                    try:
+                        # Now try to parse the extracted string as JSON
+                        json.loads(response_text_for_json) 
+                        span.set_attribute("llm.response.format", "valid_json")
+                    except json.JSONDecodeError as je:
+                        status_metric = "error"
+                        error_type_for_metric_label = "JSONDecodeError"
+                        metrics.log.error("llm_analysis_invalid_json_response", task=task, error=str(je), response_snippet=response_text_for_json[:200])
+                        span.set_attribute("llm.response.format", "invalid_json")
+                        span.set_attribute("error.message", f"LLM response was not valid JSON: {str(je)}")
+                        span.set_attribute("error.type", error_type_for_metric_label)
+                        span.set_attribute("llm.status", status_metric) 
+                        result_json_string = json.dumps({"error": "LLM response was not valid JSON", "details": str(je)}, indent=2)
+                
+                span.set_attribute("llm.status", "success")
+                return result_json_string # Return the successfully parsed JSON string
+            except APIClientError as api_err:
+                status_metric = "error"
+                error_type_for_metric_label = type(api_err).__name__
+                metrics.log.error("llm_analysis_api_client_error", task=task, error=str(api_err))
+                span.set_attribute("llm.status", status_metric)
+                span.set_attribute("error.message", str(api_err))
+                span.set_attribute("error.type", error_type_for_metric_label)
+                span.record_exception(api_err)
+                result_json_string = json.dumps({"error": f"API Client Error: {api_err}"}, indent=2)
+        else: # if prompt is None
+            status_metric = "error"
+            error_type_for_metric_label = "PromptGenerationError"
+            metrics.log.warn("llm_analysis_unknown_task_or_prompt_failure", task=task)
+            span.set_attribute("llm.status", status_metric)
+            span.set_attribute("error.message", "Unknown task or failed to generate prompt.")
+            span.set_attribute("error.type", error_type_for_metric_label)
+            result_json_string = json.dumps({"error": "Unknown task or failed to generate prompt."}, indent=2)
     
-    # Metrics instrumentation
-    start_time = time.time()
-    success = False
-    error_type_str = None
-    # Use the `task` parameter as the `endpoint_task` for metrics
-    endpoint_task_label = task 
-
-    metrics.VCF_AGENT_AI_CONCURRENT_REQUESTS.labels(model_provider=model_provider, endpoint_task=endpoint_task_label).inc()
-    try:
-        metrics.log.info("llm_analysis_task_started", task=task, model_provider=model_provider, files=file_paths)
-        response = agent.generate(prompt, **llm_kwargs)
-        success = True # Assume success if no exception
-        metrics.log.info("llm_analysis_task_completed", task=task, model_provider=model_provider)
-        # TODO: Add response validation if applicable, e.g., is it valid JSON?
-        return response
-    except APIClientError as e: # Specific error from our API clients
-        error_type_str = type(e).__name__
-        metrics.log.error("llm_analysis_api_client_error", task=task, model_provider=model_provider, error=str(e))
-        return json.dumps({"error": f"API Error during LLM analysis for task '{task}': {str(e)}"})
-    except Exception as e:
-        error_type_str = type(e).__name__
-        metrics.log.error("llm_analysis_task_error", task=task, model_provider=model_provider, error=str(e))
-        # Return a generic JSON error response
-        return json.dumps({"error": f"Error during LLM analysis for task '{task}': {str(e)}"})
-    finally:
+    finally: # Attached to the main try block
         duration = time.time() - start_time
-        metrics.VCF_AGENT_AI_CONCURRENT_REQUESTS.labels(model_provider=model_provider, endpoint_task=endpoint_task_label).dec()
-        metrics.observe_ai_interaction(
-            model_provider=model_provider,
-            endpoint_task=endpoint_task_label, # Use the task name here
-            duration_seconds=duration,
-            success=success,
-            error_type=error_type_str
-            # prompt_tokens, completion_tokens, total_tokens are not easily available here
-            # without changes to Strands or the underlying models.
-        )
+        metrics.VCF_AGENT_AI_RESPONSE_SECONDS.labels(
+            model_provider=model_provider, 
+            endpoint_task=task
+        ).observe(duration)
+        metrics.VCF_AGENT_AI_REQUESTS_TOTAL.labels(
+            model_provider=model_provider, 
+            endpoint_task=task, 
+            status=status_metric 
+        ).inc()
+        if status_metric == "error":
+            metrics.VCF_AGENT_AI_ERRORS_TOTAL.labels(
+                model_provider=model_provider, 
+                endpoint_task=task, 
+                error_type=error_type_for_metric_label
+            ).inc()
 
-__all__ = ["agent", "SYSTEM_PROMPT", "get_agent_with_session"] 
+    return result_json_string # Single return point for the function
+
+__all__ = ["agent", "SYSTEM_PROMPT", "get_agent_with_session", "run_llm_analysis_task"] # Added run_llm_analysis_task 

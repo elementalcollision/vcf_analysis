@@ -15,6 +15,36 @@ import threading
 import os
 from typing import Optional
 
+from opentelemetry import trace
+from opentelemetry.trace.propagation.tracecontext import (
+    format_trace_id,
+    format_span_id,
+)
+from opentelemetry.sdk.trace import Span
+from opentelemetry.semconv.resource import ResourceAttributes
+
+# --- Structlog OTel Processor ---
+def add_otel_context(_, __, event_dict):
+    current_span = trace.get_current_span()
+    if isinstance(current_span, Span) and current_span.is_recording():
+        span_context = current_span.get_span_context()
+        if span_context and span_context.is_valid:
+            event_dict["trace_id"] = format_trace_id(span_context.trace_id)
+            event_dict["span_id"] = format_span_id(span_context.span_id)
+            
+            # Attempt to get service.name from the span's resource
+            # The Resource is associated with the TracerProvider, not directly on every span object in the simplest API.
+            # However, the instrumentor might add it. For now, let's try a common way, but this might need adjustment.
+            if hasattr(current_span, 'resource') and current_span.resource:
+                service_name = current_span.resource.attributes.get(ResourceAttributes.SERVICE_NAME)
+                if service_name:
+                    event_dict["service.name"] = service_name
+            elif hasattr(current_span, '_resource') and current_span._resource: # Check private attribute as last resort
+                service_name = current_span._resource.attributes.get(ResourceAttributes.SERVICE_NAME)
+                if service_name:
+                    event_dict["service.name"] = service_name
+    return event_dict
+
 # --- Structured Logging Setup ---
 
 def setup_logging():
@@ -38,6 +68,7 @@ def setup_logging():
     structlog.configure(
         processors=[
             structlog.processors.TimeStamper(fmt="iso"),
+            add_otel_context,  # Add OTel context processor
             structlog.stdlib.add_logger_name, # Good to have logger name
             structlog.stdlib.add_log_level,   # Good to have log level
             structlog.processors.JSONRenderer()
