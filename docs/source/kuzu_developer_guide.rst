@@ -37,13 +37,13 @@ Key Functions
 
 While ``automodule`` above lists all members, some key functions include:
 
-*   ``get_kuzu_db_connection(db_path: str, read_only: bool)``: Establishes a connection to the Kuzu database (on-disk or in-memory).
-*   ``create_schema(conn: kuzu.Connection)``: Defines and creates the necessary graph schema.
-*   ``add_variant(conn: kuzu.Connection, variant_data: Dict[str, Any])``: Adds a variant node.
-*   ``add_sample(conn: kuzu.Connection, sample_data: Dict[str, Any])``: Adds a sample node.
-*   ``link_variant_to_sample(conn: kuzu.Connection, variant_id: str, sample_id: str, properties: Dict[str, Any])``: Links a variant to a sample.
-*   ``execute_query(conn: kuzu.Connection, cypher_query: str, params: Optional[Dict[str, Any]])``: Executes an arbitrary Cypher query.
-*   ``get_variant_context(conn: kuzu.Connection, variant_ids: List[str])``: Retrieves graph context for a list of variant IDs (crucial for post-LanceDB enrichment).
+- ``get_kuzu_db_connection(db_path: str, read_only: bool)``: Establishes a connection to the Kuzu database (on-disk or in-memory).
+- ``create_schema(conn: kuzu.Connection)``: Defines and creates the necessary graph schema.
+- ``add_variant(conn: kuzu.Connection, variant_data: Dict[str, Any])``: Adds a variant node.
+- ``add_sample(conn: kuzu.Connection, sample_data: Dict[str, Any])``: Adds a sample node.
+- ``link_variant_to_sample(conn: kuzu.Connection, variant_id: str, sample_id: str, properties: Dict[str, Any])``: Links a variant to a sample.
+- ``execute_query(conn: kuzu.Connection, cypher_query: str, params: Optional[Dict[str, Any]])``: Executes an arbitrary Cypher query.
+- ``get_variant_context(conn: kuzu.Connection, variant_ids: List[str])``: Retrieves graph context for a list of variant IDs (crucial for post-LanceDB enrichment).
 
 Schema Details
 --------------
@@ -52,25 +52,31 @@ The Kuzu graph database within the VCF Agent uses the following schema:
 
 **Nodes:**
 
-1.  **Variant**
-    *   Properties:
-        *   ``variant_id`` (STRING, PRIMARY KEY): A unique identifier for the variant (e.g., "chr1-12345-A-T").
-        *   ``chrom`` (STRING): Chromosome (e.g., "1", "X").
-        *   ``pos`` (INT64): Position on the chromosome.
-        *   ``ref`` (STRING): Reference allele.
-        *   ``alt`` (STRING): Alternative allele.
-        *   ``rs_id`` (STRING, optional): dbSNP Reference SNP identifier (e.g., "rs12345").
+1. **Variant**
 
-2.  **Sample**
-    *   Properties:
-        *   ``sample_id`` (STRING, PRIMARY KEY): A unique identifier for the sample.
+   - Properties:
+
+     - ``variant_id`` (STRING, PRIMARY KEY): A unique identifier for the variant (e.g., "chr1-12345-A-T").
+     - ``chrom`` (STRING): Chromosome (e.g., "1", "X").
+     - ``pos`` (INT64): Position on the chromosome.
+     - ``ref`` (STRING): Reference allele.
+     - ``alt`` (STRING): Alternative allele.
+     - ``rs_id`` (STRING, optional): dbSNP Reference SNP identifier (e.g., "rs12345").
+
+2. **Sample**
+
+   - Properties:
+
+     - ``sample_id`` (STRING, PRIMARY KEY): A unique identifier for the sample.
 
 **Relationships:**
 
-1.  **ObservedIn**
-    *   Direction: (Variant) -[:ObservedIn]-> (Sample)
-    *   Properties:
-        *   ``zygosity`` (STRING): The zygosity of the variant in the sample (e.g., "HET" for heterozygous, "HOM" for homozygous).
+1. **ObservedIn**
+
+   - Direction: (Variant) -[:ObservedIn]-> (Sample)
+   - Properties:
+
+     - ``zygosity`` (STRING): The zygosity of the variant in the sample (e.g., "HET" for heterozygous, "HOM" for homozygous).
 
 Usage Pattern with LanceDB
 --------------------------
@@ -129,7 +135,7 @@ Key security considerations specific to Kuzu local file-based usage include:
 Refer to the main :doc:`security` and :doc:`audit` documents for the complete framework governing all components of the VCF Analysis Agent.
 
 Known Issues and Workarounds
----------------------------
+----------------------------
 
 **Segmentation Faults with QueryResult Lifetime**
 

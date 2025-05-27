@@ -209,7 +209,7 @@ Key security considerations specific to LanceDB local file-based usage include:
 Refer to the main :doc:`security` and :doc:`audit` documents for the complete framework.
 
 Performance Considerations
-------------------------
+-------------------------
 
 The LanceDB integration in the VCF Analysis Agent is designed to be efficient and scalable. Key considerations include:
 

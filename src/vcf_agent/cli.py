@@ -139,6 +139,33 @@ def main():
     parser_populate_kuzu.add_argument("--kuzu_db_path", type=str, default="./kuzu_db", help="Path to Kuzu database directory.")
     # Optionally, add --sample_name_override if needed for the CLI too
 
+    # SAMspec compliance validation
+    parser_samspec = subparsers.add_parser("samspec", help="SAMspec compliance validation commands")
+    samspec_subparsers = parser_samspec.add_subparsers(dest="samspec_command", help="SAMspec subcommands")
+    
+    # SAMspec validate
+    samspec_validate = samspec_subparsers.add_parser("validate", help="Validate VCF file for SAMspec compliance")
+    samspec_validate.add_argument("vcf_file", type=str, help="Path to VCF file to validate")
+    samspec_validate.add_argument("--output", "-o", type=str, help="Output file for compliance report")
+    samspec_validate.add_argument("--format", "-f", choices=["text", "json"], default="text", help="Output format")
+    samspec_validate.add_argument("--strict", action="store_true", help="Treat warnings as failures")
+    samspec_validate.add_argument("--quiet", "-q", action="store_true", help="Only show summary")
+    samspec_validate.add_argument("--verbose", "-v", action="store_true", help="Show detailed violation information")
+    
+    # SAMspec batch-validate
+    samspec_batch = samspec_subparsers.add_parser("batch-validate", help="Validate multiple VCF files")
+    samspec_batch.add_argument("vcf_files", nargs="+", type=str, help="Paths to VCF files to validate")
+    samspec_batch.add_argument("--output-dir", "-d", type=str, help="Output directory for reports")
+    samspec_batch.add_argument("--format", "-f", choices=["text", "json"], default="text", help="Output format")
+    samspec_batch.add_argument("--strict", action="store_true", help="Treat warnings as failures")
+    samspec_batch.add_argument("--summary", action="store_true", help="Show summary report for all files")
+    
+    # SAMspec explain
+    samspec_explain = samspec_subparsers.add_parser("explain", help="Explain SAMspec compliance violations")
+    samspec_explain.add_argument("vcf_file", type=str, help="Path to VCF file to explain")
+    samspec_explain.add_argument("--rule-id", type=str, help="Show details for specific rule ID")
+    samspec_explain.add_argument("--level", choices=["critical", "warning", "info"], help="Filter violations by level")
+
     args = parser.parse_args()
 
     # If no command is given, but there are unparsed args, assume it's an 'ask' command
@@ -325,6 +352,269 @@ def main():
 
                 if error_observed: # Re-raise or exit after pushing metrics
                     sys.exit(1)
+        return
+    elif args.command == "samspec":
+        # Handle SAMspec compliance validation commands
+        from vcf_agent.samspec_compliance import validate_vcf_samspec_compliance
+        from pathlib import Path
+        import json
+        
+        def format_text_report(report, verbose=False, quiet=False):
+            """Format compliance report as text."""
+            lines = []
+            
+            if not quiet:
+                lines.append("SAMspec Compliance Report")
+                lines.append("=" * 50)
+                lines.append(f"File: {report.file_path}")
+                lines.append(f"VCF Version: {report.vcf_version or 'Unknown'}")
+                lines.append(f"Compliant: {'Yes' if report.is_compliant else 'No'}")
+                lines.append("")
+            
+            # Summary
+            lines.append("Violation Summary:")
+            lines.append(f"  Critical: {report.critical_count}")
+            lines.append(f"  Warnings: {report.warning_count}")
+            lines.append(f"  Info: {report.info_count}")
+            lines.append(f"  Total: {report.total_violations}")
+            
+            # Detailed violations
+            if verbose and report.violations:
+                lines.append("\nDetailed Violations:")
+                lines.append("-" * 30)
+                
+                for i, violation in enumerate(report.violations, 1):
+                    lines.append(f"\n{i}. {violation.rule_id} ({violation.level.value.upper()})")
+                    lines.append(f"   {violation.message}")
+                    
+                    if violation.line_number:
+                        lines.append(f"   Line: {violation.line_number}")
+                    if violation.field:
+                        lines.append(f"   Field: {violation.field}")
+                    if violation.suggestion:
+                        lines.append(f"   Suggestion: {violation.suggestion}")
+            
+            return "\n".join(lines)
+        
+        def format_summary_report(reports, strict=False):
+            """Format summary report for multiple files."""
+            lines = []
+            lines.append("SAMspec Compliance Summary Report")
+            lines.append("=" * 50)
+            
+            total_files = len(reports)
+            compliant_files = sum(1 for r in reports if r.is_compliant)
+            failed_files = total_files - compliant_files
+            
+            if strict:
+                # In strict mode, warnings count as failures
+                failed_files = sum(1 for r in reports if r.critical_count > 0 or r.warning_count > 0)
+                compliant_files = total_files - failed_files
+            
+            lines.append(f"Total Files: {total_files}")
+            lines.append(f"Compliant: {compliant_files}")
+            lines.append(f"Non-compliant: {failed_files}")
+            lines.append(f"Strict Mode: {'Yes' if strict else 'No'}")
+            lines.append("")
+            
+            # Per-file summary
+            lines.append("Per-File Results:")
+            lines.append("-" * 30)
+            
+            for report in reports:
+                file_name = Path(report.file_path).name
+                status = "PASS"
+                
+                if report.critical_count > 0:
+                    status = "FAIL"
+                elif strict and report.warning_count > 0:
+                    status = "FAIL"
+                
+                lines.append(f"{file_name}: {status} "
+                            f"(C:{report.critical_count}, W:{report.warning_count}, I:{report.info_count})")
+            
+            # Overall statistics
+            total_critical = sum(r.critical_count for r in reports)
+            total_warnings = sum(r.warning_count for r in reports)
+            total_info = sum(r.info_count for r in reports)
+            
+            lines.append("")
+            lines.append("Overall Statistics:")
+            lines.append(f"  Total Critical Violations: {total_critical}")
+            lines.append(f"  Total Warnings: {total_warnings}")
+            lines.append(f"  Total Info: {total_info}")
+            
+            return "\n".join(lines)
+        
+        if args.samspec_command == "validate":
+            try:
+                # Perform validation
+                print(f"Validating VCF file: {args.vcf_file}")
+                report = validate_vcf_samspec_compliance(args.vcf_file)
+                
+                # Generate output
+                if args.format == 'json':
+                    output_content = json.dumps(report.to_dict(), indent=2)
+                else:
+                    output_content = format_text_report(report, args.verbose, args.quiet)
+                
+                # Write output
+                if args.output:
+                    Path(args.output).write_text(output_content)
+                    print(f"Report written to: {args.output}")
+                else:
+                    print(output_content)
+                
+                # Determine exit code
+                exit_code = 0
+                if report.critical_count > 0:
+                    exit_code = 1
+                elif args.strict and report.warning_count > 0:
+                    exit_code = 1
+                
+                if exit_code != 0:
+                    print(f"\nValidation failed with {report.critical_count} critical "
+                          f"and {report.warning_count} warning violations.", file=sys.stderr)
+                else:
+                    print(f"\nValidation passed! File is SAMspec compliant.")
+                
+                sys.exit(exit_code)
+                
+            except Exception as e:
+                print(f"Error during validation: {str(e)}", file=sys.stderr)
+                sys.exit(1)
+        
+        elif args.samspec_command == "batch-validate":
+            try:
+                results = []
+                failed_files = []
+                
+                # Create output directory if specified
+                if args.output_dir:
+                    output_path = Path(args.output_dir)
+                    output_path.mkdir(parents=True, exist_ok=True)
+                
+                # Validate each file
+                for vcf_file in args.vcf_files:
+                    print(f"Validating: {vcf_file}")
+                    
+                    try:
+                        report = validate_vcf_samspec_compliance(vcf_file)
+                        results.append(report)
+                        
+                        # Check if file failed validation
+                        file_failed = report.critical_count > 0
+                        if args.strict and report.warning_count > 0:
+                            file_failed = True
+                        
+                        if file_failed:
+                            failed_files.append(vcf_file)
+                        
+                        # Generate individual report if output directory specified
+                        if args.output_dir:
+                            file_stem = Path(vcf_file).stem
+                            if args.format == 'json':
+                                report_file = output_path / f"{file_stem}_compliance.json"
+                                content = json.dumps(report.to_dict(), indent=2)
+                            else:
+                                report_file = output_path / f"{file_stem}_compliance.txt"
+                                content = format_text_report(report, verbose=True, quiet=False)
+                            
+                            report_file.write_text(content)
+                            print(f"  Report: {report_file}")
+                        
+                        # Show brief status
+                        status = "PASS" if not file_failed else "FAIL"
+                        print(f"  Status: {status} ({report.critical_count} critical, "
+                              f"{report.warning_count} warnings)")
+                        
+                    except Exception as e:
+                        print(f"  Error: {str(e)}", file=sys.stderr)
+                        failed_files.append(vcf_file)
+                
+                # Generate summary report
+                if args.summary and results:
+                    summary_content = format_summary_report(results, args.strict)
+                    
+                    if args.output_dir:
+                        summary_file = output_path / f"compliance_summary.{args.format}"
+                        if args.format == 'json':
+                            summary_data = {
+                                "total_files": len(results),
+                                "passed_files": len(results) - len(failed_files),
+                                "failed_files": len(failed_files),
+                                "strict_mode": args.strict,
+                                "files": [report.to_dict() for report in results]
+                            }
+                            summary_file.write_text(json.dumps(summary_data, indent=2))
+                        else:
+                            summary_file.write_text(summary_content)
+                        print(f"\nSummary report: {summary_file}")
+                    else:
+                        print("\n" + summary_content)
+                
+                # Final status
+                total_files = len(args.vcf_files)
+                passed_files = total_files - len(failed_files)
+                
+                print(f"\nBatch validation complete:")
+                print(f"  Total files: {total_files}")
+                print(f"  Passed: {passed_files}")
+                print(f"  Failed: {len(failed_files)}")
+                
+                if failed_files:
+                    print(f"\nFailed files:")
+                    for file in failed_files:
+                        print(f"  - {file}")
+                    sys.exit(1)
+                else:
+                    print(f"\nAll files passed SAMspec compliance validation!")
+                    sys.exit(0)
+                    
+            except Exception as e:
+                print(f"Error during batch validation: {str(e)}", file=sys.stderr)
+                sys.exit(1)
+        
+        elif args.samspec_command == "explain":
+            try:
+                report = validate_vcf_samspec_compliance(args.vcf_file)
+                
+                # Filter violations if requested
+                violations = report.violations
+                if args.rule_id:
+                    violations = [v for v in violations if v.rule_id == args.rule_id]
+                if args.level:
+                    violations = [v for v in violations if v.level.value == args.level]
+                
+                if not violations:
+                    if args.rule_id or args.level:
+                        print("No violations found matching the specified criteria.")
+                    else:
+                        print("No compliance violations found. File is SAMspec compliant!")
+                    return
+                
+                print(f"SAMspec Compliance Violations for: {args.vcf_file}")
+                print("=" * 60)
+                
+                for i, violation in enumerate(violations, 1):
+                    print(f"\n{i}. {violation.rule_id} ({violation.level.value.upper()})")
+                    print(f"   Message: {violation.message}")
+                    
+                    if violation.line_number:
+                        print(f"   Line: {violation.line_number}")
+                    if violation.field:
+                        print(f"   Field: {violation.field}")
+                    if violation.value:
+                        print(f"   Value: {violation.value}")
+                    if violation.suggestion:
+                        print(f"   Suggestion: {violation.suggestion}")
+                
+                print(f"\nTotal violations: {len(violations)}")
+                
+            except Exception as e:
+                print(f"Error during explanation: {str(e)}", file=sys.stderr)
+                sys.exit(1)
+        
         return
 
     # Agent interaction logic (now specifically for 'ask' or default)
