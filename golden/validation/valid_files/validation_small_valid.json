@@ -1,0 +1,4 @@
+[
+  false,
+  "Compliance check (bcftools) passed with rc=0 but contained warnings: [W::vcf_parse] Contig 'chr1' is not defined in the header. (Quick workaround: index the file with tabix.)"
+]

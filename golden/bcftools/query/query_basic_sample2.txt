@@ -1,0 +1,2 @@
+chr1	20	C	T
+chr1	30	G	A

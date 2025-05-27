@@ -1,0 +1,8 @@
+{
+  "comparison_type": "basic",
+  "differences": 0,
+  "file1": "sample1.vcf",
+  "file2": "sample2.vcf",
+  "matches": 0,
+  "summary": "Comparison completed"
+}
