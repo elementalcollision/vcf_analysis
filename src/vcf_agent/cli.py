@@ -133,6 +133,17 @@ def main():
     parser_filter.add_argument("--select_columns", type=str, default=None, help="Comma-separated list of columns to return (e.g., variant_id,chrom,pos)")
     parser_filter.add_argument("--limit", type=int, default=None, help="Maximum number of records to return")
 
+    # VCF Ingestion: ingest-vcf
+    parser_ingest = subparsers.add_parser("ingest-vcf", help="Ingest VCF file into both LanceDB and Kuzu databases")
+    parser_ingest.add_argument("--vcf-file", type=str, required=True, help="Path to VCF file (.vcf or .vcf.gz)")
+    parser_ingest.add_argument("--lancedb-path", type=str, default="./lancedb", help="LanceDB database path")
+    parser_ingest.add_argument("--kuzu-path", type=str, default="./kuzu_db", help="Kuzu database path")
+    parser_ingest.add_argument("--table-name", type=str, default="variants", help="LanceDB table name")
+    parser_ingest.add_argument("--batch-size", type=int, default=1000, help="Batch size for processing variants")
+    parser_ingest.add_argument("--validate-only", action="store_true", help="Only validate VCF file, no ingestion")
+    parser_ingest.add_argument("--resume-from", type=str, help="Resume from specific position (CHROM:POS)")
+    parser_ingest.add_argument("--sample-name-override", type=str, help="Override sample name for single-sample VCFs")
+
     # Kuzu: populate from VCF
     parser_populate_kuzu = subparsers.add_parser("populate-kuzu-from-vcf", help="Populate Kuzu graph database from a VCF file.")
     parser_populate_kuzu.add_argument("--vcf_file_path", type=str, required=True, help="Path to the VCF file.")
@@ -287,6 +298,95 @@ def main():
         except Exception as e:
             print(f"An unexpected error occurred: {e}", file=sys.stderr)
             sys.exit(1)            
+        return
+    elif args.command == "ingest-vcf":
+        # Handle VCF ingestion into both LanceDB and Kuzu
+        with cli_tracer.start_as_current_span("cli.ingest_vcf") as ingest_span:
+            ingest_span.set_attribute("vcf.file_path", args.vcf_file)
+            ingest_span.set_attribute("lancedb.path", args.lancedb_path)
+            ingest_span.set_attribute("kuzu.path", args.kuzu_path)
+            ingest_span.set_attribute("batch_size", args.batch_size)
+
+            command_name = "ingest-vcf"
+            status = "success"
+            start_time = time.time()
+            error_observed = None
+            
+            # CLI metrics
+            cli_duration = metrics.CLI_COMMAND_DURATION_SECONDS
+            cli_requests = metrics.CLI_COMMAND_REQUESTS_TOTAL
+            cli_errors = metrics.CLI_COMMAND_ERRORS_TOTAL
+
+            try:
+                from vcf_agent.vcf_ingestion import VCFIngestionPipeline, IngestionConfig
+                
+                # Create ingestion configuration
+                config = IngestionConfig(
+                    vcf_file=args.vcf_file,
+                    lancedb_path=args.lancedb_path,
+                    kuzu_path=args.kuzu_path,
+                    table_name=args.table_name,
+                    batch_size=args.batch_size,
+                    validate_only=args.validate_only,
+                    resume_from=args.resume_from,
+                    sample_name_override=args.sample_name_override
+                )
+                
+                # Initialize and run ingestion pipeline
+                pipeline = VCFIngestionPipeline(config)
+                result = pipeline.execute()
+                
+                # Log success
+                metrics.log.info(f"VCF ingestion completed successfully. "
+                               f"Variants processed: {result.get('variants_processed', 0)}, "
+                               f"LanceDB records: {result.get('lancedb_records', 0)}, "
+                               f"Kuzu variants: {result.get('kuzu_variants', 0)}, "
+                               f"Kuzu samples: {result.get('kuzu_samples', 0)}")
+                
+                ingest_span.set_attribute("variants_processed", result.get('variants_processed', 0))
+                ingest_span.set_attribute("lancedb_records", result.get('lancedb_records', 0))
+                ingest_span.set_attribute("kuzu_variants", result.get('kuzu_variants', 0))
+                ingest_span.set_attribute("kuzu_samples", result.get('kuzu_samples', 0))
+                
+                print(f"✅ VCF ingestion completed successfully!")
+                print(f"📊 Summary:")
+                print(f"   • Variants processed: {result.get('variants_processed', 0)}")
+                print(f"   • LanceDB records added: {result.get('lancedb_records', 0)}")
+                print(f"   • Kuzu variants added: {result.get('kuzu_variants', 0)}")
+                print(f"   • Kuzu samples added: {result.get('kuzu_samples', 0)}")
+
+            except FileNotFoundError as e:
+                status = "error"
+                error_observed = e
+                metrics.log.error(f"VCF file not found: {args.vcf_file}")
+                ingest_span.record_exception(e)
+                ingest_span.set_status(trace.StatusCode.ERROR, f"VCF file not found: {args.vcf_file}")
+                print(f"❌ Error: VCF file not found at '{args.vcf_file}'", file=sys.stderr)
+                
+            except Exception as e:
+                status = "error"
+                error_observed = e
+                metrics.log.error(f"Error during VCF ingestion: {e}")
+                ingest_span.record_exception(e)
+                ingest_span.set_status(trace.StatusCode.ERROR, "Error during VCF ingestion")
+                print(f"❌ Error during VCF ingestion: {e}", file=sys.stderr)
+                
+            finally:
+                duration = time.time() - start_time
+                cli_duration.labels(command=command_name, status=status).observe(duration)
+                cli_requests.labels(command=command_name, status=status).inc()
+                
+                metrics_to_push_list = [cli_duration, cli_requests]
+
+                if status == "error" and error_observed:
+                    error_type = type(error_observed).__name__
+                    cli_errors.labels(command=command_name, error_type=error_type).inc()
+                    metrics_to_push_list.append(cli_errors)
+                
+                metrics.push_job_metrics(job_name=command_name, metrics_to_push=metrics_to_push_list)
+
+                if error_observed:
+                    sys.exit(1)
         return
     elif args.command == "populate-kuzu-from-vcf":
         with cli_tracer.start_as_current_span("cli.populate_kuzu_from_vcf") as populate_span:

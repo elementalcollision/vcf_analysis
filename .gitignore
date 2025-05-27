@@ -33,6 +33,7 @@ ENV/
 # Database directories
 /kuzu_db/
 /lancedb/
+**/kuzu_db/
 
 # Containers
 *.img

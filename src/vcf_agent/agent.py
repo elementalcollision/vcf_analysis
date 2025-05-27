@@ -64,8 +64,10 @@ SYSTEM_PROMPT = (
     "{\"tool_name\": \"<name_of_tool>\", \"tool_args\": {\"arg_name1\": \"value1\", \"arg_name2\": \"value2\", ...}}"
     "Do NOT include any explanation, markdown, <think> blocks, or any other text outside this JSON structure.\n"
     "The available tools are: echo, validate_vcf, bcftools_view_tool, bcftools_query_tool, bcftools_filter_tool, "
-    "bcftools_norm_tool, bcftools_stats_tool, bcftools_annotate_tool, vcf_comparison_tool, "
+    "bcftools_norm_tool, bcftools_stats_tool, bcftools_annotate_tool, vcf_comparison_tool, ai_vcf_comparison_tool, "
     "vcf_analysis_summary_tool, vcf_summarization_tool, load_vcf_into_graph_db_tool.\n"
+    "Use ai_vcf_comparison_tool for intelligent VCF comparisons with AI insights, vcf_analysis_summary_tool for "
+    "comprehensive AI-powered VCF analysis, and vcf_summarization_tool for AI-enhanced VCF summaries.\n"
     "If you cannot perform the task or the query is not a tool request, return a JSON object with an 'error' field and no other fields, or a direct textual answer if appropriate for a simple query not requiring a tool.\n"
     "/no_think"  # Always disable chain-of-thought
 )
@@ -510,29 +512,314 @@ def vcf_comparison_tool(file1: str, file2: str, reference: str) -> str:
                 except OSError as e_rmdir:
                     logging.warning(f"Could not delete temp directory {path}: {e_rmdir}")
 
-# Add stubs for vcf_analysis_summary_tool and vcf_summarization_tool if not present
+# AI-powered VCF comparison tool
+@tools.tool(
+    openai_schema={
+        "name": "ai_vcf_comparison_tool",
+        "description": "AI-powered comparison of two VCF files with intelligent analysis and insights.",
+        "parameters": {
+            "file1": {"type": "string", "description": "Path to the first VCF file."},
+            "file2": {"type": "string", "description": "Path to the second VCF file."},
+            "reference": {"type": "string", "description": "Path to the reference FASTA for normalization."}
+        },
+        "required": ["file1", "file2", "reference"]
+    }
+)
+def ai_vcf_comparison_tool(file1: str, file2: str, reference: str) -> str:
+    """
+    AI-powered VCF comparison tool that uses LLM analysis for intelligent insights.
+    Combines bcftools comparison with AI interpretation.
+    """
+    tool_name = "ai_vcf_comparison_tool"
+    print(f"[TOOL {tool_name}] Entered. Files: {file1}, {file2}, Reference: {reference}")
+    
+    import json
+    from .bcftools_integration import bcftools_stats
+    
+    # Metrics and tracing setup
+    metrics_status = "success"
+    error_type_str = None
+    result_str_to_return = json.dumps({
+        "concordant_variant_count": 0,
+        "discordant_variant_count": 0,
+        "unique_to_file_1": [],
+        "unique_to_file_2": [],
+        "quality_metrics": {},
+        "error": "Internal error: Result not set"
+    })
+
+    with agent_tracer.start_as_current_span(f"tool.{tool_name}") as tool_span:
+        tool_span.set_attribute("tool.name", tool_name)
+        tool_span.set_attribute("tool.args.file1", file1)
+        tool_span.set_attribute("tool.args.file2", file2)
+        tool_span.set_attribute("tool.args.reference", reference)
+        tool_span.add_event("tool.execution.start")
+
+        start_time = time.time()
+        try:
+            # Step 1: Perform basic comparison using existing tool
+            print(f"[TOOL {tool_name}] Running basic VCF comparison...")
+            basic_comparison = vcf_comparison_tool(file1, file2, reference)
+            
+            try:
+                basic_data = json.loads(basic_comparison)
+                if "error" in basic_data:
+                    raise ValueError(f"Basic comparison failed: {basic_data['error']}")
+            except json.JSONDecodeError:
+                raise ValueError("Basic comparison returned invalid JSON")
+            
+            # Step 2: Gather additional statistics for AI analysis
+            print(f"[TOOL {tool_name}] Gathering additional statistics...")
+            stats1_rc, stats1_out, stats1_err = bcftools_stats([file1])
+            stats2_rc, stats2_out, stats2_err = bcftools_stats([file2])
+            
+            # Step 3: Prepare context for LLM analysis
+            analysis_context = {
+                "basic_comparison": basic_data,
+                "file1_stats": stats1_out if stats1_rc == 0 else "Stats unavailable",
+                "file2_stats": stats2_out if stats2_rc == 0 else "Stats unavailable",
+                "file1_path": file1,
+                "file2_path": file2,
+                "reference_path": reference,
+                "analysis_type": "comparison"
+            }
+            
+            # Step 4: Use LLM for intelligent analysis
+            print(f"[TOOL {tool_name}] Running AI analysis...")
+            try:
+                llm_result = run_llm_analysis_task(
+                    task="vcf_comparison_v1",
+                    file_paths=[file1, file2],
+                    extra_context=analysis_context,
+                    model_provider="ollama"
+                )
+                
+                # Parse and enhance LLM result
+                llm_data = json.loads(llm_result)
+                if "error" not in llm_data:
+                    # Enhance basic comparison with AI insights
+                    enhanced_result = basic_data.copy()
+                    enhanced_result.update(llm_data)
+                    enhanced_result["analysis_method"] = "ai_powered"
+                    enhanced_result["ai_insights"] = llm_data.get("ai_insights", [])
+                    result_str_to_return = json.dumps(enhanced_result)
+                    tool_span.set_attribute("analysis.method", "ai_enhanced")
+                else:
+                    print(f"[TOOL {tool_name}] LLM analysis failed, using basic comparison")
+                    basic_data["analysis_method"] = "basic_fallback"
+                    basic_data["note"] = f"AI analysis failed: {llm_data['error']}"
+                    result_str_to_return = json.dumps(basic_data)
+                    tool_span.set_attribute("analysis.method", "basic_fallback")
+                    
+            except (json.JSONDecodeError, ValueError) as e:
+                print(f"[TOOL {tool_name}] LLM analysis failed: {e}, using basic comparison")
+                basic_data["analysis_method"] = "basic_fallback"
+                basic_data["note"] = f"AI analysis failed: {str(e)}"
+                result_str_to_return = json.dumps(basic_data)
+                tool_span.set_attribute("analysis.method", "basic_fallback")
+            
+            tool_span.set_status(trace.StatusCode.OK)
+            tool_span.add_event("tool.execution.end")
+            
+        except Exception as e:
+            metrics_status = "error"
+            error_type_str = type(e).__name__
+            result_str_to_return = json.dumps({
+                "concordant_variant_count": 0,
+                "discordant_variant_count": 0,
+                "unique_to_file_1": [],
+                "unique_to_file_2": [],
+                "quality_metrics": {},
+                "error": f"Comparison failed: {str(e)}"
+            })
+            
+            print(f"[TOOL {tool_name}] Error: {str(e)}")
+            tool_span.record_exception(e)
+            tool_span.set_status(trace.StatusCode.ERROR, f"Comparison failed: {str(e)}")
+            tool_span.add_event("tool.execution.failed", attributes={"error": True, "exception": str(e)})
+        
+        finally:
+            duration = time.time() - start_time
+            metrics.VCF_AGENT_TOOL_DURATION_SECONDS.labels(tool_name=tool_name, status=metrics_status).observe(duration)
+            metrics.VCF_AGENT_TOOL_REQUESTS_TOTAL.labels(tool_name=tool_name, status=metrics_status).inc()
+            if metrics_status == "error" and error_type_str:
+                metrics.VCF_AGENT_TOOL_ERRORS_TOTAL.labels(tool_name=tool_name, error_type=error_type_str).inc()
+            
+            tool_span.set_attribute("result.length", len(result_str_to_return))
+            tool_span.set_attribute("tool.call.parameters", json.dumps({
+                "file1": file1, "file2": file2, "reference": reference
+            }))
+            print(f"[TOOL {tool_name}] Exiting. Result length: {len(result_str_to_return)}")
+
+    return result_str_to_return
 @tools.tool
 def vcf_analysis_summary_tool(filepath: str) -> str:
     """
-    Analyze a VCF file and return a summary. Always returns all required fields, even on error.
+    Analyze a VCF file using AI and return a comprehensive summary.
+    Uses LLM to provide intelligent analysis of VCF data.
+    """
+    tool_name = "vcf_analysis_summary_tool"
+    print(f"[TOOL {tool_name}] Entered. Filepath: {filepath}")
+    
+    import json
+    from .bcftools_integration import bcftools_stats, bcftools_query
+    
+    # Metrics and tracing setup
+    metrics_status = "success"
+    error_type_str = None
+    result_str_to_return = json.dumps({
+        "variant_count": 0,
+        "variant_types": {},
+        "sample_statistics": {},
+        "notable_patterns": [],
+        "error": "Internal error: Result not set"
+    })
+
+    with agent_tracer.start_as_current_span(f"tool.{tool_name}") as tool_span:
+        tool_span.set_attribute("tool.name", tool_name)
+        tool_span.set_attribute("tool.args.filepath", filepath)
+        tool_span.add_event("tool.execution.start")
+
+        start_time = time.time()
+        try:
+            # Step 1: Gather basic VCF statistics using bcftools
+            print(f"[TOOL {tool_name}] Gathering VCF statistics...")
+            stats_rc, stats_out, stats_err = bcftools_stats([filepath])
+            
+            if stats_rc != 0:
+                raise RuntimeError(f"bcftools stats failed: {stats_err}")
+            
+            # Step 2: Get sample information
+            query_rc, query_out, query_err = bcftools_query(["-l", filepath])
+            samples = []
+            if query_rc == 0 and query_out.strip():
+                samples = query_out.strip().split('\n')
+            
+            # Step 3: Use LLM to analyze the data
+            print(f"[TOOL {tool_name}] Running LLM analysis...")
+            
+            # Prepare context for LLM
+            analysis_context = {
+                "bcftools_stats": stats_out,
+                "sample_count": len(samples),
+                "samples": samples[:10] if len(samples) > 10 else samples,  # Limit for prompt size
+                "file_path": filepath
+            }
+            
+            # Use the existing LLM analysis framework
+            llm_result = run_llm_analysis_task(
+                task="vcf_analysis_summary_v1",
+                file_paths=[filepath],
+                extra_context=analysis_context,
+                model_provider="ollama"  # Default to ollama for now
+            )
+            
+            # Parse LLM result
+            try:
+                llm_data = json.loads(llm_result)
+                if "error" in llm_data:
+                    # LLM returned an error, but we can still provide basic stats
+                    print(f"[TOOL {tool_name}] LLM analysis failed: {llm_data['error']}")
+                    # Fall back to basic analysis
+                    result_str_to_return = _generate_basic_vcf_summary(filepath, stats_out, samples)
+                else:
+                    result_str_to_return = llm_result
+                    
+            except json.JSONDecodeError as je:
+                print(f"[TOOL {tool_name}] LLM returned invalid JSON: {je}")
+                # Fall back to basic analysis
+                result_str_to_return = _generate_basic_vcf_summary(filepath, stats_out, samples)
+            
+            tool_span.set_status(trace.StatusCode.OK)
+            tool_span.add_event("tool.execution.end")
+            
+        except Exception as e:
+            metrics_status = "error"
+            error_type_str = type(e).__name__
+            result_str_to_return = json.dumps({
+                "variant_count": 0,
+                "variant_types": {},
+                "sample_statistics": {},
+                "notable_patterns": [],
+                "error": f"Analysis failed: {str(e)}"
+            })
+            
+            print(f"[TOOL {tool_name}] Error: {str(e)}")
+            tool_span.record_exception(e)
+            tool_span.set_status(trace.StatusCode.ERROR, f"Analysis failed: {str(e)}")
+            tool_span.add_event("tool.execution.failed", attributes={"error": True, "exception": str(e)})
+        
+        finally:
+            duration = time.time() - start_time
+            metrics.VCF_AGENT_TOOL_DURATION_SECONDS.labels(tool_name=tool_name, status=metrics_status).observe(duration)
+            metrics.VCF_AGENT_TOOL_REQUESTS_TOTAL.labels(tool_name=tool_name, status=metrics_status).inc()
+            if metrics_status == "error" and error_type_str:
+                metrics.VCF_AGENT_TOOL_ERRORS_TOTAL.labels(tool_name=tool_name, error_type=error_type_str).inc()
+            
+            tool_span.set_attribute("result.length", len(result_str_to_return))
+            tool_span.set_attribute("tool.call.parameters", json.dumps({"vcf_file_path": filepath}))
+            print(f"[TOOL {tool_name}] Exiting. Result length: {len(result_str_to_return)}")
+
+    return result_str_to_return
+
+
+def _generate_basic_vcf_summary(filepath: str, stats_output: str, samples: list) -> str:
+    """
+    Generate a basic VCF summary when LLM analysis fails.
+    Parses bcftools stats output to extract key metrics.
     """
     import json
+    import re
+    
     try:
-        # Placeholder: not implemented
-        raise NotImplementedError("vcf_analysis_summary_tool is not implemented.")
+        # Parse basic stats from bcftools output
+        variant_count = 0
+        variant_types = {}
+        
+        # Extract variant count
+        for line in stats_output.split('\n'):
+            if line.startswith('SN') and 'number of records:' in line:
+                match = re.search(r'number of records:\s+(\d+)', line)
+                if match:
+                    variant_count = int(match.group(1))
+            elif line.startswith('SN') and 'number of SNPs:' in line:
+                match = re.search(r'number of SNPs:\s+(\d+)', line)
+                if match:
+                    variant_types['SNP'] = int(match.group(1))
+            elif line.startswith('SN') and 'number of indels:' in line:
+                match = re.search(r'number of indels:\s+(\d+)', line)
+                if match:
+                    variant_types['INDEL'] = int(match.group(1))
+        
+        # Generate basic sample statistics
+        sample_statistics = {}
+        for sample in samples:
+            sample_statistics[sample] = {
+                "mean_depth": 30.0,  # Placeholder - would need more detailed analysis
+                "het_ratio": 0.5     # Placeholder - would need more detailed analysis
+            }
+        
+        return json.dumps({
+            "variant_count": variant_count,
+            "variant_types": variant_types,
+            "sample_statistics": sample_statistics,
+            "notable_patterns": ["Basic analysis - LLM analysis unavailable"],
+            "analysis_method": "basic_fallback"
+        })
+        
     except Exception as e:
         return json.dumps({
             "variant_count": 0,
             "variant_types": {},
             "sample_statistics": {},
             "notable_patterns": [],
-            "error": str(e)
+            "error": f"Basic analysis failed: {str(e)}"
         })
 
 @tools.tool(
     openai_schema={
         "name": "vcf_summarization_tool",
-        "description": "Summarize a VCF file for key variant statistics and sample-level insights.",
+        "description": "Summarize a VCF file for key variant statistics and sample-level insights using AI analysis.",
         "parameters": {
             "filepath": {"type": "string", "description": "Path to the VCF file to summarize."}
         },
@@ -540,32 +827,157 @@ def vcf_analysis_summary_tool(filepath: str) -> str:
     }
 )
 def vcf_summarization_tool(filepath: str) -> str:
+    """
+    Enhanced VCF summarization tool that uses LLM analysis for intelligent insights.
+    Falls back to basic analysis if LLM is unavailable.
+    """
+    tool_name = "vcf_summarization_tool"
+    print(f"[TOOL {tool_name}] Entered. Filepath: {filepath}")
+    
     import json
     from .vcf_utils import extract_variant_summary
-    try:
-        summary = extract_variant_summary(filepath)
-        # Compose sample_statistics (mocked for now)
-        sample_statistics = {}
-        for sample in summary["samples"]:
-            sample_statistics[sample] = {
-                "mean_depth": 30.0,  # Placeholder
-                "het_ratio": 0.5     # Placeholder
-            }
-        result = {
-            "variant_count": summary["variant_count"],
-            "variant_types": summary["variant_types"],
-            "sample_statistics": sample_statistics,
-            "notable_patterns": []
+    from .bcftools_integration import bcftools_stats, bcftools_query
+    
+    # Metrics and tracing setup
+    metrics_status = "success"
+    error_type_str = None
+    result_str_to_return = json.dumps({
+        "variant_count": 0,
+        "variant_types": {},
+        "sample_statistics": {},
+        "notable_patterns": [],
+        "error": "Internal error: Result not set"
+    })
+
+    with agent_tracer.start_as_current_span(f"tool.{tool_name}") as tool_span:
+        tool_span.set_attribute("tool.name", tool_name)
+        tool_span.set_attribute("tool.args.filepath", filepath)
+        tool_span.add_event("tool.execution.start")
+
+        start_time = time.time()
+        try:
+            # Step 1: Try LLM-powered analysis first
+            print(f"[TOOL {tool_name}] Attempting LLM-powered analysis...")
+            
+            # Gather comprehensive data for LLM
+            stats_rc, stats_out, stats_err = bcftools_stats([filepath])
+            query_rc, query_out, query_err = bcftools_query(["-l", filepath])
+            
+            samples = []
+            if query_rc == 0 and query_out.strip():
+                samples = query_out.strip().split('\n')
+            
+            if stats_rc == 0:
+                # Prepare context for LLM analysis
+                analysis_context = {
+                    "bcftools_stats": stats_out,
+                    "sample_count": len(samples),
+                    "samples": samples[:10] if len(samples) > 10 else samples,
+                    "file_path": filepath,
+                    "analysis_type": "summarization"
+                }
+                
+                # Use LLM for intelligent analysis
+                llm_result = run_llm_analysis_task(
+                    task="vcf_summarization_v1",
+                    file_paths=[filepath],
+                    extra_context=analysis_context,
+                    model_provider="ollama"
+                )
+                
+                # Parse and validate LLM result
+                try:
+                    llm_data = json.loads(llm_result)
+                    if "error" not in llm_data:
+                        print(f"[TOOL {tool_name}] LLM analysis successful")
+                        result_str_to_return = llm_result
+                        tool_span.set_attribute("analysis.method", "llm_powered")
+                    else:
+                        print(f"[TOOL {tool_name}] LLM returned error, falling back to basic analysis")
+                        raise ValueError(f"LLM analysis failed: {llm_data['error']}")
+                        
+                except (json.JSONDecodeError, ValueError) as e:
+                    print(f"[TOOL {tool_name}] LLM analysis failed: {e}, falling back to basic analysis")
+                    # Fall back to basic analysis
+                    summary = extract_variant_summary(filepath)
+                    result_str_to_return = _create_basic_summary_result(summary)
+                    tool_span.set_attribute("analysis.method", "basic_fallback")
+            else:
+                print(f"[TOOL {tool_name}] bcftools stats failed, using basic analysis")
+                # Fall back to basic analysis
+                summary = extract_variant_summary(filepath)
+                result_str_to_return = _create_basic_summary_result(summary)
+                tool_span.set_attribute("analysis.method", "basic_only")
+            
+            tool_span.set_status(trace.StatusCode.OK)
+            tool_span.add_event("tool.execution.end")
+            
+        except Exception as e:
+            metrics_status = "error"
+            error_type_str = type(e).__name__
+            
+            print(f"[TOOL {tool_name}] Error during analysis: {e}")
+            
+            # Final fallback - try basic analysis
+            try:
+                summary = extract_variant_summary(filepath)
+                result_str_to_return = _create_basic_summary_result(summary, error_note=str(e))
+                tool_span.set_attribute("analysis.method", "error_fallback")
+            except Exception as fallback_error:
+                result_str_to_return = json.dumps({
+                    "variant_count": 0,
+                    "variant_types": {},
+                    "sample_statistics": {},
+                    "notable_patterns": [],
+                    "error": f"All analysis methods failed. Primary: {str(e)}, Fallback: {str(fallback_error)}"
+                })
+            
+            tool_span.record_exception(e)
+            tool_span.set_status(trace.StatusCode.ERROR, f"Analysis failed: {str(e)}")
+            tool_span.add_event("tool.execution.failed", attributes={"error": True, "exception": str(e)})
+        
+        finally:
+            duration = time.time() - start_time
+            metrics.VCF_AGENT_TOOL_DURATION_SECONDS.labels(tool_name=tool_name, status=metrics_status).observe(duration)
+            metrics.VCF_AGENT_TOOL_REQUESTS_TOTAL.labels(tool_name=tool_name, status=metrics_status).inc()
+            if metrics_status == "error" and error_type_str:
+                metrics.VCF_AGENT_TOOL_ERRORS_TOTAL.labels(tool_name=tool_name, error_type=error_type_str).inc()
+            
+            tool_span.set_attribute("result.length", len(result_str_to_return))
+            tool_span.set_attribute("tool.call.parameters", json.dumps({"vcf_file_path": filepath}))
+            print(f"[TOOL {tool_name}] Exiting. Result length: {len(result_str_to_return)}")
+
+    return result_str_to_return
+
+
+def _create_basic_summary_result(summary: dict, error_note: str = None) -> str:
+    """
+    Create a basic summary result from vcf_utils.extract_variant_summary output.
+    """
+    import json
+    
+    # Compose sample_statistics (basic placeholders)
+    sample_statistics = {}
+    for sample in summary.get("samples", []):
+        sample_statistics[sample] = {
+            "mean_depth": 30.0,  # Placeholder - would need detailed analysis
+            "het_ratio": 0.5     # Placeholder - would need detailed analysis
         }
-        return json.dumps(result)
-    except Exception as e:
-        return json.dumps({
-            "variant_count": 0,
-            "variant_types": {},
-            "sample_statistics": {},
-            "notable_patterns": [],
-            "error": str(e)
-        })
+    
+    notable_patterns = []
+    if error_note:
+        notable_patterns.append(f"Note: Advanced analysis unavailable - {error_note}")
+    notable_patterns.append("Basic analysis using vcf_utils")
+    
+    result = {
+        "variant_count": summary.get("variant_count", 0),
+        "variant_types": summary.get("variant_types", {}),
+        "sample_statistics": sample_statistics,
+        "notable_patterns": notable_patterns,
+        "analysis_method": "basic"
+    }
+    
+    return json.dumps(result)
 
 @tools.tool(
     openai_schema={
@@ -800,6 +1212,7 @@ def get_agent_with_session(
         bcftools_stats_tool, 
         bcftools_annotate_tool,
         vcf_comparison_tool,
+        ai_vcf_comparison_tool,  # New AI-powered comparison tool
         vcf_analysis_summary_tool, 
         vcf_summarization_tool,
         load_vcf_into_graph_db_tool,

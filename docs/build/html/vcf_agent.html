@@ -14,8 +14,8 @@
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="LanceDB Developer Guide" href="lancedb_developer_guide.html" />
-    <link rel="prev" title="VCF Analysis Agent documentation" href="index.html" />
+    <link rel="next" title="SAMspec Compliance Validation" href="samspec_compliance.html" />
+    <link rel="prev" title="VCF Analysis Agent Documentation" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -283,7 +283,8 @@ input_data (Optional[bytes]): Optional bytes to pass to stdin.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.bcftools_integration.count_variants_in_vcf">
 <span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">count_variants_in_vcf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vcf_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.count_variants_in_vcf" title="Link to this definition">¶</a></dt>
-<dd><p>Count the number of variant records in a VCF file (ignores header lines).</p>
+<dd><p>Count the number of variant records in a VCF file using bcftools view.
+This is generally more robust than manual parsing.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>vcf_path</strong> (<em>str</em>)</p>
@@ -411,7 +412,7 @@ manufacturer_tool (Optional[str]): Name of manufacturer-specific tool</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="vcf_agent.config.SessionConfig">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">vcf_agent.config.</span></span><span class="sig-name descname"><span class="pre">SessionConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ollama'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credentials_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_fasta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ollama_model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'qwen:4b'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.config.SessionConfig" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">vcf_agent.config.</span></span><span class="sig-name descname"><span class="pre">SessionConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ollama'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credentials_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_fasta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ollama_model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'qwen3:4b'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ollama_base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'http://localhost:11434'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.config.SessionConfig" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Session configuration for VCF Analysis Agent.</p>
 <p>Controls session-specific settings, including output mode toggling (chain-of-thought vs. raw output),
@@ -424,6 +425,7 @@ model provider selection, and reference FASTA for normalization.</p>
 <li><p><strong>credentials_file</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>reference_fasta</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>ollama_model_name</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>ollama_base_url</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -819,6 +821,7 @@ Selects backend based on config or argument.</p>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="samspec_compliance.html">SAMspec Compliance Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#core-module-src-vcf-agent-graph-integration">Core Module: <code class="docutils literal notranslate"><span class="pre">src.vcf_agent.graph_integration</span></code></a></li>
@@ -835,16 +838,13 @@ Selects backend based on config or argument.</p>
 </ul>
 </li>
 </ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a></li>
-</ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="previous chapter">VCF Analysis Agent documentation</a></li>
-      <li>Next: <a href="lancedb_developer_guide.html" title="next chapter">LanceDB Developer Guide</a></li>
+      <li>Previous: <a href="index.html" title="previous chapter">VCF Analysis Agent Documentation</a></li>
+      <li>Next: <a href="samspec_compliance.html" title="next chapter">SAMspec Compliance Validation</a></li>
   </ul></li>
 </ul>
 </div>
