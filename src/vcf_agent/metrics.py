@@ -489,4 +489,40 @@ if __name__ == "__main__":
 # VCF_AGENT_AI_TOKENS_TOTAL: Counter of total tokens by model_provider, endpoint_task, and token_type.
 # VCF_AGENT_AI_ERRORS_TOTAL: Counter of AI errors by model_provider, endpoint_task, and error_type.
 # VCF_AGENT_AI_CONCURRENT_REQUESTS: Gauge of concurrent AI requests by model_provider and endpoint_task.
-# (CLI, Tool, BCFTools metrics to be documented as they are fully instrumented) 
+# (CLI, Tool, BCFTools metrics to be documented as they are fully instrumented)
+
+# --- BCFTools Integration Helper ---
+def observe_bcftools_command(
+    bcftools_subcommand: str,
+    duration_seconds: float,
+    success: bool = True,
+    error_type: Optional[str] = None
+):
+    """
+    Record metrics for bcftools command execution.
+    
+    Args:
+        bcftools_subcommand: The bcftools subcommand (e.g., 'view', 'query', 'filter')
+        duration_seconds: Duration of the command execution
+        success: Whether the command succeeded
+        error_type: Type of error if command failed
+    """
+    status_str = "success" if success else "error"
+    
+    # Increment command counter
+    VCF_AGENT_BCFTOOLS_COMMANDS_TOTAL.labels(
+        bcftools_subcommand=bcftools_subcommand, 
+        status=status_str
+    ).inc()
+    
+    # Record duration
+    VCF_AGENT_BCFTOOLS_DURATION_SECONDS.labels(
+        bcftools_subcommand=bcftools_subcommand,
+        status=status_str
+    ).observe(duration_seconds)
+    
+    # Record errors
+    if not success:
+        VCF_AGENT_BCFTOOLS_ERRORS_TOTAL.labels(
+            bcftools_subcommand=bcftools_subcommand
+        ).inc() 

@@ -410,7 +410,8 @@ def main():
                 # Token counts are not readily available here without deeper parsing of Strands agent internals.
                 metrics.VCF_AGENT_AI_RESPONSE_SECONDS.labels(
                     model_provider=model_provider, 
-                    endpoint_task="cli_ask" # Generic task for CLI 'ask'
+                    endpoint_task="cli_ask", # Generic task for CLI 'ask'
+                    status=ai_status_metric
                 ).observe(ai_duration)
                 metrics.VCF_AGENT_AI_REQUESTS_TOTAL.labels(
                     model_provider=model_provider, 
@@ -427,10 +428,8 @@ def main():
         # Metrics server start - consider if this should only be for 'ask'
         metrics.start_metrics_http_server() 
 
-    # TEST: Keep alive for metrics scraping
-    print("\n[CLI] Test: Keeping metrics server alive for 60 seconds before flushing spans...")
-    time.sleep(60)
-    print("[CLI] Test: 60 second delay finished.")
+    # Metrics server start - consider if this should only be for 'ask'
+    # Note: Removed 60-second sleep for testing purposes
 
     # Ensure OTel spans are flushed before exit (this logic might already be present or adapted)
     # Based on previous versions, the OTel flush was here.
