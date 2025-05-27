@@ -1,4 +1,5 @@
 # VCF Analysis Agent
+[![wakatime](https://wakatime.com/badge/user/a9e67bf6-759a-4da2-bcad-a3031b64a17d/project/ce17de12-99a8-46c6-ae39-88598186cc9b.svg)](https://wakatime.com/badge/user/a9e67bf6-759a-4da2-bcad-a3031b64a17d/project/ce17de12-99a8-46c6-ae39-88598186cc9b)
 
 A powerful and intelligent agent for analyzing, processing, and managing Variant Call Format (VCF) files in genomics research and clinical applications.
 
