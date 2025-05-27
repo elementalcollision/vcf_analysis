@@ -31,4 +31,34 @@ for f in sample_test_data/*.vcf.gz; do bcftools view "$f"; done
 
 ## Notes
 - These files are intended for automated and manual regression testing.
-- See the project README for more details on edge case testing strategy. 
+- See the project README for more details on edge case testing strategy.
+
+## Large VCF for Performance Testing
+
+Some performance tests, such as `tests/test_vcf_comparison_tool.py::test_vcf_comparison_large_files_performance`, require a large VCF file.
+This file is not included in the repository due to its size.
+
+To run these tests, you first need the base large VCF file:
+
+- **Base File:** `chr22.1kg.phase3.v5a.vcf.gz`
+- **Source:** 1000 Genomes Project (via University of Washington)
+- **URL:** `https://bochet.gcc.biostat.washington.edu/beagle/1000_Genomes_phase3_v5a/b37.vcf/chr22.1kg.phase3.v5a.vcf.gz`
+- **Size:** Approximately 129MB
+
+Place the downloaded file into the `sample_test_data/` directory.
+
+Next, you need to create a "test-ready" version of this file that has the correct contig header for chromosome `22` (matching the `22.fa` reference):
+
+- **Test-Ready File:** `chr22.1kg.phase3.v5a.testready.vcf.gz`
+- **Creation Command (run from workspace root after downloading the base file and ensuring `22.fa` and `22.fa.fai` are present):
+  ```bash
+  CONTIG_LINE="##contig=<ID=22,length=51304566>" # Length from 22.fa.fai
+  { gunzip -c sample_test_data/chr22.1kg.phase3.v5a.vcf.gz | grep '^##' | grep -v '^##contig=<ID=GL'; \
+    echo "$CONTIG_LINE"; \
+    gunzip -c sample_test_data/chr22.1kg.phase3.v5a.vcf.gz | grep -v '^##'; \
+  } | bgzip -c > sample_test_data/chr22.1kg.phase3.v5a.testready.vcf.gz && \
+  bcftools index sample_test_data/chr22.1kg.phase3.v5a.testready.vcf.gz
+  ```
+
+The performance test will use `chr22.1kg.phase3.v5a.testready.vcf.gz` and `22.fa`.
+If the `testready` file is not found, the relevant performance tests will be skipped. 

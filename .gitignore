@@ -80,4 +80,14 @@ docs/build/
 # If you want to version canonical test VCFs in sample_test_data/
 !sample_test_data/*.vcf.gz
 
-kuzu_bug_report.md 
+kuzu_bug_report.md
+
+# Large data files in sample_test_data/ that should not be committed
+sample_test_data/chr22.1kg.phase3.v5a.vcf.gz
+sample_test_data/chr22.1kg.phase3.v5a.vcf.gz.csi
+sample_test_data/chr22.1kg.phase3.v5a.vcf.gz.tbi
+sample_test_data/chr22.1kg.phase3.v5a.testready.vcf.gz
+sample_test_data/chr22.1kg.phase3.v5a.testready.vcf.gz.csi
+sample_test_data/chr22.1kg.phase3.v5a.testready.vcf.gz.tbi
+sample_test_data/22.fa
+sample_test_data/22.fa.fai 

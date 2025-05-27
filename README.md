@@ -1,5 +1,5 @@
 # VCF Analysis Agent
-[![wakatime](https://wakatime.com/badge/user/a9e67bf6-759a-4da2-bcad-a3031b64a17d/project/ce17de12-99a8-46c6-ae39-88598186cc9b.svg)](https://wakatime.com/badge/user/a9e67bf6-759a-4da2-bcad-a3031b64a17d/project/ce17de12-99a8-46c6-ae39-88598186cc9b)
+
 A powerful and intelligent agent for analyzing, processing, and managing Variant Call Format (VCF) files in genomics research and clinical applications.
 
 ## Overview
@@ -204,9 +204,9 @@ Significant effort (documented in `TASK-007.md`) was undertaken to resolve criti
 
 ### Known Issues & Future Testing Considerations
 
-1.  **OpenAI Schema Validation for Array Types**: Several tests are skipped due to `litellm.exceptions.BadRequestError` related to array types in tool schemas for OpenAI. This requires further investigation, potentially with Strands/LiteLLM.
+1.  **OpenAI Schema Validation for Array Types**: Several tests are skipped due to `litellm.exceptions.BadRequestError` related to array tool schemas for OpenAI. This requires further investigation, potentially with Strands/LiteLLM.
 2.  **Missing Edge Case VCF Files**: Some tests in `test_edgecase_compliance.py` are skipped as they require specific VCF files not currently in `sample_test_data/`. These files need to be created or sourced.
-3.  **Missing Large VCF for Performance Test**: A performance test in `test_vcf_comparison_tool.py` is skipped.
+3.  **Large VCF File for Performance Test**: The performance test `tests/test_vcf_comparison_tool.py::test_vcf_comparison_large_file_performance` requires a large VCF file (~129MB) and a corresponding reference FASTA. Due to its size, the VCF is not stored in the repository. Instructions for downloading the base 1000 Genomes chr22 VCF, and then preparing a `testready` version (e.g., `chr22.1kg.phase3.v5a.testready.vcf.gz`) with the correct contig header for use with a `22.fa` reference, are detailed in `sample_test_data/README.md`. This preparation is necessary because the `bcftools` version 1.21 on the primary test system (macOS via Homebrew) did not support the `--add-missing-contigs` option for `bcftools norm`.
 4.  **Helper Function Coverage in `metrics.py`**: While core metrics definitions and existing helper functions are tested, some originally planned observer helper functions (e.g., for CLI commands, specific tool usage beyond AI) are not currently implemented in `metrics.py`. If these are added in the future, corresponding tests will be needed.
 
 Consult `.context/tasks/completed/TASK-007.md` for a detailed history of recent test stabilization efforts.

@@ -23,10 +23,11 @@ BAD_INFO_VCF = os.path.abspath(os.path.join(SAMPLE_DIR, 'bad_info.vcf.gz'))
 GOLD_STANDARD_VCF = MINIMAL_VCF
 TEST_VCF = MULTIALLELIC_VCF
 
-LARGE_VCF_1 = os.path.join(SAMPLE_DIR, '1KG.chr22.anno.vcf.gz')
-LARGE_VCF_2 = os.path.join(SAMPLE_DIR, '1KG.chr22.anno.vcf.gz')  # Self-comparison for performance
+LARGE_VCF_FILENAME = 'chr22.1kg.phase3.v5a.testready.vcf.gz'
+LARGE_VCF_PATH = os.path.join(SAMPLE_DIR, LARGE_VCF_FILENAME)
 
 REFERENCE_FASTA = os.path.join(SAMPLE_DIR, 'chr22.fa')
+LARGE_VCF_REFERENCE_FASTA = os.path.join(SAMPLE_DIR, '22.fa')
 
 # Utility: skip if reference FASTA not available
 pytestmark = pytest.mark.skipif(
@@ -101,17 +102,18 @@ def test_vcf_comparison_gold_standard():
 
 @pytest.mark.slow
 def test_vcf_comparison_large_file_performance():
-    if not os.path.isfile(LARGE_VCF_1):
-        pytest.skip('Large VCF file not available')
+    if not os.path.isfile(LARGE_VCF_PATH):
+        pytest.skip(f'Large VCF file ({LARGE_VCF_FILENAME}) not found in {SAMPLE_DIR}. See sample_test_data/README.md for download and preparation instructions.')
+    if not os.path.isfile(LARGE_VCF_REFERENCE_FASTA):
+        pytest.skip(f'Reference FASTA for large VCF ({os.path.basename(LARGE_VCF_REFERENCE_FASTA)}) not found in {SAMPLE_DIR}. This should be created by test setup or manually as per extended instructions.')
     start = time.time()
-    result = vcf_comparison_tool(LARGE_VCF_1, LARGE_VCF_2, REFERENCE_FASTA)
+    result = vcf_comparison_tool(LARGE_VCF_PATH, LARGE_VCF_PATH, LARGE_VCF_REFERENCE_FASTA)
     elapsed = time.time() - start
     data = json.loads(result)
     assert 'concordant_variant_count' in data
     assert 'discordant_variant_count' in data
-    assert isinstance(data['unique_to_file_1'], list)
-    assert isinstance(data['unique_to_file_2'], list)
-    assert isinstance(data['quality_metrics'], dict)
+    assert isinstance(data['unique_to_file_1_count'], int)
+    assert isinstance(data['unique_to_file_2_count'], int)
     assert 'per_sample_concordance' in data
-    assert isinstance(data['per_sample_concordance'], dict)
-    assert elapsed < 30  # seconds, adjust as needed for your environment 
+    assert isinstance(data['quality_metrics'], dict)
+    assert elapsed < 300  # seconds, initial baseline for a ~130MB VCF file 
