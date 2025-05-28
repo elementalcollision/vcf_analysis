@@ -40,6 +40,227 @@
     sphinx-apidoc -f -o docs/source src/vcf_agent
     ```
 
+## 3.5. Docker Development Environment
+
+### Quick Start with Docker
+
+The VCF Analysis Agent provides a complete Docker development environment with hot reloading, debugging tools, and full observability stack integration.
+
+#### Development Environment Setup
+
+```bash
+# Start development environment
+docker-compose --profile development up -d
+
+# Access development container with mounted source code
+docker-compose exec vcf-agent-dev bash
+
+# Install additional development packages
+docker-compose exec vcf-agent-dev pip install ipython jupyter
+
+# Start Jupyter notebook for interactive development
+docker-compose exec vcf-agent-dev jupyter notebook --ip=0.0.0.0 --port=8888
+```
+
+#### Development Workflow
+
+```bash
+# 1. Start development stack
+docker-compose --profile development up -d
+
+# 2. Make code changes (automatically reflected in container)
+# Edit files in your local IDE - changes are mounted into container
+
+# 3. Run tests in container
+docker-compose exec vcf-agent-dev pytest tests/unit/ -v
+
+# 4. Test CLI commands
+docker-compose exec vcf-agent-dev python -m vcf_agent.cli --help
+
+# 5. Debug with interactive Python
+docker-compose exec vcf-agent-dev python -c "
+import vcf_agent
+from vcf_agent.cli import main
+# Interactive debugging
+"
+```
+
+### Building and Testing Images
+
+#### Local Development Builds
+
+```bash
+# Build development image
+./scripts/docker-build.sh --target development
+
+# Build production image
+./scripts/docker-build.sh --target runtime
+
+# Build with custom version
+./scripts/docker-build.sh --version dev-$(git rev-parse --short HEAD)
+```
+
+#### Multi-Architecture Development
+
+```bash
+# Build for multiple architectures
+./scripts/docker-build.sh --platform linux/amd64,linux/arm64
+
+# Test specific architecture
+./scripts/docker-build.sh --platform linux/amd64 --target development
+docker run --rm -it vcf-analysis-agent:dev-amd64 bash
+```
+
+#### Security and Quality Checks
+
+```bash
+# Build with security scanning
+./scripts/docker-build.sh --scan
+
+# Manual vulnerability scanning
+trivy image vcf-analysis-agent:latest
+
+# Check image layers and size
+docker history vcf-analysis-agent:latest
+docker images vcf-analysis-agent --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+```
+
+### Development Best Practices
+
+#### Container Development Guidelines
+
+1. **Source Code Mounting**: Use volume mounts for hot reloading during development
+2. **Database Persistence**: Use named volumes for database data to persist across container restarts
+3. **Environment Variables**: Use `.env` files for local development configuration
+4. **Resource Limits**: Set appropriate CPU and memory limits for development containers
+
+#### Debugging in Containers
+
+```bash
+# Debug container startup issues
+docker-compose logs vcf-agent-dev
+
+# Check container health
+docker-compose exec vcf-agent-dev python -c "import vcf_agent; print('OK')"
+
+# Monitor resource usage
+docker stats vcf_analysis_agent_dev
+
+# Access container filesystem
+docker-compose exec vcf-agent-dev ls -la /app/
+
+# Check environment variables
+docker-compose exec vcf-agent-dev env | grep VCF
+```
+
+#### Testing in Containers
+
+```bash
+# Run full test suite in container
+docker-compose exec vcf-agent-dev pytest
+
+# Run tests with coverage
+docker-compose exec vcf-agent-dev pytest --cov=src/vcf_agent --cov-report=term-missing
+
+# Run specific test categories
+docker-compose exec vcf-agent-dev pytest tests/unit/ -v
+docker-compose exec vcf-agent-dev pytest tests/integration/ -v
+
+# Test with different Python versions (if multiple images available)
+docker run --rm -v $(pwd):/app/src python:3.11-slim bash -c "cd /app/src && pip install -r requirements.txt && pytest"
+```
+
+### Production Deployment Preparation
+
+#### Image Optimization
+
+```bash
+# Build optimized production image
+./scripts/docker-build.sh --target runtime --no-cache
+
+# Verify image size and layers
+docker images vcf-analysis-agent:latest
+docker history vcf-analysis-agent:latest --no-trunc
+
+# Test production image functionality
+docker run --rm vcf-analysis-agent:latest python -m vcf_agent.cli --help
+```
+
+#### Configuration Management
+
+```bash
+# Create production configuration
+cp config/docker/production.env .env.production
+
+# Test with production configuration
+docker run --rm --env-file .env.production vcf-analysis-agent:latest
+
+# Validate configuration
+docker run --rm --env-file .env.production vcf-analysis-agent:latest \
+  python -c "from vcf_agent.config import get_config; print(get_config())"
+```
+
+### Observability in Development
+
+#### Monitoring Stack
+
+```bash
+# Start full observability stack
+docker-compose up -d
+
+# Access monitoring dashboards
+open http://localhost:3000  # Grafana (admin/admin)
+open http://localhost:9090  # Prometheus
+open http://localhost:16686 # Jaeger
+
+# Check service health
+curl -f http://localhost:9090/-/healthy
+curl -f http://localhost:3000/api/health
+```
+
+#### Development Metrics
+
+```bash
+# View application metrics
+curl http://localhost:8000/metrics
+
+# Test tracing integration
+docker-compose exec vcf-agent python -m vcf_agent.cli ask "What are the basic stats for sample_data/minimal.vcf.gz?"
+
+# View traces in Jaeger UI
+open http://localhost:16686
+```
+
+### Troubleshooting
+
+#### Common Development Issues
+
+1. **Port Conflicts**: Ensure ports 3000, 8000, 9090, 16686 are available
+2. **Volume Permissions**: Fix with `sudo chown -R $USER:$USER ./data ./lancedb ./kuzu_db`
+3. **Memory Issues**: Increase Docker memory allocation in Docker Desktop settings
+4. **Build Failures**: Clear Docker cache with `docker system prune -a`
+
+#### Debug Commands
+
+```bash
+# Check Docker daemon
+docker version
+docker info
+
+# Verify Docker Compose configuration
+docker-compose config
+
+# Check container logs
+docker-compose logs --tail=50 vcf-agent-dev
+
+# Inspect container configuration
+docker inspect vcf_analysis_agent_dev
+
+# Check network connectivity
+docker-compose exec vcf-agent-dev ping prometheus
+docker-compose exec vcf-agent-dev curl -f http://prometheus:9090/-/healthy
+```
+
 ## 4. CLI Usage
 - Refer to the main `README.md` for a comprehensive list of CLI commands, their arguments, and usage examples for both agent interaction and database management (LanceDB, Kuzu).
 - **Entrypoint Example:**

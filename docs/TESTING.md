@@ -200,8 +200,85 @@ pytest --cov=src/vcf_agent --cov-report=term-missing
 # Generate HTML coverage report
 pytest --cov=src/vcf_agent --cov-report=html
 
-# Generate XML coverage report (for CI/CD)
-pytest --cov=src/vcf_agent --cov-report=xml
+# Coverage with specific threshold
+pytest --cov=src/vcf_agent --cov-fail-under=85
+```
+
+### Docker Testing
+
+#### Container Testing
+
+```bash
+# Build and test in container
+docker-compose --profile development up -d
+docker-compose exec vcf-agent-dev pytest
+
+# Run specific test categories in container
+docker-compose exec vcf-agent-dev pytest tests/unit/ -v
+docker-compose exec vcf-agent-dev pytest tests/integration/ -v
+
+# Run tests with coverage in container
+docker-compose exec vcf-agent-dev pytest --cov=src/vcf_agent --cov-report=term-missing
+```
+
+#### Multi-Architecture Testing
+
+```bash
+# Test AMD64 build
+./scripts/docker-build.sh --platform linux/amd64 --target development
+docker run --rm vcf-analysis-agent:dev-amd64 pytest
+
+# Test ARM64 build (if on compatible hardware)
+./scripts/docker-build.sh --platform linux/arm64 --target development
+docker run --rm vcf-analysis-agent:dev-arm64 pytest
+```
+
+#### Container Integration Testing
+
+```bash
+# Test full stack with observability
+docker-compose up -d
+docker-compose exec vcf-agent python -m vcf_agent.cli --help
+
+# Test VCF ingestion in container
+docker-compose exec vcf-agent python -m vcf_agent.cli ingest-vcf --vcf-file sample_data/minimal.vcf.gz
+
+# Test AI analysis in container
+docker-compose exec vcf-agent python -m vcf_agent.cli ask "vcf_analysis_summary_tool: sample_data/minimal.vcf.gz"
+
+# Verify observability stack
+curl -f http://localhost:9090/-/healthy  # Prometheus
+curl -f http://localhost:3000/api/health  # Grafana
+curl -f http://localhost:16686/  # Jaeger
+```
+
+#### Performance Testing in Containers
+
+```bash
+# Test resource limits
+docker run --memory="4g" --cpus="2" vcf-analysis-agent:latest pytest tests/integration/
+
+# Test with large files (if available)
+docker run -v $(pwd)/large_data:/app/large_data vcf-analysis-agent:latest \
+  python -m vcf_agent.cli ingest-vcf --vcf-file /app/large_data/large.vcf.gz
+
+# Monitor resource usage during tests
+docker stats vcf_analysis_agent
+```
+
+#### Security Testing
+
+```bash
+# Test non-root execution
+docker run --rm vcf-analysis-agent:latest id
+# Should show: uid=10001(appuser) gid=10001(appuser)
+
+# Test file permissions
+docker run --rm vcf-analysis-agent:latest ls -la /app/
+
+# Vulnerability scanning
+./scripts/docker-build.sh --scan
+trivy image vcf-analysis-agent:latest
 ```
 
 ### Selective Test Execution
