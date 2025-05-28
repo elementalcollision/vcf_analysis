@@ -19,9 +19,7 @@
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Docker Deployment Guide" href="docker.html" />
-    <link rel="prev" title="VCF Analysis Agent Documentation" href="index.html" /> 
+    <link rel="search" title="Search" href="search.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -43,241 +41,307 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">vcf_agent package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.agent">vcf_agent.agent module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#output-mode-toggling-chain-of-thought-vs-raw-output">Output Mode Toggling (Chain-of-Thought vs. Raw Output):</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.agent.get_agent_with_session"><code class="docutils literal notranslate"><span class="pre">get_agent_with_session()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.agent.run_llm_analysis_task"><code class="docutils literal notranslate"><span class="pre">run_llm_analysis_task()</span></code></a></li>
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">VCF Analysis Agent User Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#table-of-contents">Table of Contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#quick-start">Quick Start</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#minute-setup">5-Minute Setup</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.bcftools_integration">vcf_agent.bcftools_integration module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.run_bcftools_command"><code class="docutils literal notranslate"><span class="pre">run_bcftools_command()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_view"><code class="docutils literal notranslate"><span class="pre">bcftools_view()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_query"><code class="docutils literal notranslate"><span class="pre">bcftools_query()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_filter"><code class="docutils literal notranslate"><span class="pre">bcftools_filter()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_norm"><code class="docutils literal notranslate"><span class="pre">bcftools_norm()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_stats"><code class="docutils literal notranslate"><span class="pre">bcftools_stats()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_annotate"><code class="docutils literal notranslate"><span class="pre">bcftools_annotate()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_isec"><code class="docutils literal notranslate"><span class="pre">bcftools_isec()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.count_variants_in_vcf"><code class="docutils literal notranslate"><span class="pre">count_variants_in_vcf()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.parse_vcf_variants"><code class="docutils literal notranslate"><span class="pre">parse_vcf_variants()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.vcf_compare"><code class="docutils literal notranslate"><span class="pre">vcf_compare()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#installation">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#installation-methods">Installation Methods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#method-1-pip-install-recommended">Method 1: pip Install (Recommended)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#method-2-from-source">Method 2: From Source</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#method-3-docker">Method 3: Docker</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.cli">vcf_agent.cli module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.cli.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#verify-installation">Verify Installation</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.config">vcf_agent.config module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.config.CONFIG"><code class="docutils literal notranslate"><span class="pre">CONFIG</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.config.SessionConfig"><code class="docutils literal notranslate"><span class="pre">SessionConfig</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.config.SessionConfig.raw_mode"><code class="docutils literal notranslate"><span class="pre">SessionConfig.raw_mode</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.config.SessionConfig.model_provider"><code class="docutils literal notranslate"><span class="pre">SessionConfig.model_provider</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.config.SessionConfig.credentials_file"><code class="docutils literal notranslate"><span class="pre">SessionConfig.credentials_file</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.config.SessionConfig.reference_fasta"><code class="docutils literal notranslate"><span class="pre">SessionConfig.reference_fasta</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#configuration">Configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#environment-variables">Environment Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#configuration-file">Configuration File</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#api-key-management">API Key Management</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#option-1-environment-variables">Option 1: Environment Variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#option-2-credentials-file">Option 2: Credentials File</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#option-3-secure-vault-production">Option 3: Secure Vault (Production)</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.gatk_integration">vcf_agent.gatk_integration module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.gatk_integration.run_gatk_command"><code class="docutils literal notranslate"><span class="pre">run_gatk_command()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.gatk_integration.gatk_validatevariants"><code class="docutils literal notranslate"><span class="pre">gatk_validatevariants()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#basic-usage">Basic Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#command-line-interface">Command Line Interface</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#analyze-vcf-files">Analyze VCF Files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#interactive-ai-analysis">Interactive AI Analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#data-management">Data Management</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.validation">vcf_agent.validation module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.validation.file_exists"><code class="docutils literal notranslate"><span class="pre">file_exists()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.validation.is_vcf_or_bcf"><code class="docutils literal notranslate"><span class="pre">is_vcf_or_bcf()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.validation.has_index"><code class="docutils literal notranslate"><span class="pre">has_index()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.validation.validate_with_bcftools_stats"><code class="docutils literal notranslate"><span class="pre">validate_with_bcftools_stats()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.validation.validate_with_gatk"><code class="docutils literal notranslate"><span class="pre">validate_with_gatk()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.validation.validate_with_manufacturer_tool"><code class="docutils literal notranslate"><span class="pre">validate_with_manufacturer_tool()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.validation.compliance_check"><code class="docutils literal notranslate"><span class="pre">compliance_check()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.validation.validate_vcf_file"><code class="docutils literal notranslate"><span class="pre">validate_vcf_file()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent">Module contents</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="docker.html">Docker Deployment Guide</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="docker.html#architecture-overview">Architecture Overview</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#multi-stage-build-strategy">Multi-Stage Build Strategy</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#key-features">Key Features</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="docker.html#quick-start">Quick Start</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#prerequisites">Prerequisites</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#basic-usage">Basic Usage</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="docker.html#building-images">Building Images</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#using-the-build-script">Using the Build Script</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#manual-docker-build">Manual Docker Build</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#build-arguments">Build Arguments</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="docker.html#deployment">Deployment</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#docker-compose-recommended">Docker Compose (Recommended)</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="docker.html#production-deployment">Production Deployment</a></li>
-<li class="toctree-l4"><a class="reference internal" href="docker.html#development-deployment">Development Deployment</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#standalone-container">Standalone Container</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="docker.html#configuration">Configuration</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#environment-variables">Environment Variables</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#volume-mounts">Volume Mounts</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#network-configuration">Network Configuration</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="docker.html#monitoring-observability">Monitoring &amp; Observability</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#health-checks">Health Checks</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#metrics">Metrics</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#tracing">Tracing</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#logs">Logs</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="docker.html#security">Security</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#security-features">Security Features</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#security-scanning">Security Scanning</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#best-practices">Best Practices</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="docker.html#development">Development</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#development-environment">Development Environment</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#debugging">Debugging</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#hot-reloading">Hot Reloading</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="docker.html#performance-optimization">Performance Optimization</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#resource-allocation">Resource Allocation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#performance-tuning">Performance Tuning</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="docker.html#troubleshooting">Troubleshooting</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="docker.html#common-issues">Common Issues</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="docker.html#container-won-t-start">Container Won’t Start</a></li>
-<li class="toctree-l4"><a class="reference internal" href="docker.html#permission-issues">Permission Issues</a></li>
-<li class="toctree-l4"><a class="reference internal" href="docker.html#memory-issues">Memory Issues</a></li>
-<li class="toctree-l4"><a class="reference internal" href="docker.html#database-connection-issues">Database Connection Issues</a></li>
-<li class="toctree-l4"><a class="reference internal" href="docker.html#performance-issues">Performance Issues</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#python-api">Python API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#id1">Basic Usage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#advanced-usage">Advanced Usage</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="docker.html#additional-resources">Additional Resources</a></li>
-<li class="toctree-l2"><a class="reference internal" href="docker.html#contributing">Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#advanced-features">Advanced Features</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#dual-database-architecture">Dual-Database Architecture</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#lancedb-vector-database">LanceDB (Vector Database)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#kuzu-graph-database">Kuzu (Graph Database)</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="samspec_compliance.html">SAMspec Compliance Validation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#features">Features</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#comprehensive-validation-rules">Comprehensive Validation Rules</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#file-format-validation">File Format Validation</a></li>
-<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#header-structure-validation">Header Structure Validation</a></li>
-<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#info-field-validation">INFO Field Validation</a></li>
-<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#format-field-validation">FORMAT Field Validation</a></li>
-<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#filter-field-validation">FILTER Field Validation</a></li>
-<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#data-record-validation">Data Record Validation</a></li>
-<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#contig-validation">Contig Validation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#ai-powered-embeddings">AI-Powered Embeddings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#batch-processing">Batch Processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#performance-monitoring">Performance Monitoring</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#file-format-support">File Format Support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#id2">Data Management</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#supported-file-formats">Supported File Formats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#data-ingestion-workflow">Data Ingestion Workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#data-export-options">Data Export Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#database-management">Database Management</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#cli-usage">CLI Usage</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#basic-validation">Basic Validation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#output-formats">Output Formats</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#batch-validation">Batch Validation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#explain-violations">Explain Violations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#ai-powered-analysis">AI-Powered Analysis</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#supported-ai-models">Supported AI Models</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#openai-models">OpenAI Models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#cerebras-models">Cerebras Models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#local-models-ollama">Local Models (Ollama)</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#python-api-usage">Python API Usage</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#id1">Basic Validation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#advanced-usage">Advanced Usage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#analysis-types">Analysis Types</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#variant-interpretation">Variant Interpretation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#comparative-analysis">Comparative Analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#pathway-analysis">Pathway Analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#quality-assessment">Quality Assessment</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#report-structure">Report Structure</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#compliancereport">ComplianceReport</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#complianceviolation">ComplianceViolation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#custom-prompts">Custom Prompts</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#example-reports">Example Reports</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#text-format">Text Format</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#json-format">JSON Format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#performance-optimization">Performance Optimization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#hardware-recommendations">Hardware Recommendations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#minimum-requirements">Minimum Requirements</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#recommended-configuration">Recommended Configuration</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#integration-with-ci-cd">Integration with CI/CD</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#exit-codes">Exit Codes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#example-github-actions-workflow">Example GitHub Actions Workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#performance-tuning">Performance Tuning</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#batch-size-optimization">Batch Size Optimization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#worker-thread-configuration">Worker Thread Configuration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#caching-strategies">Caching Strategies</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#performance-considerations">Performance Considerations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#best-practices">Best Practices</a></li>
-<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#troubleshooting">Troubleshooting</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#common-issues">Common Issues</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#getting-help">Getting Help</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#monitoring-performance">Monitoring Performance</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#related-features">Related Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#common-issues">Common Issues</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#api-key-errors">1. API Key Errors</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#memory-issues">2. Memory Issues</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#database-connection-issues">3. Database Connection Issues</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#performance-issues">4. Performance Issues</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#module-vcf_agent.lancedb_integration">API Reference</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.mask_sensitive_sql"><code class="docutils literal notranslate"><span class="pre">mask_sensitive_sql()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#debug-mode">Debug Mode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#log-analysis">Log Analysis</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#cli-usage-guide">CLI Usage Guide</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#data-flow-overview">Data Flow Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#schema-definition">Schema Definition</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#variant-table-schema-er-diagram">Variant Table Schema (ER Diagram)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#concurrency-model">Concurrency Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#security-notes">Security Notes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#performance-considerations">Performance Considerations</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="lancedb_developer_guide.html#vulnerability-scanning-with-pip-audit">Vulnerability Scanning with pip-audit</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#purpose">Purpose</a></li>
-<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#ci-cd-integration">CI/CD Integration</a></li>
-<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#local-usage">Local Usage</a></li>
-<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#interpreting-results">Interpreting Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#best-practices">Best Practices</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#data-organization">Data Organization</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#directory-structure">Directory Structure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#file-naming-conventions">File Naming Conventions</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="lancedb_developer_guide.html#software-bill-of-materials-sbom-generation">Software Bill of Materials (SBOM) Generation</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#id1">Purpose</a></li>
-<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#id2">CI/CD Integration</a></li>
-<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#id3">Local Usage</a></li>
-<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#sbom-formats">SBOM Formats</a></li>
-<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#best-practices">Best Practices</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#security-best-practices">Security Best Practices</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#id3">API Key Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#data-protection">Data Protection</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="lancedb_developer_guide.html#filesystem-acls-and-secure-permissions">Filesystem ACLs and Secure Permissions</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#principle-of-least-privilege">Principle of Least Privilege</a></li>
-<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#linux-macos">Linux/macOS</a></li>
-<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#windows">Windows</a></li>
-<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#review-and-monitoring">Review and Monitoring</a></li>
-<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#references">References</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#workflow-automation">Workflow Automation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#batch-processing-script">Batch Processing Script</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#monitoring-script">Monitoring Script</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#quality-assurance">Quality Assurance</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#validation-workflow">Validation Workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="user_guide.html#testing-pipeline">Testing Pipeline</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide.html#support-and-resources">Support and Resources</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#documentation">Documentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#community">Community</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#professional-support">Professional Support</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user_guide.html#getting-help">Getting Help</a></li>
 </ul>
 </li>
 </ul>
 </li>
 </ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#core-module-src-vcf-agent-graph-integration">Core Module: <code class="docutils literal notranslate"><span class="pre">src.vcf_agent.graph_integration</span></code></a><ul>
-<li class="toctree-l2"><a class="reference internal" href="kuzu_developer_guide.html#key-functions">Key Functions</a></li>
+<p class="caption" role="heading"><span class="caption-text">Technical Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">VCF Agent API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#core-classes">Core Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api.html#unifieddatastoremanager">UnifiedDataStoreManager</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api.html#constructor">Constructor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api.html#methods">Methods</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#schema-details">Schema Details</a></li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#usage-pattern-with-lancedb">Usage Pattern with LanceDB</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="kuzu_developer_guide.html#example-conceptual">Example (Conceptual):</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api.html#datastoreconfig">DataStoreConfig</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api.html#performancemetrics">PerformanceMetrics</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#security-and-auditing">Security and Auditing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#known-issues-and-workarounds">Known Issues and Workarounds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#lancedb-integration">LanceDB Integration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api.html#vcfvariant-model">VCFVariant Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api.html#variantembeddingservice">VariantEmbeddingService</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api.html#id1">Constructor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api.html#id2">Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api.html#core-functions">Core Functions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api.html#get-or-create-vcf-table">get_or_create_vcf_table</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api.html#batch-add-vcf-variants">batch_add_vcf_variants</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api.html#hybrid-search-variants">hybrid_search_variants</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api.html#search-similar-variants">search_similar_variants</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#kuzu-graph-integration">Kuzu Graph Integration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api.html#id3">Core Functions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api.html#get-kuzu-db-connection">get_kuzu_db_connection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api.html#create-enhanced-schema">create_enhanced_schema</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api.html#batch-add-genomic-data">batch_add_genomic_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api.html#find-sample-variants">find_sample_variants</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api.html#find-variant-genes">find_variant_genes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api.html#find-similar-samples">find_similar_samples</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api.html#get-genomic-statistics">get_genomic_statistics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#convenience-functions">Convenience Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api.html#create-data-store-manager">create_data_store_manager</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#error-handling">Error Handling</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api.html#common-exceptions">Common Exceptions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api.html#databaseconnectionerror">DatabaseConnectionError</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api.html#validationerror">ValidationError</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api.html#performanceerror">PerformanceError</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#performance-optimization">Performance Optimization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api.html#batch-size-tuning">Batch Size Tuning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api.html#connection-pooling">Connection Pooling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api.html#monitoring-performance">Monitoring Performance</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#integration-examples">Integration Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api.html#complete-workflow-example">Complete Workflow Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api.html#async-operations-example">Async Operations Example</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#testing">Testing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api.html#unit-testing-example">Unit Testing Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api.html#integration-testing-example">Integration Testing Example</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#best-practices">Best Practices</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api.html#resource-management">1. Resource Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api.html#id4">2. Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api.html#performance-monitoring">3. Performance Monitoring</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api.html#configuration-management">4. Configuration Management</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#migration-and-versioning">Migration and Versioning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api.html#schema-migration">Schema Migration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api.html#data-export-import">Data Export/Import</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data_stores.html">VCF Agent Data Stores Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_stores.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_stores.html#architecture">Architecture</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#dual-database-design">Dual-Database Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#data-flow-architecture">Data Flow Architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_stores.html#core-components">Core Components</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#unifieddatastoremanager">1. UnifiedDataStoreManager</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="data_stores.html#key-features">Key Features:</a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_stores.html#core-methods">Core Methods:</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#lancedb-integration">2. LanceDB Integration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="data_stores.html#enhanced-vcfvariant-schema">Enhanced VCFVariant Schema:</a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_stores.html#key-functions">Key Functions:</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#kuzu-graph-integration">3. Kuzu Graph Integration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="data_stores.html#enhanced-graph-schema">Enhanced Graph Schema:</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#variantembeddingservice">4. VariantEmbeddingService</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="data_stores.html#features">Features:</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_stores.html#performance-specifications">Performance Specifications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#performance-monitoring">Performance Monitoring</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_stores.html#usage-examples">Usage Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#basic-setup">1. Basic Setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#adding-sample-data">2. Adding Sample Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#searching-variants">3. Searching Variants</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#sample-analysis">4. Sample Analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#performance-statistics">5. Performance Statistics</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_stores.html#data-synchronization">Data Synchronization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#consistency-guarantees">Consistency Guarantees:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_stores.html#testing-and-validation">Testing and Validation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#test-coverage">Test Coverage:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#performance-benchmarks">Performance Benchmarks:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_stores.html#configuration">Configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#datastoreconfig-options">DataStoreConfig Options:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#environment-variables">Environment Variables:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_stores.html#error-handling-and-logging">Error Handling and Logging</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#logging-strategy">Logging Strategy:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#error-recovery">Error Recovery:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_stores.html#future-enhancements">Future Enhancements</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#planned-features">Planned Features:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#performance-optimizations">Performance Optimizations:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_stores.html#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#common-issues">Common Issues:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_stores.html#debug-commands">Debug Commands:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_stores.html#references">References</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Operations &amp; Deployment</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="monitoring_with_prometheus.html">Observability Stack</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#architecture">Architecture</a></li>
@@ -359,77 +423,6 @@
 <li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#alerting">Alerting</a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="security.html">Security</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="security.html#general-principles">General Principles</a></li>
-<li class="toctree-l2"><a class="reference internal" href="security.html#credential-management">Credential Management</a></li>
-<li class="toctree-l2"><a class="reference internal" href="security.html#data-handling-for-vcf-files">Data Handling for VCF Files</a></li>
-<li class="toctree-l2"><a class="reference internal" href="security.html#database-security">Database Security</a></li>
-<li class="toctree-l2"><a class="reference internal" href="security.html#application-security">Application Security</a></li>
-<li class="toctree-l2"><a class="reference internal" href="security.html#secure-development-practices">Secure Development Practices</a></li>
-<li class="toctree-l2"><a class="reference internal" href="security.html#incident-response">Incident Response</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="audit.html">Auditing</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="audit.html#logging-strategy">Logging Strategy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="audit.html#filesystem-auditing">Filesystem Auditing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="audit.html#application-level-auditing">Application-Level Auditing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="audit.html#review-and-compliance">Review and Compliance</a></li>
-</ul>
-</li>
-<li class="toctree-l1 current"><a class="reference internal" href="modules.html">vcf_agent</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">vcf_agent package</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-vcf_agent.agent">vcf_agent.agent module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#output-mode-toggling-chain-of-thought-vs-raw-output">Output Mode Toggling (Chain-of-Thought vs. Raw Output):</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.agent.get_agent_with_session"><code class="docutils literal notranslate"><span class="pre">get_agent_with_session()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.agent.run_llm_analysis_task"><code class="docutils literal notranslate"><span class="pre">run_llm_analysis_task()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#module-vcf_agent.bcftools_integration">vcf_agent.bcftools_integration module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.run_bcftools_command"><code class="docutils literal notranslate"><span class="pre">run_bcftools_command()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_view"><code class="docutils literal notranslate"><span class="pre">bcftools_view()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_query"><code class="docutils literal notranslate"><span class="pre">bcftools_query()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_filter"><code class="docutils literal notranslate"><span class="pre">bcftools_filter()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_norm"><code class="docutils literal notranslate"><span class="pre">bcftools_norm()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_stats"><code class="docutils literal notranslate"><span class="pre">bcftools_stats()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_annotate"><code class="docutils literal notranslate"><span class="pre">bcftools_annotate()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_isec"><code class="docutils literal notranslate"><span class="pre">bcftools_isec()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.count_variants_in_vcf"><code class="docutils literal notranslate"><span class="pre">count_variants_in_vcf()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.parse_vcf_variants"><code class="docutils literal notranslate"><span class="pre">parse_vcf_variants()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.vcf_compare"><code class="docutils literal notranslate"><span class="pre">vcf_compare()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#module-vcf_agent.cli">vcf_agent.cli module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.cli.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#module-vcf_agent.config">vcf_agent.config module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.config.CONFIG"><code class="docutils literal notranslate"><span class="pre">CONFIG</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.config.SessionConfig"><code class="docutils literal notranslate"><span class="pre">SessionConfig</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#module-vcf_agent.gatk_integration">vcf_agent.gatk_integration module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.gatk_integration.run_gatk_command"><code class="docutils literal notranslate"><span class="pre">run_gatk_command()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.gatk_integration.gatk_validatevariants"><code class="docutils literal notranslate"><span class="pre">gatk_validatevariants()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#module-vcf_agent.validation">vcf_agent.validation module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.validation.file_exists"><code class="docutils literal notranslate"><span class="pre">file_exists()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.validation.is_vcf_or_bcf"><code class="docutils literal notranslate"><span class="pre">is_vcf_or_bcf()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.validation.has_index"><code class="docutils literal notranslate"><span class="pre">has_index()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.validation.validate_with_bcftools_stats"><code class="docutils literal notranslate"><span class="pre">validate_with_bcftools_stats()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.validation.validate_with_gatk"><code class="docutils literal notranslate"><span class="pre">validate_with_gatk()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.validation.validate_with_manufacturer_tool"><code class="docutils literal notranslate"><span class="pre">validate_with_manufacturer_tool()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.validation.compliance_check"><code class="docutils literal notranslate"><span class="pre">compliance_check()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.validation.validate_vcf_file"><code class="docutils literal notranslate"><span class="pre">validate_vcf_file()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#module-vcf_agent">Module contents</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
 </ul>
 </li>
 </ul>
@@ -1209,10 +1202,7 @@ Selects backend based on config or argument.</p>
 
            </div>
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="index.html" class="btn btn-neutral float-left" title="VCF Analysis Agent Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="docker.html" class="btn btn-neutral float-right" title="Docker Deployment Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-    </div>
+          <footer>
 
   <hr/>
 

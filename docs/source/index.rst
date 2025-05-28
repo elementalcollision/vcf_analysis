@@ -86,7 +86,6 @@ This documentation is organized into the following sections:
 
    deployment
    monitoring_with_prometheus
-   security
 
 .. toctree::
    :maxdepth: 2
@@ -161,6 +160,7 @@ The VCF Analysis Agent has been tested with:
 - **Access Control**: Role-based permissions and audit logging
 - **Compliance**: GDPR and HIPAA-ready data handling
 - **Vulnerability Management**: Regular security scanning and updates
+- **Security Policy**: Complete security guidelines available in `docs/SECURITY.md`
 
 📞 **Support & Community**
 
