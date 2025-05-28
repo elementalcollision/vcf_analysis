@@ -110,6 +110,14 @@ DEMO_READINESS_CHECKLIST.md
 APACHE_IGGY_IMPLEMENTATION_PLAN.md
 performance_validation.py
 
+# Session and development summary files
+*_SESSION_SUMMARY.md
+*_FIXES_SUMMARY.md
+*_SCHEMA_FIX_SUMMARY.md
+LOAD_TESTING_SESSION_SUMMARY.md
+PATH_FIXES_SUMMARY.md
+KUZU_SCHEMA_FIX_SUMMARY.md
+
 # Performance and Security Reports
 performance_reports/
 security-reports/
