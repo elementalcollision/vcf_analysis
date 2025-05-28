@@ -1,0 +1,88 @@
+{
+  "memory": {
+    "error": "create_data_store_manager() got an unexpected keyword argument 'data_store_config'"
+  },
+  "database": {
+    "error": "create_data_store_manager() got an unexpected keyword argument 'data_store_config'"
+  },
+  "ai": {
+    "error": "VariantEmbeddingService.__init__() got an unexpected keyword argument 'provider'"
+  },
+  "hotspots": {
+    "profile_output": "         7152338 function calls (6376443 primitive calls) in 13.663 seconds\n\n   Ordered by: cumulative time\n   List reduced from 1048 to 20 due to restriction <20>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n      101    0.001    0.000   12.632    0.125 /Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/optimizations.py:94(put)\n        1    0.000    0.000   12.630   12.630 /Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/optimizations.py:63(_save_cache)\n        1    1.369    1.369   12.628   12.628 /opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/__init__.py:120(dump)\n   770510    1.382    0.000   10.275    0.000 /opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/encoder.py:414(_iterencode)\n1540512/770510    3.395    0.000    8.893    0.000 /opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/encoder.py:334(_iterencode_dict)\n   769502    3.347    0.000    5.494    0.000 /opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/encoder.py:278(_iterencode_list)\n2342730/2342728    1.292    0.000    1.296    0.000 {built-in method builtins.isinstance}\n   770611    0.986    0.000    0.988    0.000 {method 'write' of '_io.TextIOWrapper' objects}\n   768000    0.874    0.000    0.874    0.000 /opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/encoder.py:224(floatstr)\n     91/1    0.002    0.000    0.502    0.502 /Users/dave/Cursor_Secondary/VCF_Agent/.venv/lib/python3.13/site-packages/kuzu/query_result.py:55(__del__)\n        1    0.000    0.000    0.466    0.466 /Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/optimizations.py:389(optimize_embedding_service)\n        1    0.000    0.000    0.466    0.466 /Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/optimizations.py:134(__init__)\n        1    0.000    0.000    0.466    0.466 /Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/optimizations.py:38(__init__)\n        1    0.000    0.000    0.466    0.466 /Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/optimizations.py:51(_load_cache)\n        1    0.000    0.000    0.466    0.466 /opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/__init__.py:274(load)\n        1    0.000    0.000    0.461    0.461 /opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/__init__.py:299(loads)\n        1    0.000    0.000    0.461    0.461 /opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/decoder.py:340(decode)\n        1    0.461    0.461    0.461    0.461 /opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/decoder.py:351(raw_decode)\n      470    0.001    0.000    0.121    0.000 {method 'run' of '_contextvars.Context' objects}\n      101    0.005    0.000    0.105    0.001 /Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/lancedb_integration.py:237(generate_embedding)\n\n\n",
+    "top_hotspots": [
+      {
+        "ncalls": "ncalls",
+        "tottime": "tottime",
+        "cumtime": "cumtime",
+        "function": "filename:lineno(function)"
+      },
+      {
+        "ncalls": "101",
+        "tottime": "0.001",
+        "cumtime": "12.632",
+        "function": "/Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/optimizations.py:94(put)"
+      },
+      {
+        "ncalls": "1",
+        "tottime": "0.000",
+        "cumtime": "12.630",
+        "function": "/Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/optimizations.py:63(_save_cache)"
+      },
+      {
+        "ncalls": "1",
+        "tottime": "1.369",
+        "cumtime": "12.628",
+        "function": "/opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/__init__.py:120(dump)"
+      },
+      {
+        "ncalls": "770510",
+        "tottime": "1.382",
+        "cumtime": "10.275",
+        "function": "/opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/encoder.py:414(_iterencode)"
+      },
+      {
+        "ncalls": "1540512/770510",
+        "tottime": "3.395",
+        "cumtime": "8.893",
+        "function": "/opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/encoder.py:334(_iterencode_dict)"
+      },
+      {
+        "ncalls": "769502",
+        "tottime": "3.347",
+        "cumtime": "5.494",
+        "function": "/opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/encoder.py:278(_iterencode_list)"
+      },
+      {
+        "ncalls": "2342730/2342728",
+        "tottime": "1.292",
+        "cumtime": "1.296",
+        "function": "{built-in method builtins.isinstance}"
+      },
+      {
+        "ncalls": "770611",
+        "tottime": "0.986",
+        "cumtime": "0.988",
+        "function": "{method 'write' of '_io.TextIOWrapper' objects}"
+      },
+      {
+        "ncalls": "768000",
+        "tottime": "0.874",
+        "cumtime": "0.874",
+        "function": "/opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/encoder.py:224(floatstr)"
+      }
+    ]
+  },
+  "resources": {
+    "error": "'Process' object has no attribute 'io_counters'"
+  },
+  "recommendations": [
+    "Optimize batch ingestion by increasing batch size or implementing parallel processing"
+  ],
+  "metadata": {
+    "analysis_date": "2025-05-28T10:36:20.881661",
+    "total_duration_seconds": 14.836370944976807,
+    "python_version": "3.13.3 (main, Apr  8 2025, 13:54:08) [Clang 16.0.0 (clang-1600.0.26.6)]",
+    "platform": "Darwin"
+  }
+}

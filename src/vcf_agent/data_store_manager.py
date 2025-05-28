@@ -27,6 +27,7 @@ from .graph_integration import (
     get_genomic_statistics as get_kuzu_stats
 )
 from .config import SessionConfig
+from .optimizations import get_optimizer, OptimizationConfig
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -79,6 +80,15 @@ class UnifiedDataStoreManager:
         self.config = config or DataStoreConfig()
         self.session_config = session_config or SessionConfig()
         
+        # Initialize performance optimizer
+        optimization_config = OptimizationConfig(
+            enable_embedding_cache=True,
+            enable_query_batching=True,
+            enable_async_processing=True,
+            max_concurrent_tasks=self.config.max_workers
+        )
+        self.optimizer = get_optimizer(optimization_config)
+        
         # Database connections
         self.lancedb = None
         self.lance_table = None
@@ -86,6 +96,8 @@ class UnifiedDataStoreManager:
         
         # Services
         self.embedding_service = VariantEmbeddingService(self.session_config)
+        # Optimize embedding service
+        self.embedding_service = self.optimizer.optimize_embedding_service(self.embedding_service)
         
         # Performance tracking
         self.performance_metrics: List[PerformanceMetrics] = []
@@ -396,14 +408,21 @@ class UnifiedDataStoreManager:
             variants = find_sample_variants(self.kuzu_conn, sample_id, limit=1000)
             analysis["variants"] = variants
             
-            # Get genes for each variant
-            unique_genes = set()
-            for variant in variants:
-                variant_genes = find_variant_genes(self.kuzu_conn, variant['variant_id'])
-                for gene in variant_genes:
-                    unique_genes.add(gene['gene_symbol'])
-                    
-            analysis["genes"] = list(unique_genes)
+            # Optimize gene lookups using batch queries
+            variant_ids = [variant['variant_id'] for variant in variants]
+            if variant_ids:
+                # Use optimized batch gene queries
+                gene_results = self.optimizer.optimize_gene_queries(self.kuzu_conn, variant_ids)
+                
+                # Collect unique genes
+                unique_genes = set()
+                for variant_id, genes in gene_results.items():
+                    for gene in genes:
+                        unique_genes.add(gene['symbol'])
+                
+                analysis["genes"] = list(unique_genes)
+            else:
+                analysis["genes"] = []
             
             # Find similar samples
             similar_samples = find_similar_samples(self.kuzu_conn, sample_id, min_shared_variants=5)
@@ -412,7 +431,7 @@ class UnifiedDataStoreManager:
             # Get statistics
             analysis["statistics"] = {
                 "total_variants": len(variants),
-                "unique_genes": len(unique_genes),
+                "unique_genes": len(analysis["genes"]),
                 "similar_samples_count": len(similar_samples)
             }
             
@@ -432,10 +451,11 @@ class UnifiedDataStoreManager:
             
             analysis["performance"] = {
                 "duration_seconds": duration,
-                "variants_analyzed": len(variants)
+                "variants_analyzed": len(variants),
+                "optimization_stats": self.optimizer.get_optimization_stats()
             }
             
-            logger.info(f"Sample analysis completed: {len(variants)} variants, {len(unique_genes)} genes in {duration:.2f}s")
+            logger.info(f"Sample analysis completed: {len(variants)} variants, {len(analysis['genes'])} genes in {duration:.2f}s")
             return analysis
             
         except Exception as e:

@@ -1,0 +1,124 @@
+{
+  "analysis_date": "2025-05-28T10:37:29.606991",
+  "performance_summary": {
+    "total_analysis_time": 14.836370944976807,
+    "major_bottlenecks_found": 4,
+    "optimization_opportunities": 4
+  },
+  "bottlenecks": [
+    {
+      "type": "code_hotspot",
+      "function": "/Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/optimizations.py:94(put)",
+      "time_seconds": 12.632,
+      "calls": "101",
+      "severity": "high"
+    },
+    {
+      "type": "code_hotspot",
+      "function": "/Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/optimizations.py:63(_save_cache)",
+      "time_seconds": 12.63,
+      "calls": "1",
+      "severity": "high"
+    },
+    {
+      "type": "code_hotspot",
+      "function": "/opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/__init__.py:120(dump)",
+      "time_seconds": 12.628,
+      "calls": "1",
+      "severity": "high"
+    },
+    {
+      "type": "code_hotspot",
+      "function": "/opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/encoder.py:414(_iterencode)",
+      "time_seconds": 10.275,
+      "calls": "770510",
+      "severity": "high"
+    },
+    {
+      "type": "code_hotspot",
+      "function": "/opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/json/encoder.py:334(_iterencode_dict)",
+      "time_seconds": 8.893,
+      "calls": "1540512/770510",
+      "severity": "medium"
+    }
+  ],
+  "recommendations": [
+    {
+      "category": "Cache Optimization",
+      "priority": "high",
+      "issue": "JSON cache serialization is taking 12+ seconds",
+      "recommendation": "Replace JSON cache with binary format (pickle/msgpack) or implement async cache persistence",
+      "implementation": [
+        "Use msgpack for faster serialization",
+        "Implement background cache persistence",
+        "Add cache size limits to prevent large serialization",
+        "Consider using SQLite for cache storage"
+      ],
+      "expected_improvement": "90% reduction in cache save time"
+    },
+    {
+      "category": "Embedding Generation",
+      "priority": "medium",
+      "issue": "Multiple embedding calls for same content",
+      "recommendation": "Implement smarter caching and batch processing",
+      "implementation": [
+        "Pre-compute embeddings for common variant descriptions",
+        "Implement embedding deduplication",
+        "Use batch embedding APIs where available",
+        "Add embedding compression for storage"
+      ],
+      "expected_improvement": "50% reduction in embedding generation time"
+    },
+    {
+      "category": "Database Queries",
+      "priority": "medium",
+      "issue": "Individual gene queries instead of batch queries",
+      "recommendation": "Implement proper batch query optimization",
+      "implementation": [
+        "Fix batch query result iteration",
+        "Optimize Kuzu query patterns",
+        "Add query result caching",
+        "Implement connection pooling"
+      ],
+      "expected_improvement": "70% reduction in query time for large datasets"
+    },
+    {
+      "category": "Memory Management",
+      "priority": "low",
+      "issue": "Large object creation and retention",
+      "recommendation": "Implement memory-efficient data structures",
+      "implementation": [
+        "Use generators for large data processing",
+        "Implement object pooling for frequent allocations",
+        "Add memory monitoring and limits",
+        "Optimize data structure sizes"
+      ],
+      "expected_improvement": "30% reduction in memory usage"
+    }
+  ],
+  "implementation_plan": {
+    "immediate_actions": [
+      "Cache Optimization: Use msgpack for faster serialization",
+      "Cache Optimization: Implement background cache persistence"
+    ],
+    "short_term": [
+      "Embedding Generation: Pre-compute embeddings for common variant descriptions",
+      "Embedding Generation: Implement embedding deduplication",
+      "Database Queries: Fix batch query result iteration",
+      "Database Queries: Optimize Kuzu query patterns"
+    ],
+    "long_term": [
+      "Memory Management: Use generators for large data processing"
+    ]
+  },
+  "expected_improvements": {
+    "estimated_time_savings": "24.0 seconds",
+    "performance_gain": "80%",
+    "priority_order": [
+      "Cache Optimization",
+      "Database Queries",
+      "Embedding Generation",
+      "Memory Management"
+    ]
+  }
+}

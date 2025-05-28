@@ -1,0 +1,88 @@
+{
+  "memory": {
+    "error": "create_data_store_manager() got an unexpected keyword argument 'data_store_config'"
+  },
+  "database": {
+    "error": "create_data_store_manager() got an unexpected keyword argument 'data_store_config'"
+  },
+  "ai": {
+    "error": "VariantEmbeddingService.__init__() got an unexpected keyword argument 'provider'"
+  },
+  "hotspots": {
+    "profile_output": "         222730 function calls (216846 primitive calls) in 0.591 seconds\n\n   Ordered by: cumulative time\n   List reduced from 1007 to 20 due to restriction <20>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n      470    0.001    0.000    0.132    0.000 {method 'run' of '_contextvars.Context' objects}\n      101    0.010    0.000    0.116    0.001 /Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/lancedb_integration.py:237(generate_embedding)\n       52    0.000    0.000    0.099    0.002 /Users/dave/Cursor_Secondary/VCF_Agent/.venv/lib/python3.13/site-packages/pandas/util/_decorators.py:325(wrapper)\n       52    0.000    0.000    0.098    0.002 /Users/dave/Cursor_Secondary/VCF_Agent/.venv/lib/python3.13/site-packages/pandas/core/frame.py:2063(to_dict)\n       52    0.006    0.000    0.097    0.002 /Users/dave/Cursor_Secondary/VCF_Agent/.venv/lib/python3.13/site-packages/pandas/core/methods/to_dict.py:78(to_dict)\n   157/56    0.001    0.000    0.095    0.002 /opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/base_events.py:683(run_until_complete)\n   158/56    0.000    0.000    0.093    0.002 /opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/base_events.py:672(run_forever)\n     88/6    0.001    0.000    0.090    0.015 /opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py:131(_lazy_init)\n      155    0.086    0.001    0.086    0.001 {method 'tolist' of 'numpy.ndarray' objects}\n       52    0.000    0.000    0.081    0.002 /Users/dave/Cursor_Secondary/VCF_Agent/.venv/lib/python3.13/site-packages/pandas/core/frame.py:1805(from_dict)\n    70/52    0.000    0.000    0.081    0.002 /Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/lancedb_integration.py:279(generate_embedding_sync)\n      153    0.000    0.000    0.081    0.001 /Users/dave/Cursor_Secondary/VCF_Agent/.venv/lib/python3.13/site-packages/kuzu/connection.py:147(prepare)\n       52    0.001    0.000    0.081    0.002 /Users/dave/Cursor_Secondary/VCF_Agent/.venv/lib/python3.13/site-packages/pandas/core/frame.py:694(__init__)\n      153    0.080    0.001    0.080    0.001 /Users/dave/Cursor_Secondary/VCF_Agent/.venv/lib/python3.13/site-packages/kuzu/prepared_statement.py:15(__init__)\n       52    0.004    0.000    0.078    0.001 /Users/dave/Cursor_Secondary/VCF_Agent/.venv/lib/python3.13/site-packages/pandas/core/internals/construction.py:423(dict_to_mgr)\n       50    0.002    0.000    0.067    0.001 /Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/data_store_manager.py:523(_prepare_lance_variant)\n  460/136    0.001    0.000    0.065    0.000 /opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/events.py:87(_run)\n       52    0.000    0.000    0.061    0.001 /Users/dave/Cursor_Secondary/VCF_Agent/.venv/lib/python3.13/site-packages/pandas/core/internals/construction.py:96(arrays_to_mgr)\n       52    0.001    0.000    0.058    0.001 /Users/dave/Cursor_Secondary/VCF_Agent/.venv/lib/python3.13/site-packages/pandas/core/frame.py:1559(itertuples)\n      625    0.013    0.000    0.057    0.000 /Users/dave/Cursor_Secondary/VCF_Agent/.venv/lib/python3.13/site-packages/pandas/core/construction.py:517(sanitize_array)\n\n\n",
+    "top_hotspots": [
+      {
+        "ncalls": "ncalls",
+        "tottime": "tottime",
+        "cumtime": "cumtime",
+        "function": "filename:lineno(function)"
+      },
+      {
+        "ncalls": "470",
+        "tottime": "0.001",
+        "cumtime": "0.132",
+        "function": "{method 'run' of '_contextvars.Context' objects}"
+      },
+      {
+        "ncalls": "101",
+        "tottime": "0.010",
+        "cumtime": "0.116",
+        "function": "/Users/dave/Cursor_Secondary/VCF_Agent/src/vcf_agent/lancedb_integration.py:237(generate_embedding)"
+      },
+      {
+        "ncalls": "52",
+        "tottime": "0.000",
+        "cumtime": "0.099",
+        "function": "/Users/dave/Cursor_Secondary/VCF_Agent/.venv/lib/python3.13/site-packages/pandas/util/_decorators.py:325(wrapper)"
+      },
+      {
+        "ncalls": "52",
+        "tottime": "0.000",
+        "cumtime": "0.098",
+        "function": "/Users/dave/Cursor_Secondary/VCF_Agent/.venv/lib/python3.13/site-packages/pandas/core/frame.py:2063(to_dict)"
+      },
+      {
+        "ncalls": "52",
+        "tottime": "0.006",
+        "cumtime": "0.097",
+        "function": "/Users/dave/Cursor_Secondary/VCF_Agent/.venv/lib/python3.13/site-packages/pandas/core/methods/to_dict.py:78(to_dict)"
+      },
+      {
+        "ncalls": "157/56",
+        "tottime": "0.001",
+        "cumtime": "0.095",
+        "function": "/opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/base_events.py:683(run_until_complete)"
+      },
+      {
+        "ncalls": "158/56",
+        "tottime": "0.000",
+        "cumtime": "0.093",
+        "function": "/opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/base_events.py:672(run_forever)"
+      },
+      {
+        "ncalls": "88/6",
+        "tottime": "0.001",
+        "cumtime": "0.090",
+        "function": "/opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py:131(_lazy_init)"
+      },
+      {
+        "ncalls": "155",
+        "tottime": "0.086",
+        "cumtime": "0.086",
+        "function": "{method 'tolist' of 'numpy.ndarray' objects}"
+      }
+    ]
+  },
+  "resources": {
+    "error": "'Process' object has no attribute 'io_counters'"
+  },
+  "recommendations": [
+    "Optimize batch ingestion by increasing batch size or implementing parallel processing"
+  ],
+  "metadata": {
+    "analysis_date": "2025-05-28T10:28:16.334727",
+    "total_duration_seconds": 1.704699993133545,
+    "python_version": "3.13.3 (main, Apr  8 2025, 13:54:08) [Clang 16.0.0 (clang-1600.0.26.6)]",
+    "platform": "Darwin"
+  }
+}
