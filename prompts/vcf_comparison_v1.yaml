@@ -10,11 +10,22 @@ instructions: |
   - Summarize concordant and discordant variants, and key quality metrics.
   - Respond with ONLY valid JSON matching the provided schema. Do not include any explanation, markdown, <think> blocks, or extra text.
   - If you cannot perform the task, return a valid JSON object with an 'error' field and no other fields.
+  - CRITICAL: Use the EXACT field names from the schema: concordant_variant_count, discordant_variant_count, unique_to_file_1, unique_to_file_2, quality_metrics
+  
+  Example output format:
+  {
+    "concordant_variant_count": 120,
+    "discordant_variant_count": 30,
+    "unique_to_file_1": ["chr1:12345:A>G", "chr2:67890:T>C"],
+    "unique_to_file_2": ["chr3:11111:G>A", "chr4:22222:C>T"],
+    "quality_metrics": {"mean_concordance": 0.85, "genotype_concordance": 0.92}
+  }
 constraints:
   - Use only the provided files and metadata.
   - Output must be in JSON schema (see below).
   - Output must be valid JSON, with no extra text, explanation, <think> blocks, or formatting.
   - If the task cannot be performed, output a valid JSON object with an 'error' field and no other fields.
+  - MUST use exact field names: concordant_variant_count, discordant_variant_count, unique_to_file_1, unique_to_file_2, quality_metrics
 evaluation:
   - Output must match the provided JSON schema.
   - Determinism: Output must be identical for the same input and seed.

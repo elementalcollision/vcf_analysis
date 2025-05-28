@@ -143,6 +143,7 @@ docs/source/monitoring_with_prometheus.md
 import structlog
 import logging
 from prometheus_client import Counter, Histogram, Gauge, start_http_server, CollectorRegistry, push_to_gateway
+from prometheus_client.registry import REGISTRY
 import time
 import threading
 import os
@@ -155,6 +156,20 @@ from opentelemetry.trace.propagation.tracecontext import (
 )
 from opentelemetry.sdk.trace import Span
 from opentelemetry.semconv.resource import ResourceAttributes
+
+# Create a lock for thread-safe metric registration
+_metrics_lock = threading.Lock()
+_registered_metrics = set()
+
+def safe_register_metric(metric, registry=None):
+    """Safely register a metric to avoid duplicates"""
+    with _metrics_lock:
+        metric_name = metric._name
+        if metric_name not in _registered_metrics:
+            if registry:
+                registry.register(metric)
+            _registered_metrics.add(metric_name)
+        return metric
 
 # --- Structlog OTel Processor ---
 def add_otel_context(_, __, event_dict):
@@ -254,24 +269,36 @@ VCF_AGENT_AI_CONCURRENT_REQUESTS = Gauge(
 # --- CLI Command Metrics ---
 # These will often be registered to a temporary registry for Pushgateway
 # For now, define them. Registration strategy will be handled by helper functions.
-CLI_COMMAND_REQUESTS_TOTAL = Counter(
-    'vcf_agent_cli_command_requests_total',
-    'Total number of CLI subcommand invocations.',
-    ['command', 'status']
-    # registry=http_registry # Optionally register to HTTP if some CLI commands are long-running server-like
-)
-CLI_COMMAND_DURATION_SECONDS = Histogram(
-    'vcf_agent_cli_command_duration_seconds',
-    'Duration of CLI subcommand execution in seconds.',
-    ['command', 'status']
-    # registry=http_registry
-)
-CLI_COMMAND_ERRORS_TOTAL = Counter(
-    'vcf_agent_cli_command_errors_total',
-    'Total errors specifically from CLI command execution logic.',
-    ['command', 'error_type']
-    # registry=http_registry
-)
+try:
+    CLI_COMMAND_REQUESTS_TOTAL = Counter(
+        'vcf_agent_cli_command_requests_total',
+        'Total number of CLI subcommand invocations.',
+        ['command', 'status']
+        # registry=http_registry # Optionally register to HTTP if some CLI commands are long-running server-like
+    )
+except ValueError:
+    # Metric already exists, get it from registry
+    CLI_COMMAND_REQUESTS_TOTAL = REGISTRY._names_to_collectors.get('vcf_agent_cli_command_requests_total')
+
+try:
+    CLI_COMMAND_DURATION_SECONDS = Histogram(
+        'vcf_agent_cli_command_duration_seconds',
+        'Duration of CLI subcommand execution in seconds.',
+        ['command', 'status']
+        # registry=http_registry
+    )
+except ValueError:
+    CLI_COMMAND_DURATION_SECONDS = REGISTRY._names_to_collectors.get('vcf_agent_cli_command_duration_seconds')
+
+try:
+    CLI_COMMAND_ERRORS_TOTAL = Counter(
+        'vcf_agent_cli_command_errors_total',
+        'Total errors specifically from CLI command execution logic.',
+        ['command', 'error_type']
+        # registry=http_registry
+    )
+except ValueError:
+    CLI_COMMAND_ERRORS_TOTAL = REGISTRY._names_to_collectors.get('vcf_agent_cli_command_errors_total')
 
 # --- Agent Tool Metrics ---
 VCF_AGENT_TOOL_REQUESTS_TOTAL = Counter(
@@ -525,4 +552,39 @@ def observe_bcftools_command(
     if not success:
         VCF_AGENT_BCFTOOLS_ERRORS_TOTAL.labels(
             bcftools_subcommand=bcftools_subcommand
+        ).inc()
+
+# --- Tool Usage Helper ---
+def record_tool_usage(
+    tool_name: str,
+    duration_seconds: float,
+    status: str = "success",
+    error_type: Optional[str] = None
+):
+    """
+    Record metrics for agent tool usage.
+    
+    Args:
+        tool_name: Name of the tool that was executed
+        duration_seconds: Duration of the tool execution
+        status: Status of the execution ("success" or "error")
+        error_type: Type of error if tool failed
+    """
+    # Increment tool request counter
+    VCF_AGENT_TOOL_REQUESTS_TOTAL.labels(
+        tool_name=tool_name,
+        status=status
+    ).inc()
+    
+    # Record duration
+    VCF_AGENT_TOOL_DURATION_SECONDS.labels(
+        tool_name=tool_name,
+        status=status
+    ).observe(duration_seconds)
+    
+    # Record errors
+    if status == "error" and error_type:
+        VCF_AGENT_TOOL_ERRORS_TOTAL.labels(
+            tool_name=tool_name,
+            error_type=error_type
         ).inc() 

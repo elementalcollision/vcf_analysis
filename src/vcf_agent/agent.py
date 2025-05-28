@@ -16,11 +16,10 @@ See the README for usage examples and details.
 
 """
 
-from strands import Agent, tools
-from strands.tools import tool
+from strands import Agent, tool
 from strands.models.ollama import OllamaModel
 from strands.models.litellm import LiteLLMModel
-from typing import Any, Optional, Dict, List as PyList, cast, Union, Literal
+from typing import Any, Optional, Dict, List as PyList, cast, Union, Literal, List
 from .validation import validate_vcf_file
 from .bcftools_integration import (
     bcftools_view as _bcftools_view,
@@ -34,7 +33,7 @@ from .bcftools_integration import (
 import os
 from .config import SessionConfig
 from .api_clients import OpenAIClient, CerebrasClient, APIClientError
-from .prompt_templates import get_prompt_for_task
+from .prompt_templates import get_prompt_for_task, load_prompt_contract
 from . import graph_integration # Import the module
 from . import vcf_utils # Import the new function
 import time # For timing
@@ -43,10 +42,16 @@ import json # Added import
 import subprocess
 import logging
 import tempfile # Ensure tempfile is imported
+import re # Add this import for regex
+import jsonschema
+from jsonschema import validate, ValidationError
 
 # OpenTelemetry Imports
 from opentelemetry import trace
 from .tracing import init_tracer # Assuming setup_auto_instrumentation is called by CLI
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 # Initialize OpenTelemetry Tracer for the agent
 agent_tracer = init_tracer(service_name="vcf-agent-core")
@@ -56,32 +61,35 @@ agent_tracer = init_tracer(service_name="vcf-agent-core")
 # 2. CLI flag: --raw / --no-think (see cli.py)
 # 3. Session-based: SessionConfig(raw_mode=...) (see config.py)
 # See README for details.
-RAW_MODE = True  # Always use raw output mode (no chain-of-thought, no <think> blocks)
+RAW_MODE = False  # Enable chain-of-thought by default for better reasoning
 
 SYSTEM_PROMPT = (
-    "You are the VCF Analysis Agent. You analyze, validate, and process VCF files for genomics workflows.\n"
-    "To use a tool, you MUST respond with ONLY a single JSON object formatted as follows:\n"
-    "{\"tool_name\": \"<name_of_tool>\", \"tool_args\": {\"arg_name1\": \"value1\", \"arg_name2\": \"value2\", ...}}"
-    "Do NOT include any explanation, markdown, <think> blocks, or any other text outside this JSON structure.\n"
-    "The available tools are: echo, validate_vcf, bcftools_view_tool, bcftools_query_tool, bcftools_filter_tool, "
-    "bcftools_norm_tool, bcftools_stats_tool, bcftools_annotate_tool, vcf_comparison_tool, ai_vcf_comparison_tool, "
-    "vcf_analysis_summary_tool, vcf_summarization_tool, load_vcf_into_graph_db_tool.\n"
-    "Use ai_vcf_comparison_tool for intelligent VCF comparisons with AI insights, vcf_analysis_summary_tool for "
-    "comprehensive AI-powered VCF analysis, and vcf_summarization_tool for AI-enhanced VCF summaries.\n"
-    "If you cannot perform the task or the query is not a tool request, return a JSON object with an 'error' field and no other fields, or a direct textual answer if appropriate for a simple query not requiring a tool.\n"
-    "/no_think"  # Always disable chain-of-thought
+    "You are the VCF Analysis Agent, a specialized assistant for genomics workflows. "
+    "You help users analyze, validate, and process VCF (Variant Call Format) files.\n\n"
+    
+    "Your capabilities include:\n"
+    "- VCF file validation and format checking\n"
+    "- BCFtools operations (view, query, filter, norm, stats, annotate)\n"
+    "- VCF file comparison and analysis\n"
+    "- AI-powered variant analysis and summarization\n"
+    "- Graph database integration for variant relationships\n"
+    "- Performance optimization and quality metrics\n\n"
+    
+    "You can engage in natural conversation about genomics topics and automatically use tools when needed. "
+    "When a user asks you to validate, analyze, compare, or process VCF files, use the appropriate tools. "
+    "Always provide clear, helpful explanations of your analysis and findings.\n\n"
+    
+    "Available tools include: validate_vcf, bcftools operations, AI-powered analysis tools, "
+    "and graph database tools. Use them intelligently based on user requests."
 )
-
-# Placeholder for tool imports and configuration
-# from strands_tools import calculator, file_read, shell
 
 # Global variable to hold the main Kuzu connection, initialized by get_agent_with_session
 # This is one way; alternatively, tools can call get_managed_kuzu_connection() directly.
 # For now, we'll initialize it to ensure DB and schema are ready when an agent is created.
 _kuzu_connection_for_agent = None
 
-# Placeholder echo tool using @tools.tool decorator
-@tools.tool
+# Placeholder echo tool using @tool decorator
+@tool
 def echo(text: str) -> str:
     """
     Echoes the input text back to the user.
@@ -99,7 +107,7 @@ def echo(text: str) -> str:
     return f"Echo: {text}"
 
 # VCF validation tool
-@tools.tool
+@tool
 def validate_vcf(filepath: str) -> str:
     """
     Validates a VCF/BCF file for existence, format, index, and bcftools stats.
@@ -123,91 +131,45 @@ def validate_vcf(filepath: str) -> str:
 
         start_time = time.time()
         try:
-            # --- Actual validation logic --- 
-            is_valid, error_msg = validate_vcf_file(filepath)
+            # Call the validation function
+            is_valid, error_message = validate_vcf_file(filepath)
+            
+            # Convert tuple result to user-friendly string
             if is_valid:
-                result_str_to_return = f"VALID: {filepath} passed all checks."
-                tool_span.set_status(trace.StatusCode.OK)
+                result_str_to_return = f"✅ VCF file '{filepath}' is valid and passed all validation checks."
             else:
-                metrics_status = "error"
-                error_type_str = "ValidationError"
-                result_str_to_return = f"INVALID: {filepath} failed validation. Reason: {error_msg}"
-                tool_span.set_attribute("tool.error", error_msg if error_msg else "Unknown validation error")
-                tool_span.set_status(trace.StatusCode.ERROR, f"Validation failed: {error_msg if error_msg else 'Unknown'}")
+                result_str_to_return = f"❌ VCF file '{filepath}' failed validation: {error_message}"
             
+            tool_span.set_status(trace.StatusCode.OK)
             tool_span.add_event("tool.execution.end")
-        
         except Exception as e:
-            metrics_status = "error"
             error_type_str = type(e).__name__
-            result_str_to_return = f"ERROR: Unexpected error during {tool_name} for {filepath}. Error: {str(e)}"
-            metrics.log.error(f"{tool_name}_unexpected_error", tool_name=tool_name, filepath=filepath, error=str(e))
-            
-            tool_span.record_exception(e)
-            tool_span.set_status(trace.StatusCode.ERROR, f"Unexpected error: {str(e)}")
-            tool_span.add_event("tool.execution.failed", attributes={"error": True, "exception": str(e)})
-        
+            result_str_to_return = f"ERROR: {str(e)}"
+            metrics_status = "error"
+            tool_span.set_status(trace.StatusCode.ERROR, description=str(e))
+            tool_span.add_event("tool.execution.error", {"error": str(e)})
         finally:
+            # Record metrics
             duration = time.time() - start_time
-            metrics.VCF_AGENT_TOOL_DURATION_SECONDS.labels(tool_name=tool_name, status=metrics_status).observe(duration)
-            metrics.VCF_AGENT_TOOL_REQUESTS_TOTAL.labels(tool_name=tool_name, status=metrics_status).inc()
-            if metrics_status == "error" and error_type_str:
-                metrics.VCF_AGENT_TOOL_ERRORS_TOTAL.labels(tool_name=tool_name, error_type=error_type_str).inc()
-            
-            # Set these attributes here, after result_str_to_return is finalized
-            tool_span.set_attribute("result.length", len(result_str_to_return))
-            tool_span.set_attribute("tool.call.parameters", json.dumps({"vcf_file_path": filepath}))
-            print(f"[TOOL {tool_name}] Exiting. Result: {result_str_to_return}")
+            metrics.record_tool_usage(tool_name, duration, metrics_status, error_type_str)
 
-    return result_str_to_return # Single return point
+    print(f"[TOOL {tool_name}] Exiting. Result: {result_str_to_return[:100]}...")
+    return result_str_to_return
 
-# Register the decorated tool directly
-@tools.tool(
-    openai_schema={
-        "name": "bcftools_view_tool",
-        "description": "Run bcftools view with the given arguments.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "args": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Arguments for bcftools view (e.g., ['-h', 'file.vcf'])"
-                }
-            },
-            "required": ["args"]
-        }
-    }
-)
+@tool
 def bcftools_view_tool(args: PyList[str]) -> str:
     """
     Run bcftools view with the given arguments.
 
     Args:
-        args (list): Arguments for bcftools view (e.g., ["-h", "file.vcf"])
+        args (list): Arguments for bcftools view.
     Returns:
         str: Output or error from bcftools.
     """
     rc, out, err = _bcftools_view(args)
     return out if rc == 0 else err
 
-@tools.tool(
-    openai_schema={
-        "name": "bcftools_query_tool",
-        "description": "Run bcftools query with the given arguments.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "args": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Arguments for bcftools query."
-                }
-            },
-            "required": ["args"]
-        }
-    }
-)
+@tool
 def bcftools_query_tool(args: PyList[str]) -> str:
     """
     Run bcftools query with the given arguments.
@@ -220,23 +182,7 @@ def bcftools_query_tool(args: PyList[str]) -> str:
     rc, out, err = _bcftools_query(args)
     return out if rc == 0 else err
 
-@tools.tool(
-    openai_schema={
-        "name": "bcftools_filter_tool",
-        "description": "Run bcftools filter with the given arguments.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "args": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Arguments for bcftools filter."
-                }
-            },
-            "required": ["args"]
-        }
-    }
-)
+@tool
 def bcftools_filter_tool(args: PyList[str]) -> str:
     """
     Run bcftools filter with the given arguments.
@@ -249,23 +195,7 @@ def bcftools_filter_tool(args: PyList[str]) -> str:
     rc, out, err = _bcftools_filter(args)
     return out if rc == 0 else err
 
-@tools.tool(
-    openai_schema={
-        "name": "bcftools_norm_tool",
-        "description": "Run bcftools norm with the given arguments.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "args": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Arguments for bcftools norm."
-                }
-            },
-            "required": ["args"]
-        }
-    }
-)
+@tool
 def bcftools_norm_tool(args: PyList[str]) -> str:
     """
     Run bcftools norm with the given arguments.
@@ -278,23 +208,7 @@ def bcftools_norm_tool(args: PyList[str]) -> str:
     rc, out, err = _bcftools_norm(args)
     return out if rc == 0 else err
 
-@tools.tool(
-    openai_schema={
-        "name": "bcftools_stats_tool",
-        "description": "Run bcftools stats with the given arguments.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "args": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Arguments for bcftools stats."
-                }
-            },
-            "required": ["args"]
-        }
-    }
-)
+@tool
 def bcftools_stats_tool(args: PyList[str]) -> str:
     """
     Run bcftools stats with the given arguments.
@@ -307,23 +221,7 @@ def bcftools_stats_tool(args: PyList[str]) -> str:
     rc, out, err = _bcftools_stats(args)
     return out if rc == 0 else err
 
-@tools.tool(
-    openai_schema={
-        "name": "bcftools_annotate_tool",
-        "description": "Run bcftools annotate with the given arguments.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "args": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Arguments for bcftools annotate."
-                }
-            },
-            "required": ["args"]
-        }
-    }
-)
+@tool
 def bcftools_annotate_tool(args: PyList[str]) -> str:
     """
     Run bcftools annotate with the given arguments.
@@ -336,18 +234,7 @@ def bcftools_annotate_tool(args: PyList[str]) -> str:
     rc, out, err = _bcftools_annotate(args)
     return out if rc == 0 else err
 
-@tools.tool(
-    openai_schema={
-        "name": "vcf_comparison_tool",
-        "description": "Compare two VCF files for concordance, discordance, and quality metrics, with normalization and multi-sample support.",
-        "parameters": {
-            "file1": {"type": "string", "description": "Path to the first VCF file."},
-            "file2": {"type": "string", "description": "Path to the second VCF file."},
-            "reference": {"type": "string", "description": "Path to the reference FASTA for normalization."}
-        },
-        "required": ["file1", "file2", "reference"]
-    }
-)
+@tool
 def vcf_comparison_tool(file1: str, file2: str, reference: str) -> str:
     """
     Compares two VCF files using bcftools for normalization and isec.
@@ -513,18 +400,7 @@ def vcf_comparison_tool(file1: str, file2: str, reference: str) -> str:
                     logging.warning(f"Could not delete temp directory {path}: {e_rmdir}")
 
 # AI-powered VCF comparison tool
-@tools.tool(
-    openai_schema={
-        "name": "ai_vcf_comparison_tool",
-        "description": "AI-powered comparison of two VCF files with intelligent analysis and insights.",
-        "parameters": {
-            "file1": {"type": "string", "description": "Path to the first VCF file."},
-            "file2": {"type": "string", "description": "Path to the second VCF file."},
-            "reference": {"type": "string", "description": "Path to the reference FASTA for normalization."}
-        },
-        "required": ["file1", "file2", "reference"]
-    }
-)
+@tool
 def ai_vcf_comparison_tool(file1: str, file2: str, reference: str) -> str:
     """
     AI-powered VCF comparison tool that uses LLM analysis for intelligent insights.
@@ -590,7 +466,6 @@ def ai_vcf_comparison_tool(file1: str, file2: str, reference: str) -> str:
                 llm_result = run_llm_analysis_task(
                     task="vcf_comparison_v1",
                     file_paths=[file1, file2],
-                    extra_context=analysis_context,
                     model_provider="ollama"
                 )
                 
@@ -652,7 +527,8 @@ def ai_vcf_comparison_tool(file1: str, file2: str, reference: str) -> str:
             print(f"[TOOL {tool_name}] Exiting. Result length: {len(result_str_to_return)}")
 
     return result_str_to_return
-@tools.tool
+
+@tool
 def vcf_analysis_summary_tool(filepath: str) -> str:
     """
     Analyze a VCF file using AI and return a comprehensive summary.
@@ -710,7 +586,6 @@ def vcf_analysis_summary_tool(filepath: str) -> str:
             llm_result = run_llm_analysis_task(
                 task="vcf_analysis_summary_v1",
                 file_paths=[filepath],
-                extra_context=analysis_context,
                 model_provider="ollama"  # Default to ollama for now
             )
             
@@ -816,16 +691,7 @@ def _generate_basic_vcf_summary(filepath: str, stats_output: str, samples: list)
             "error": f"Basic analysis failed: {str(e)}"
         })
 
-@tools.tool(
-    openai_schema={
-        "name": "vcf_summarization_tool",
-        "description": "Summarize a VCF file for key variant statistics and sample-level insights using AI analysis.",
-        "parameters": {
-            "filepath": {"type": "string", "description": "Path to the VCF file to summarize."}
-        },
-        "required": ["filepath"]
-    }
-)
+@tool
 def vcf_summarization_tool(filepath: str) -> str:
     """
     Enhanced VCF summarization tool that uses LLM analysis for intelligent insights.
@@ -881,7 +747,6 @@ def vcf_summarization_tool(filepath: str) -> str:
                 llm_result = run_llm_analysis_task(
                     task="vcf_summarization_v1",
                     file_paths=[filepath],
-                    extra_context=analysis_context,
                     model_provider="ollama"
                 )
                 
@@ -979,17 +844,7 @@ def _create_basic_summary_result(summary: dict, error_note: str = None) -> str:
     
     return json.dumps(result)
 
-@tools.tool(
-    openai_schema={
-        "name": "load_vcf_into_graph_db",
-        "description": "Parses a VCF file and loads its variants, samples, and relationships into the Kuzu graph database.",
-        "parameters": {
-            "filepath": {"type": "string", "description": "Path to the VCF file to load."},
-            "sample_name_override": {"type": "string", "description": "(Optional) If provided, use this as the sample_id for all records in the VCF."}
-        },
-        "required": ["filepath"]
-    }
-)
+@tool
 def load_vcf_into_graph_db_tool(filepath: str, sample_name_override: Optional[str] = None) -> str:
     """
     Agent tool to load VCF data into the Kuzu graph database.
@@ -1020,13 +875,6 @@ def load_vcf_into_graph_db_tool(filepath: str, sample_name_override: Optional[st
         # Log the full error for debugging
         print(f"Error loading VCF {filepath} into Kuzu: {e}")
         return json.dumps({"error": f"Failed to load VCF into Kuzu: {e}", "status": "failed"})
-
-# Register all bcftools tools to tools_list
-tools_list = [
-    echo,
-    validate_vcf,
-    bcftools_view_tool,
-]
 
 # Setup OpenAI model adapter for Strands using LiteLLM
 def get_openai_model(credential_manager=None):
@@ -1138,19 +986,17 @@ def get_agent_with_session(
     model_provider: Literal["ollama", "openai", "cerebras"] = "ollama"
 ):
     """
-    Factory function to create and configure a VCF Analysis Agent.
-
+    Creates a VCF Analysis Agent with the specified session configuration and model provider.
+    
     Args:
-        session_config (Optional[SessionConfig]): Session-specific settings.
-        model_provider (str): Model provider to use ('ollama', 'openai', 'cerebras').
-
+        session_config: Optional session configuration
+        model_provider: Model provider to use ("ollama", "openai", "cerebras")
+    
     Returns:
-        Agent: Configured VCF Analysis Agent instance.
+        Agent: Configured Strands agent instance
     """
-    global _kuzu_connection_for_agent
-
     if session_config is None:
-        session_config = SessionConfig() # Use default session config
+        session_config = SessionConfig()
 
     # Determine raw_mode based on SessionConfig, then ENV, then CLI (CLI handled in cli.py)
     # For now, direct assignment or simple logic here.
@@ -1161,12 +1007,6 @@ def get_agent_with_session(
     elif os.environ.get("VCF_AGENT_RAW_MODE", "").lower() in ["1", "true", "yes"]:
         current_raw_mode = True
     
-    # effective_system_prompt = SYSTEM_PROMPT if current_raw_mode else SYSTEM_PROMPT.replace("/no_think", "")
-    # Strands agent does not directly take system_prompt for Ollama models in the same way.
-    # For LiteLLM (OpenAI, Cerebras), system prompt is passed in `converse`.
-    # For Ollama, it's part of the Modelfile or initial setup.
-    # The /no_think in SYSTEM_PROMPT is a convention for this agent.
-
     # Initialize Kuzu DB Connection and Schema
     # This ensures Kuzu is ready when an agent is first created.
     try:
@@ -1218,7 +1058,13 @@ def get_agent_with_session(
         load_vcf_into_graph_db_tool,
     ]
 
-    agent = Agent(model=model, tools=cast(PyList[Any], available_tools))
+    # Create agent with proper system prompt
+    agent = Agent(
+        model=model, 
+        tools=cast(PyList[Any], available_tools),
+        system_prompt=SYSTEM_PROMPT
+    )
+    
     # Attach each tool as an attribute for direct access (e.g., agent.load_vcf_into_graph_db_tool)
     for tool_fn in available_tools:
         # Use the function's __name__ (strip trailing _tool for consistency)
@@ -1231,132 +1077,249 @@ def get_agent_with_session(
 # Default agent instance (uses env/CLI for RAW_MODE)
 agent = get_agent_with_session()
 
+def extract_json_from_text(text: str) -> str:
+    """
+    Extract JSON from LLM response text, handling <think> blocks and other formatting.
+    
+    Args:
+        text: Raw LLM response text
+        
+    Returns:
+        Extracted JSON string
+        
+    Raises:
+        ValueError: If no valid JSON object found
+    """
+    # Remove <think> blocks
+    text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
+    
+    # Remove any markdown code blocks
+    text = re.sub(r'```json\s*', '', text)
+    text = re.sub(r'```\s*', '', text)
+    
+    # Find the first {...} block
+    json_pattern = re.compile(r'\{.*?\}', re.DOTALL)
+    match = json_pattern.search(text)
+    
+    if match:
+        json_str = match.group(0)
+        
+        # Try to repair common issues
+        try:
+            # Test if it's valid JSON
+            json.loads(json_str)
+            return json_str
+        except json.JSONDecodeError as e:
+            # Try to fix common issues
+            # Add missing closing braces
+            open_braces = json_str.count('{')
+            close_braces = json_str.count('}')
+            if open_braces > close_braces:
+                json_str += '}' * (open_braces - close_braces)
+            
+            # Try again
+            try:
+                json.loads(json_str)
+                return json_str
+            except json.JSONDecodeError:
+                # If still invalid, try to extract a simpler structure
+                pass
+    
+    # If no valid JSON found, try to extract key-value pairs and construct JSON
+    lines = text.split('\n')
+    json_data = {}
+    
+    for line in lines:
+        line = line.strip()
+        if ':' in line and not line.startswith('//') and not line.startswith('#'):
+            try:
+                # Try to parse as key: value
+                if line.endswith(','):
+                    line = line[:-1]
+                
+                # Simple key-value extraction
+                if '"' in line:
+                    parts = line.split(':', 1)
+                    if len(parts) == 2:
+                        key = parts[0].strip().strip('"')
+                        value = parts[1].strip()
+                        
+                        # Try to parse the value
+                        try:
+                            if value.startswith('"') and value.endswith('"'):
+                                json_data[key] = value[1:-1]
+                            elif value.startswith('[') and value.endswith(']'):
+                                json_data[key] = json.loads(value)
+                            elif value.startswith('{') and value.endswith('}'):
+                                json_data[key] = json.loads(value)
+                            elif value.lower() in ['true', 'false']:
+                                json_data[key] = value.lower() == 'true'
+                            elif value.isdigit():
+                                json_data[key] = int(value)
+                            elif '.' in value and value.replace('.', '').isdigit():
+                                json_data[key] = float(value)
+                            else:
+                                json_data[key] = value
+                        except:
+                            json_data[key] = value
+            except:
+                continue
+    
+    if json_data:
+        return json.dumps(json_data)
+    
+    raise ValueError(f"No valid JSON found in text: {text[:200]}...")
+
 @agent_tracer.start_as_current_span("agent.run_llm_analysis_task")
 def run_llm_analysis_task(
     task: str,
-    file_paths: list,
-    extra_context: Optional[Dict[str, Any]] = None,
-    session_config: Optional[SessionConfig] = None,
-    model_provider: Literal["ollama", "openai", "cerebras"] = "ollama",
-    **llm_kwargs
+    file_paths: List[str],
+    model_provider: str = "ollama",
+    max_retries: int = 3
 ) -> str:
-    # Initialize a default return value
-    result_json_string = json.dumps({"error": "Internal error: Result not set before return"}, indent=2)
-
-    span = trace.get_current_span() # Get the current span created by the decorator
-    span.set_attribute("llm.task", task)
-    span.set_attribute("llm.file_paths", file_paths if file_paths else [])
-    span.set_attribute("llm.model_provider", model_provider)
-    if extra_context:
-        try:
-            context_str = json.dumps(extra_context)
-            if len(context_str) > 1024: 
-                context_str = context_str[:1024] + "... (truncated)"
-            span.set_attribute("llm.extra_context", context_str)
-        except TypeError: 
-            span.set_attribute("llm.extra_context", "<non-serializable>")
-    if llm_kwargs:
-        try:
-            kwargs_str = json.dumps(llm_kwargs)
-            if len(kwargs_str) > 1024:
-                kwargs_str = kwargs_str[:1024] + "... (truncated)"
-            span.set_attribute("llm.kwargs", kwargs_str)
-        except TypeError:
-            span.set_attribute("llm.kwargs", "<non-serializable>")
-
-    start_time = time.time() 
-    status_metric = "success" # Initialize status_metric before try block
-    error_type_for_metric_label = "UnknownError" # Initialize for metrics
-
-    try: # Main try block for the function's operations
-        """
-        Runs a specific LLM-based analysis task on VCF data.
-        """
-        agent_instance = get_agent_with_session(session_config, model_provider)
-        prompt = get_prompt_for_task(task, file_paths, extra_context)
-        
-        if prompt:
-            metrics.log.info("llm_analysis_task_started", task=task, model_provider=model_provider)
-            try: # Inner try for the agent call and JSON processing
-                # Use agent_instance as a callable, similar to cli.py
-                agent_result = agent_instance(prompt, **llm_kwargs) 
-                
-                # Extract string response from agent_result for JSON processing
-                response_text_for_json = ""
-                if isinstance(agent_result, str):
-                    response_text_for_json = agent_result
-                elif hasattr(agent_result, 'response') and isinstance(getattr(agent_result, 'response'), str):
-                    response_text_for_json = getattr(agent_result, 'response')
-                elif hasattr(agent_result, 'text') and isinstance(getattr(agent_result, 'text'), str):
-                    response_text_for_json = getattr(agent_result, 'text')
-                elif agent_result is not None: # Fallback if no known attribute but not None
-                    response_text_for_json = str(agent_result)
-                # If agent_result is None or extraction failed, response_text_for_json remains ""
-
-                if not response_text_for_json:
-                    status_metric = "error"
-                    error_type_for_metric_label = "EmptyLLMResponse"
-                    metrics.log.error("llm_analysis_empty_response_string", task=task, agent_result_type=type(agent_result).__name__)
-                    span.set_attribute("llm.response.format", "empty_string_from_agent")
-                    span.set_attribute("error.message", "LLM response string was empty after extraction from agent result.")
-                    span.set_attribute("error.type", error_type_for_metric_label)
-                    span.set_attribute("llm.status", status_metric)
-                    result_json_string = json.dumps({"error": "LLM response string was empty."}, indent=2)
-                else:
-                    try:
-                        # Now try to parse the extracted string as JSON
-                        json.loads(response_text_for_json) 
-                        span.set_attribute("llm.response.format", "valid_json")
-                        result_json_string = response_text_for_json # Assign successful response
-                    except json.JSONDecodeError as je:
-                        status_metric = "error"
-                        error_type_for_metric_label = "JSONDecodeError"
-                        metrics.log.error("llm_analysis_invalid_json_response", task=task, error=str(je), response_snippet=response_text_for_json[:200])
-                        span.set_attribute("llm.response.format", "invalid_json")
-                        span.set_attribute("error.message", f"LLM response was not valid JSON: {str(je)}")
-                        span.set_attribute("error.type", error_type_for_metric_label)
-                        span.set_attribute("llm.status", status_metric) 
-                        result_json_string = json.dumps({"error": "LLM response was not valid JSON", "details": str(je)}, indent=2)
-                
-                span.set_attribute("llm.status", "success")
-                return result_json_string # Return the successfully parsed JSON string
-            except APIClientError as api_err:
-                status_metric = "error"
-                error_type_for_metric_label = type(api_err).__name__
-                metrics.log.error("llm_analysis_api_client_error", task=task, error=str(api_err))
-                span.set_attribute("llm.status", status_metric)
-                span.set_attribute("error.message", str(api_err))
-                span.set_attribute("error.type", error_type_for_metric_label)
-                span.record_exception(api_err)
-                result_json_string = json.dumps({"error": f"API Client Error: {api_err}"}, indent=2)
-        else: # if prompt is None
-            status_metric = "error"
-            error_type_for_metric_label = "PromptGenerationError"
-            metrics.log.warn("llm_analysis_unknown_task_or_prompt_failure", task=task)
-            span.set_attribute("llm.status", status_metric)
-            span.set_attribute("error.message", "Unknown task or failed to generate prompt.")
-            span.set_attribute("error.type", error_type_for_metric_label)
-            result_json_string = json.dumps({"error": "Unknown task or failed to generate prompt."}, indent=2)
+    """
+    Run an LLM analysis task with improved error handling and retries.
     
-    finally: # Attached to the main try block
-        duration = time.time() - start_time
-        metrics.VCF_AGENT_AI_RESPONSE_SECONDS.labels(
-            model_provider=model_provider, 
-            endpoint_task=task,
-            status=status_metric  # Added status_metric
-        ).observe(duration)
-        metrics.VCF_AGENT_AI_REQUESTS_TOTAL.labels(
-            model_provider=model_provider, 
-            endpoint_task=task, 
-            status=status_metric 
-        ).inc()
-        if status_metric == "error":
-            metrics.VCF_AGENT_AI_ERRORS_TOTAL.labels(
-                model_provider=model_provider, 
-                endpoint_task=task, 
-                error_type=error_type_for_metric_label
-            ).inc()
+    Args:
+        task: The task name (prompt contract ID)
+        file_paths: List of file paths to analyze
+        model_provider: The model provider to use
+        max_retries: Maximum number of retries for failed attempts
+        
+    Returns:
+        JSON string with analysis results
+        
+    Raises:
+        ValueError: If task fails after all retries
+    """
+    logger.info(f"Starting LLM analysis task", extra={
+        "task": task,
+        "model_provider": model_provider,
+        "event": "llm_analysis_task_started"
+    })
+    
+    # Load prompt contract
+    try:
+        contract = load_prompt_contract(task)
+    except Exception as e:
+        raise ValueError(f"Failed to load prompt contract '{task}': {e}")
+    
+    # Generate prompt
+    try:
+        prompt = get_prompt_for_task(task, file_paths)
+    except Exception as e:
+        raise ValueError(f"Failed to generate prompt for task '{task}': {e}")
+    
+    # Try multiple times with different approaches
+    for attempt in range(max_retries):
+        try:
+            logger.info(f"Attempt {attempt + 1}/{max_retries} for task {task}")
+            
+            # Get agent with session
+            config = SessionConfig(raw_mode=False, model_provider=model_provider)
+            agent = get_agent_with_session(config, model_provider)
+            
+            # Add extra instructions for schema compliance
+            enhanced_prompt = f"""
+{prompt}
 
-    return result_json_string # Single return point for the function
+CRITICAL REQUIREMENTS:
+1. You MUST return ONLY valid JSON matching the exact schema provided
+2. Use the EXACT field names from the schema (e.g., 'variant_count' NOT 'variants_count')
+3. Include ALL required fields: {', '.join(contract['json_schema']['required'])}
+4. Do NOT include any explanation, markdown, or extra text
+5. If you cannot complete the analysis, return: {{"error": "Unable to complete analysis"}}
+
+Required JSON structure:
+{json.dumps(contract['json_schema'], indent=2)}
+"""
+            
+            # Run the analysis
+            response = agent(enhanced_prompt)
+            
+            # Extract JSON from response
+            json_str = extract_json_from_text(str(response))
+            
+            # Validate against schema
+            try:
+                result_data = json.loads(json_str)
+                validate(instance=result_data, schema=contract['json_schema'])
+                
+                logger.info(f"Task {task} completed successfully on attempt {attempt + 1}")
+                return json_str
+                
+            except ValidationError as e:
+                logger.warning(f"Schema validation failed on attempt {attempt + 1}: {e}")
+                if attempt == max_retries - 1:
+                    # On final attempt, try to fix common schema issues
+                    try:
+                        fixed_data = fix_schema_issues(result_data, contract['json_schema'])
+                        validate(instance=fixed_data, schema=contract['json_schema'])
+                        return json.dumps(fixed_data)
+                    except:
+                        pass
+                continue
+                
+        except Exception as e:
+            logger.warning(f"Attempt {attempt + 1} failed: {e}")
+            if attempt == max_retries - 1:
+                raise ValueError(f"Task '{task}' failed after {max_retries} attempts: {e}")
+            continue
+    
+    raise ValueError(f"Task '{task}' failed after {max_retries} attempts")
+
+def fix_schema_issues(data: dict, schema: dict) -> dict:
+    """
+    Try to fix common schema validation issues.
+    
+    Args:
+        data: The data that failed validation
+        schema: The expected schema
+        
+    Returns:
+        Fixed data dictionary
+    """
+    fixed_data = data.copy()
+    required_fields = schema.get('required', [])
+    properties = schema.get('properties', {})
+    
+    # Add missing required fields with default values
+    for field in required_fields:
+        if field not in fixed_data:
+            field_schema = properties.get(field, {})
+            field_type = field_schema.get('type', 'string')
+            
+            if field_type == 'integer':
+                fixed_data[field] = 0
+            elif field_type == 'number':
+                fixed_data[field] = 0.0
+            elif field_type == 'array':
+                fixed_data[field] = []
+            elif field_type == 'object':
+                fixed_data[field] = {}
+            else:
+                fixed_data[field] = ""
+    
+    # Fix common field name issues
+    field_mappings = {
+        'variants_count': 'variant_count',
+        'variants_types': 'variant_types',
+        'compliance': 'non_compliant_records'  # Convert compliance status to records
+    }
+    
+    for old_field, new_field in field_mappings.items():
+        if old_field in fixed_data and new_field not in fixed_data:
+            if new_field == 'non_compliant_records' and old_field == 'compliance':
+                # Convert compliance status to non_compliant_records array
+                if fixed_data[old_field] == 'compliant':
+                    fixed_data[new_field] = []
+                else:
+                    fixed_data[new_field] = [f"File marked as {fixed_data[old_field]}"]
+                del fixed_data[old_field]
+            else:
+                fixed_data[new_field] = fixed_data[old_field]
+                del fixed_data[old_field]
+    
+    return fixed_data
 
 __all__ = ["agent", "SYSTEM_PROMPT", "get_agent_with_session", "run_llm_analysis_task"] # Added run_llm_analysis_task 

@@ -10,11 +10,24 @@ instructions: |
   - Highlight any notable patterns or outliers in the data.
   - Respond with ONLY valid JSON matching the provided schema. Do not include any explanation, markdown, <think> blocks, or extra text.
   - If you cannot perform the task, return a valid JSON object with an 'error' field and no other fields.
+  - CRITICAL: Use the EXACT field names from the schema: variant_count (not variants_count), variant_types, sample_statistics, notable_patterns
+  
+  Example output format:
+  {
+    "variant_count": 150,
+    "variant_types": {"SNP": 120, "INDEL": 25, "MNV": 5},
+    "sample_statistics": {
+      "SAMPLE1": {"mean_depth": 30.5, "het_ratio": 0.45},
+      "SAMPLE2": {"mean_depth": 28.2, "het_ratio": 0.52}
+    },
+    "notable_patterns": ["High transition/transversion ratio", "Depth varies significantly across samples"]
+  }
 constraints:
   - Use only the provided file and metadata.
   - Output must be in JSON schema (see below).
   - Output must be valid JSON, with no extra text, explanation, <think> blocks, or formatting.
   - If the task cannot be performed, output a valid JSON object with an 'error' field and no other fields.
+  - MUST use exact field names: variant_count, variant_types, sample_statistics, notable_patterns
 evaluation:
   - Output must match the provided JSON schema.
   - Determinism: Output must be identical for the same input and seed.

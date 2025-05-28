@@ -2,9 +2,296 @@
 
 ## Overview
 
-This document provides comprehensive API reference for the VCF Agent data stores implementation, including the UnifiedDataStoreManager, LanceDB integration, Kuzu graph database, and embedding services.
+This document provides comprehensive API reference for the VCF Agent, including the AI-powered agent with tools support, data stores implementation, LanceDB integration, Kuzu graph database, and embedding services.
 
-## Core Classes
+## 🤖 VCF Agent with AI Tools
+
+### Agent Overview
+
+The VCF Agent is an AI-powered assistant that combines natural conversation with automatic tool execution for genomic data analysis. The agent supports both direct tool calling and automatic tool execution based on natural language requests.
+
+```python
+from src.vcf_agent.agent import get_agent_with_session
+from src.vcf_agent.config import SessionConfig
+```
+
+### Agent Creation
+
+```python
+def get_agent_with_session(
+    session_config: SessionConfig, 
+    provider: str = "ollama"
+) -> Agent
+```
+
+**Parameters:**
+- `session_config`: Configuration for the agent session
+- `provider`: AI model provider ("ollama", "openai", "cerebras")
+
+**Example:**
+```python
+# Create agent with natural conversation mode
+config = SessionConfig(raw_mode=False)
+agent = get_agent_with_session(config, "ollama")
+
+# Natural conversation
+response = agent("Hello! What can you help me with regarding VCF files?")
+
+# Automatic tool execution
+response = agent("Please validate the VCF file at sample_data/example.vcf")
+```
+
+### Available Tools
+
+The VCF Agent provides a comprehensive set of tools for genomic data analysis:
+
+#### Core Validation Tools
+
+##### echo
+```python
+def echo(text: str) -> str
+```
+Simple echo functionality for testing agent connectivity.
+
+**Example:**
+```python
+result = agent.echo("Hello World!")
+# Returns: "Echo: Hello World!"
+```
+
+##### validate_vcf
+```python
+def validate_vcf(filepath: str) -> str
+```
+Validates a VCF/BCF file for existence, format, index, and bcftools compatibility.
+
+**Parameters:**
+- `filepath`: Path to the VCF/BCF file
+
+**Returns:**
+User-friendly validation result string
+
+**Example:**
+```python
+# Direct tool call
+result = agent.validate_vcf("sample_data/example.vcf")
+# Returns: "✅ VCF file 'sample_data/example.vcf' is valid and passed all validation checks."
+
+# Natural language (automatic execution)
+response = agent("Please validate the VCF file at sample_data/example.vcf")
+```
+
+#### BCFtools Integration Tools
+
+##### bcftools_view_tool
+```python
+def bcftools_view_tool(
+    input_file: str,
+    output_file: Optional[str] = None,
+    regions: Optional[str] = None,
+    samples: Optional[str] = None,
+    include_filter: Optional[str] = None,
+    exclude_filter: Optional[str] = None,
+    output_type: str = "v"
+) -> str
+```
+Execute bcftools view command with comprehensive options.
+
+##### bcftools_query_tool
+```python
+def bcftools_query_tool(
+    input_file: str,
+    format_string: str,
+    output_file: Optional[str] = None,
+    regions: Optional[str] = None,
+    samples: Optional[str] = None,
+    include_filter: Optional[str] = None,
+    exclude_filter: Optional[str] = None
+) -> str
+```
+Execute bcftools query command for data extraction.
+
+##### bcftools_filter_tool
+```python
+def bcftools_filter_tool(
+    input_file: str,
+    output_file: str,
+    include_expression: Optional[str] = None,
+    exclude_expression: Optional[str] = None,
+    soft_filter: Optional[str] = None,
+    mode: str = "+"
+) -> str
+```
+Execute bcftools filter command for variant filtering.
+
+##### bcftools_norm_tool
+```python
+def bcftools_norm_tool(
+    input_file: str,
+    output_file: str,
+    reference_fasta: Optional[str] = None,
+    multiallelics: str = "-any",
+    check_ref: str = "w",
+    output_type: str = "v"
+) -> str
+```
+Execute bcftools norm command for variant normalization.
+
+##### bcftools_stats_tool
+```python
+def bcftools_stats_tool(
+    input_file: str,
+    output_file: Optional[str] = None,
+    regions: Optional[str] = None,
+    samples: Optional[str] = None,
+    fasta_ref: Optional[str] = None
+) -> str
+```
+Execute bcftools stats command for comprehensive statistics.
+
+##### bcftools_annotate_tool
+```python
+def bcftools_annotate_tool(
+    input_file: str,
+    output_file: str,
+    annotations_file: str,
+    columns: str,
+    output_type: str = "v"
+) -> str
+```
+Execute bcftools annotate command for variant annotation.
+
+#### AI-Powered Analysis Tools
+
+##### ai_vcf_comparison_tool
+```python
+def ai_vcf_comparison_tool(
+    file1: str,
+    file2: str,
+    comparison_type: str = "comprehensive"
+) -> str
+```
+AI-powered VCF comparison with intelligent insights.
+
+**Parameters:**
+- `file1`: Path to first VCF file
+- `file2`: Path to second VCF file  
+- `comparison_type`: Type of comparison ("basic", "comprehensive", "clinical")
+
+##### vcf_analysis_summary_tool
+```python
+def vcf_analysis_summary_tool(
+    vcf_file: str,
+    analysis_type: str = "comprehensive"
+) -> str
+```
+AI-powered VCF analysis and summarization.
+
+**Parameters:**
+- `vcf_file`: Path to VCF file
+- `analysis_type`: Type of analysis ("basic", "comprehensive", "clinical")
+
+##### vcf_summarization_tool
+```python
+def vcf_summarization_tool(
+    vcf_file: str,
+    summary_type: str = "comprehensive"
+) -> str
+```
+Enhanced VCF summarization with LLM fallback.
+
+#### Database Integration Tools
+
+##### load_vcf_into_graph_db_tool
+```python
+def load_vcf_into_graph_db_tool(
+    vcf_file: str,
+    sample_name: str,
+    batch_size: int = 1000
+) -> str
+```
+Load VCF data into Kuzu graph database.
+
+**Parameters:**
+- `vcf_file`: Path to VCF file
+- `sample_name`: Name for the sample
+- `batch_size`: Batch size for processing
+
+### Tool Usage Patterns
+
+#### Direct Tool Calling
+```python
+# Create agent
+agent = get_agent_with_session(SessionConfig(raw_mode=False), "ollama")
+
+# Direct tool calls
+validation_result = agent.validate_vcf("sample_data/example.vcf")
+stats_result = agent.bcftools_stats_tool("sample_data/example.vcf")
+analysis_result = agent.vcf_analysis_summary_tool("sample_data/example.vcf")
+```
+
+#### Natural Language Tool Execution
+```python
+# Natural language automatically triggers appropriate tools
+response = agent("Please validate and analyze the VCF file at sample_data/example.vcf")
+response = agent("Compare these two VCF files: file1.vcf and file2.vcf")
+response = agent("Generate comprehensive statistics for my VCF file")
+response = agent("Load sample_data/example.vcf into the graph database as 'Patient_001'")
+```
+
+#### Tool Chaining
+```python
+# Complex workflows with multiple tools
+response = agent("""
+Please perform a comprehensive analysis of sample_data/example.vcf:
+1. First validate the file
+2. Generate statistics
+3. Create a summary analysis
+4. Load it into the graph database as 'Sample_123'
+""")
+```
+
+### Error Handling and Metrics
+
+All tools include comprehensive error handling and performance metrics:
+
+```python
+# Tools automatically record metrics
+# - Execution time
+# - Success/failure status
+# - Error types and messages
+# - Performance statistics
+
+# Access metrics (if needed)
+from src.vcf_agent import metrics
+# Metrics are automatically recorded during tool execution
+```
+
+### Configuration
+
+#### SessionConfig
+```python
+@dataclass
+class SessionConfig:
+    raw_mode: bool = False  # Enable chain-of-thought reasoning
+    max_tokens: int = 4000
+    temperature: float = 0.1
+    # ... other configuration options
+```
+
+#### Agent System Prompt
+The agent uses a natural conversation system prompt that enables both chat and tool use:
+
+```
+You are the VCF Analysis Agent, a specialized assistant for genomics workflows. 
+You help users analyze, validate, and process VCF files...
+You can engage in natural conversation about genomics topics and automatically 
+use tools when needed.
+```
+
+---
+
+## 📊 Data Stores API
 
 ### UnifiedDataStoreManager
 

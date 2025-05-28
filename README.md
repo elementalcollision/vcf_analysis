@@ -23,6 +23,50 @@ A comprehensive AI-powered tool for analyzing Variant Call Format (VCF) files wi
 - **Embedding Generation**: 1536-dimensional variant embeddings for similarity search
 - **Intelligent Analysis**: Context-aware variant interpretation and clinical insights
 - **Adaptive Reasoning**: Dynamic model selection based on query complexity
+- **Natural Conversation**: AI agent supports both natural language interaction and automatic tool execution
+- **Comprehensive Tools**: 15+ specialized tools for VCF validation, analysis, and processing
+
+### 🤖 AI Agent Tools
+
+The VCF Agent includes a sophisticated AI assistant with automatic tool execution:
+
+#### Core Capabilities
+- **Natural Language Interface**: Conversational interaction with automatic tool selection
+- **Direct Tool Access**: Programmatic tool calling for automation
+- **Comprehensive Validation**: VCF format validation and quality assessment
+- **BCFtools Integration**: Complete bcftools command suite with AI guidance
+- **AI-Powered Analysis**: Intelligent variant interpretation and clinical insights
+- **Graph Database Integration**: Automated data loading and relationship modeling
+
+#### Available Tools
+- `validate_vcf` - Comprehensive VCF file validation
+- `bcftools_*_tool` - Complete bcftools integration (view, query, filter, norm, stats, annotate)
+- `ai_vcf_comparison_tool` - AI-powered VCF file comparison
+- `vcf_analysis_summary_tool` - Intelligent variant analysis and summarization
+- `load_vcf_into_graph_db_tool` - Graph database integration
+- Plus additional specialized tools for genomic workflows
+
+#### Usage Examples
+```python
+# Natural language interaction
+response = agent("Please validate and analyze sample_data/patient.vcf")
+response = agent("Compare these two VCF files and highlight differences")
+
+# Direct tool calling
+result = agent.validate_vcf("sample_data/example.vcf")
+analysis = agent.vcf_analysis_summary_tool("patient.vcf", "clinical")
+
+# Complex workflows
+response = agent("""
+Perform complete quality control on sample_data/raw.vcf:
+1. Validate the file
+2. Filter high-quality variants (QUAL>30, DP>10)
+3. Generate comprehensive statistics
+4. Load into graph database as 'QC_Sample_001'
+""")
+```
+
+📖 **[Complete Tools Documentation](docs/source/tools_guide.md)**
 
 ## 📊 Architecture Overview
 
@@ -141,7 +185,35 @@ vcf-agent search "pathogenic BRCA1 variant" --limit 10
 vcf-agent stats --comprehensive
 ```
 
-### Python API Usage
+### AI Agent Usage
+
+```python
+from src.vcf_agent.agent import get_agent_with_session
+from src.vcf_agent.config import SessionConfig
+
+# Create AI agent
+config = SessionConfig(raw_mode=False)
+agent = get_agent_with_session(config, "ollama")
+
+# Natural language interaction
+response = agent("Hello! What can you help me with regarding VCF files?")
+response = agent("Please validate the VCF file at sample_data/example.vcf")
+
+# Direct tool calling
+result = agent.validate_vcf("sample_data/example.vcf")
+stats = agent.bcftools_stats_tool("sample_data/example.vcf")
+
+# Complex workflows
+response = agent("""
+Perform comprehensive analysis of sample_data/patient.vcf:
+1. Validate the file format
+2. Generate quality statistics
+3. Create clinical analysis summary
+4. Load into graph database as 'Patient_001'
+""")
+```
+
+### Python Data Store API Usage
 
 ```python
 from src.vcf_agent.data_store_manager import create_data_store_manager
