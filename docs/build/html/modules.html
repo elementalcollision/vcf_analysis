@@ -1,41 +1,49 @@
+
+
 <!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<html lang="en" data-content_root="./">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>vcf_agent &mdash; VCF Analysis Agent 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=2bd36329" />
 
-    <title>vcf_agent &#8212; VCF Analysis Agent 1.0.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
-    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
-    <script src="_static/documentation_options.js?v=8d563738"></script>
-    <script src="_static/doctools.js?v=9bcbadda"></script>
-    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Auditing" href="audit.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
+    <link rel="prev" title="Auditing" href="audit.html" /> 
+</head>
 
-  
-  
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
 
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
           
-
-          <div class="body" role="main">
-            
-  <section id="vcf-agent">
-<h1>vcf_agent<a class="headerlink" href="#vcf-agent" title="Link to this heading">¶</a></h1>
-<div class="toctree-wrapper compound">
-<ul>
+          
+          <a href="index.html" class="icon icon-home">
+            VCF Analysis Agent
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="vcf_agent.html">vcf_agent package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.agent">vcf_agent.agent module</a><ul>
@@ -45,16 +53,16 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.bcftools_integration">vcf_agent.bcftools_integration module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_annotate"><code class="docutils literal notranslate"><span class="pre">bcftools_annotate()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_filter"><code class="docutils literal notranslate"><span class="pre">bcftools_filter()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_isec"><code class="docutils literal notranslate"><span class="pre">bcftools_isec()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_norm"><code class="docutils literal notranslate"><span class="pre">bcftools_norm()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_query"><code class="docutils literal notranslate"><span class="pre">bcftools_query()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_stats"><code class="docutils literal notranslate"><span class="pre">bcftools_stats()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.run_bcftools_command"><code class="docutils literal notranslate"><span class="pre">run_bcftools_command()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_view"><code class="docutils literal notranslate"><span class="pre">bcftools_view()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_query"><code class="docutils literal notranslate"><span class="pre">bcftools_query()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_filter"><code class="docutils literal notranslate"><span class="pre">bcftools_filter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_norm"><code class="docutils literal notranslate"><span class="pre">bcftools_norm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_stats"><code class="docutils literal notranslate"><span class="pre">bcftools_stats()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_annotate"><code class="docutils literal notranslate"><span class="pre">bcftools_annotate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_isec"><code class="docutils literal notranslate"><span class="pre">bcftools_isec()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.count_variants_in_vcf"><code class="docutils literal notranslate"><span class="pre">count_variants_in_vcf()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.parse_vcf_variants"><code class="docutils literal notranslate"><span class="pre">parse_vcf_variants()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.run_bcftools_command"><code class="docutils literal notranslate"><span class="pre">run_bcftools_command()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.vcf_compare"><code class="docutils literal notranslate"><span class="pre">vcf_compare()</span></code></a></li>
 </ul>
 </li>
@@ -74,19 +82,436 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.gatk_integration">vcf_agent.gatk_integration module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.gatk_integration.gatk_validatevariants"><code class="docutils literal notranslate"><span class="pre">gatk_validatevariants()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.gatk_integration.run_gatk_command"><code class="docutils literal notranslate"><span class="pre">run_gatk_command()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.gatk_integration.gatk_validatevariants"><code class="docutils literal notranslate"><span class="pre">gatk_validatevariants()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.validation">vcf_agent.validation module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.compliance_check"><code class="docutils literal notranslate"><span class="pre">compliance_check()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.file_exists"><code class="docutils literal notranslate"><span class="pre">file_exists()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.has_index"><code class="docutils literal notranslate"><span class="pre">has_index()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.is_vcf_or_bcf"><code class="docutils literal notranslate"><span class="pre">is_vcf_or_bcf()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.validate_vcf_file"><code class="docutils literal notranslate"><span class="pre">validate_vcf_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.has_index"><code class="docutils literal notranslate"><span class="pre">has_index()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.validate_with_bcftools_stats"><code class="docutils literal notranslate"><span class="pre">validate_with_bcftools_stats()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.validate_with_gatk"><code class="docutils literal notranslate"><span class="pre">validate_with_gatk()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.validate_with_manufacturer_tool"><code class="docutils literal notranslate"><span class="pre">validate_with_manufacturer_tool()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.compliance_check"><code class="docutils literal notranslate"><span class="pre">compliance_check()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.validate_vcf_file"><code class="docutils literal notranslate"><span class="pre">validate_vcf_file()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="vcf_agent.html#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Docker Deployment Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#architecture-overview">Architecture Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#multi-stage-build-strategy">Multi-Stage Build Strategy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#key-features">Key Features</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#quick-start">Quick Start</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#basic-usage">Basic Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#building-images">Building Images</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#using-the-build-script">Using the Build Script</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#manual-docker-build">Manual Docker Build</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#build-arguments">Build Arguments</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#deployment">Deployment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#docker-compose-recommended">Docker Compose (Recommended)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="docker.html#production-deployment">Production Deployment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="docker.html#development-deployment">Development Deployment</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#standalone-container">Standalone Container</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#configuration">Configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#environment-variables">Environment Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#volume-mounts">Volume Mounts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#network-configuration">Network Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#monitoring-observability">Monitoring &amp; Observability</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#health-checks">Health Checks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#metrics">Metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#tracing">Tracing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#logs">Logs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#security">Security</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#security-features">Security Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#security-scanning">Security Scanning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#best-practices">Best Practices</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#development">Development</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#development-environment">Development Environment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#debugging">Debugging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#hot-reloading">Hot Reloading</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#performance-optimization">Performance Optimization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#resource-allocation">Resource Allocation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#performance-tuning">Performance Tuning</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#common-issues">Common Issues</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="docker.html#container-won-t-start">Container Won’t Start</a></li>
+<li class="toctree-l4"><a class="reference internal" href="docker.html#permission-issues">Permission Issues</a></li>
+<li class="toctree-l4"><a class="reference internal" href="docker.html#memory-issues">Memory Issues</a></li>
+<li class="toctree-l4"><a class="reference internal" href="docker.html#database-connection-issues">Database Connection Issues</a></li>
+<li class="toctree-l4"><a class="reference internal" href="docker.html#performance-issues">Performance Issues</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#additional-resources">Additional Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#contributing">Contributing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="samspec_compliance.html">SAMspec Compliance Validation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#features">Features</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#comprehensive-validation-rules">Comprehensive Validation Rules</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#file-format-validation">File Format Validation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#header-structure-validation">Header Structure Validation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#info-field-validation">INFO Field Validation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#format-field-validation">FORMAT Field Validation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#filter-field-validation">FILTER Field Validation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#data-record-validation">Data Record Validation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#contig-validation">Contig Validation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#file-format-support">File Format Support</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#cli-usage">CLI Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#basic-validation">Basic Validation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#output-formats">Output Formats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#batch-validation">Batch Validation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#explain-violations">Explain Violations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#python-api-usage">Python API Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#id1">Basic Validation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#advanced-usage">Advanced Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#report-structure">Report Structure</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#compliancereport">ComplianceReport</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#complianceviolation">ComplianceViolation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#example-reports">Example Reports</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#text-format">Text Format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#json-format">JSON Format</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#integration-with-ci-cd">Integration with CI/CD</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#exit-codes">Exit Codes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#example-github-actions-workflow">Example GitHub Actions Workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#performance-considerations">Performance Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#best-practices">Best Practices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#common-issues">Common Issues</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#getting-help">Getting Help</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#related-features">Related Features</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#module-vcf_agent.lancedb_integration">API Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.mask_sensitive_sql"><code class="docutils literal notranslate"><span class="pre">mask_sensitive_sql()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#cli-usage-guide">CLI Usage Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#data-flow-overview">Data Flow Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#schema-definition">Schema Definition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#variant-table-schema-er-diagram">Variant Table Schema (ER Diagram)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#concurrency-model">Concurrency Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#security-notes">Security Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#performance-considerations">Performance Considerations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="lancedb_developer_guide.html#vulnerability-scanning-with-pip-audit">Vulnerability Scanning with pip-audit</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#purpose">Purpose</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#ci-cd-integration">CI/CD Integration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#local-usage">Local Usage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#interpreting-results">Interpreting Results</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="lancedb_developer_guide.html#software-bill-of-materials-sbom-generation">Software Bill of Materials (SBOM) Generation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#id1">Purpose</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#id2">CI/CD Integration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#id3">Local Usage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#sbom-formats">SBOM Formats</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#best-practices">Best Practices</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="lancedb_developer_guide.html#filesystem-acls-and-secure-permissions">Filesystem ACLs and Secure Permissions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#principle-of-least-privilege">Principle of Least Privilege</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#linux-macos">Linux/macOS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#windows">Windows</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#review-and-monitoring">Review and Monitoring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#references">References</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#core-module-src-vcf-agent-graph-integration">Core Module: <code class="docutils literal notranslate"><span class="pre">src.vcf_agent.graph_integration</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kuzu_developer_guide.html#key-functions">Key Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#schema-details">Schema Details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#usage-pattern-with-lancedb">Usage Pattern with LanceDB</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kuzu_developer_guide.html#example-conceptual">Example (Conceptual):</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#security-and-auditing">Security and Auditing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#known-issues-and-workarounds">Known Issues and Workarounds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="monitoring_with_prometheus.html">Observability Stack</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#architecture">Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#configuration-examples">Configuration Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#docker-compose-configuration">Docker Compose Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#prometheus-configuration">Prometheus Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#grafana-dashboard-configuration">Grafana Dashboard Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#opentelemetry-integration">OpenTelemetry Integration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#tracing-setup">Tracing Setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#metrics-collection">Metrics Collection</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#prometheus-metrics">Prometheus Metrics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#metrics-endpoint">Metrics Endpoint</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#available-metrics">Available Metrics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#ai-interaction-metrics">AI Interaction Metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#tool-usage-metrics">Tool Usage Metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#bcftools-integration-metrics">BCFTools Integration Metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#system-metrics">System Metrics</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#metrics-configuration">Metrics Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#grafana-dashboards">Grafana Dashboards</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#accessing-grafana">Accessing Grafana</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#ai-interactions-dashboard">AI Interactions Dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#dashboard-configuration">Dashboard Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#jaeger-tracing">Jaeger Tracing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#accessing-jaeger">Accessing Jaeger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#trace-exploration-patterns">Trace Exploration Patterns</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#common-search-patterns">Common Search Patterns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#trace-structure">Trace Structure</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#trace-context-in-logs">Trace Context in Logs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#docker-compose-setup">Docker Compose Setup</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#starting-the-observability-stack">Starting the Observability Stack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#service-configuration">Service Configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#id1">Prometheus Configuration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#grafana-data-source">Grafana Data Source</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#development-and-debugging">Development and Debugging</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#adding-custom-metrics">Adding Custom Metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#adding-custom-traces">Adding Custom Traces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#local-development">Local Development</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#common-issues">Common Issues</a></li>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#debugging-commands">Debugging Commands</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#performance-considerations">Performance Considerations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#id2">Metrics Collection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#tracing-overhead">Tracing Overhead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#resource-usage">Resource Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#security-considerations">Security Considerations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#network-security">Network Security</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#data-privacy">Data Privacy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#access-control">Access Control</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#best-practices">Best Practices</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#metrics">Metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#tracing">Tracing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#dashboards">Dashboards</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#alerting">Alerting</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Security</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="security.html#general-principles">General Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security.html#credential-management">Credential Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security.html#data-handling-for-vcf-files">Data Handling for VCF Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security.html#database-security">Database Security</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security.html#application-security">Application Security</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security.html#secure-development-practices">Secure Development Practices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security.html#incident-response">Incident Response</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="audit.html">Auditing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="audit.html#logging-strategy">Logging Strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="audit.html#filesystem-auditing">Filesystem Auditing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="audit.html#application-level-auditing">Application-Level Auditing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="audit.html#review-and-compliance">Review and Compliance</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">vcf_agent</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html">vcf_agent package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.agent">vcf_agent.agent module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#output-mode-toggling-chain-of-thought-vs-raw-output">Output Mode Toggling (Chain-of-Thought vs. Raw Output):</a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.agent.get_agent_with_session"><code class="docutils literal notranslate"><span class="pre">get_agent_with_session()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.agent.run_llm_analysis_task"><code class="docutils literal notranslate"><span class="pre">run_llm_analysis_task()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.bcftools_integration">vcf_agent.bcftools_integration module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.run_bcftools_command"><code class="docutils literal notranslate"><span class="pre">run_bcftools_command()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_view"><code class="docutils literal notranslate"><span class="pre">bcftools_view()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_query"><code class="docutils literal notranslate"><span class="pre">bcftools_query()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_filter"><code class="docutils literal notranslate"><span class="pre">bcftools_filter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_norm"><code class="docutils literal notranslate"><span class="pre">bcftools_norm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_stats"><code class="docutils literal notranslate"><span class="pre">bcftools_stats()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_annotate"><code class="docutils literal notranslate"><span class="pre">bcftools_annotate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_isec"><code class="docutils literal notranslate"><span class="pre">bcftools_isec()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.count_variants_in_vcf"><code class="docutils literal notranslate"><span class="pre">count_variants_in_vcf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.parse_vcf_variants"><code class="docutils literal notranslate"><span class="pre">parse_vcf_variants()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.vcf_compare"><code class="docutils literal notranslate"><span class="pre">vcf_compare()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.cli">vcf_agent.cli module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.cli.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.config">vcf_agent.config module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.config.CONFIG"><code class="docutils literal notranslate"><span class="pre">CONFIG</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.config.SessionConfig"><code class="docutils literal notranslate"><span class="pre">SessionConfig</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.gatk_integration">vcf_agent.gatk_integration module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.gatk_integration.run_gatk_command"><code class="docutils literal notranslate"><span class="pre">run_gatk_command()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.gatk_integration.gatk_validatevariants"><code class="docutils literal notranslate"><span class="pre">gatk_validatevariants()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.validation">vcf_agent.validation module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.file_exists"><code class="docutils literal notranslate"><span class="pre">file_exists()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.is_vcf_or_bcf"><code class="docutils literal notranslate"><span class="pre">is_vcf_or_bcf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.has_index"><code class="docutils literal notranslate"><span class="pre">has_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.validate_with_bcftools_stats"><code class="docutils literal notranslate"><span class="pre">validate_with_bcftools_stats()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.validate_with_gatk"><code class="docutils literal notranslate"><span class="pre">validate_with_gatk()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.validate_with_manufacturer_tool"><code class="docutils literal notranslate"><span class="pre">validate_with_manufacturer_tool()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.compliance_check"><code class="docutils literal notranslate"><span class="pre">compliance_check()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.validate_vcf_file"><code class="docutils literal notranslate"><span class="pre">validate_vcf_file()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#module-vcf_agent">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">VCF Analysis Agent</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">vcf_agent</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/elementalcollision/vcf_analysis/blob/main/docs/source/modules.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="vcf-agent">
+<h1>vcf_agent<a class="headerlink" href="#vcf-agent" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="vcf_agent.html">vcf_agent package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.agent">vcf_agent.agent module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#output-mode-toggling-chain-of-thought-vs-raw-output">Output Mode Toggling (Chain-of-Thought vs. Raw Output):</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.agent.get_agent_with_session"><code class="docutils literal notranslate"><span class="pre">get_agent_with_session()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.agent.run_llm_analysis_task"><code class="docutils literal notranslate"><span class="pre">run_llm_analysis_task()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.bcftools_integration">vcf_agent.bcftools_integration module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.run_bcftools_command"><code class="docutils literal notranslate"><span class="pre">run_bcftools_command()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_view"><code class="docutils literal notranslate"><span class="pre">bcftools_view()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_query"><code class="docutils literal notranslate"><span class="pre">bcftools_query()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_filter"><code class="docutils literal notranslate"><span class="pre">bcftools_filter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_norm"><code class="docutils literal notranslate"><span class="pre">bcftools_norm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_stats"><code class="docutils literal notranslate"><span class="pre">bcftools_stats()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_annotate"><code class="docutils literal notranslate"><span class="pre">bcftools_annotate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.bcftools_isec"><code class="docutils literal notranslate"><span class="pre">bcftools_isec()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.count_variants_in_vcf"><code class="docutils literal notranslate"><span class="pre">count_variants_in_vcf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.parse_vcf_variants"><code class="docutils literal notranslate"><span class="pre">parse_vcf_variants()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.bcftools_integration.vcf_compare"><code class="docutils literal notranslate"><span class="pre">vcf_compare()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.cli">vcf_agent.cli module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.cli.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.config">vcf_agent.config module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.config.CONFIG"><code class="docutils literal notranslate"><span class="pre">CONFIG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.config.SessionConfig"><code class="docutils literal notranslate"><span class="pre">SessionConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.config.SessionConfig.raw_mode"><code class="docutils literal notranslate"><span class="pre">SessionConfig.raw_mode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.config.SessionConfig.model_provider"><code class="docutils literal notranslate"><span class="pre">SessionConfig.model_provider</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.config.SessionConfig.credentials_file"><code class="docutils literal notranslate"><span class="pre">SessionConfig.credentials_file</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="vcf_agent.html#vcf_agent.config.SessionConfig.reference_fasta"><code class="docutils literal notranslate"><span class="pre">SessionConfig.reference_fasta</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.gatk_integration">vcf_agent.gatk_integration module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.gatk_integration.run_gatk_command"><code class="docutils literal notranslate"><span class="pre">run_gatk_command()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.gatk_integration.gatk_validatevariants"><code class="docutils literal notranslate"><span class="pre">gatk_validatevariants()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent.validation">vcf_agent.validation module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.file_exists"><code class="docutils literal notranslate"><span class="pre">file_exists()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.is_vcf_or_bcf"><code class="docutils literal notranslate"><span class="pre">is_vcf_or_bcf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.has_index"><code class="docutils literal notranslate"><span class="pre">has_index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.validate_with_bcftools_stats"><code class="docutils literal notranslate"><span class="pre">validate_with_bcftools_stats()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.validate_with_gatk"><code class="docutils literal notranslate"><span class="pre">validate_with_gatk()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.validate_with_manufacturer_tool"><code class="docutils literal notranslate"><span class="pre">validate_with_manufacturer_tool()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.compliance_check"><code class="docutils literal notranslate"><span class="pre">compliance_check()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="vcf_agent.html#vcf_agent.validation.validate_vcf_file"><code class="docutils literal notranslate"><span class="pre">validate_vcf_file()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#module-vcf_agent">Module contents</a></li>
@@ -98,87 +523,33 @@
 </section>
 
 
+           </div>
           </div>
-          
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="audit.html" class="btn btn-neutral float-left" title="Auditing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, VCF Agent Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="index.html">VCF Analysis Agent</a></h1>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
 
-
-
-
-
-
-
-
-
-<search id="searchbox" style="display: none" role="search">
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
-<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="vcf_agent.html">vcf_agent package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="vcf_agent.html#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="samspec_compliance.html">SAMspec Compliance Validation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#core-module-src-vcf-agent-graph-integration">Core Module: <code class="docutils literal notranslate"><span class="pre">src.vcf_agent.graph_integration</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#schema-details">Schema Details</a></li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#usage-pattern-with-lancedb">Usage Pattern with LanceDB</a></li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#security-and-auditing">Security and Auditing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#known-issues-and-workarounds">Known Issues and Workarounds</a></li>
-<li class="toctree-l1"><a class="reference internal" href="monitoring_with_prometheus.html">Observability Stack</a></li>
-<li class="toctree-l1"><a class="reference internal" href="security.html">Security</a></li>
-<li class="toctree-l1"><a class="reference internal" href="audit.html">Auditing</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">vcf_agent</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html">vcf_agent package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="vcf_agent.html#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
-</ul>
-</li>
-</ul>
-
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="audit.html" title="previous chapter">Auditing</a></li>
-  </ul></li>
-</ul>
-</div>
-
-
-
-
-
-
-
-
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &#169;2025, VCF Agent Team.
-      
-      |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
-      
-      |
-      <a href="_sources/modules.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
-  </body>
+</body>
 </html>

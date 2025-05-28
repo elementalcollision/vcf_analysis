@@ -1,1 +1,139 @@
-/* This file intentionally left blank. */
+/* Custom CSS for VCF Analysis Agent Documentation */
+
+/* Improve code block styling */
+.highlight {
+    background-color: #f8f8f8;
+    border: 1px solid #e1e4e5;
+    border-radius: 4px;
+    margin: 1em 0;
+}
+
+/* Better table styling */
+.wy-table-responsive table td,
+.wy-table-responsive table th {
+    white-space: normal;
+    padding: 8px 12px;
+}
+
+/* Improve admonition styling */
+.admonition {
+    margin: 1em 0;
+    padding: 12px;
+    border-radius: 4px;
+}
+
+.admonition.note {
+    background-color: #e7f2fa;
+    border-left: 4px solid #2980b9;
+}
+
+.admonition.warning {
+    background-color: #fff3cd;
+    border-left: 4px solid #f39c12;
+}
+
+.admonition.tip {
+    background-color: #d4edda;
+    border-left: 4px solid #27ae60;
+}
+
+/* Better emoji support */
+.emoji {
+    font-size: 1.2em;
+    vertical-align: middle;
+}
+
+/* Improve navigation */
+.wy-nav-content {
+    max-width: 1200px;
+}
+
+/* Better spacing for sections */
+.section {
+    margin-bottom: 2em;
+}
+
+/* Improve inline code styling */
+code.literal {
+    background-color: #f1f2f3;
+    border: 1px solid #e1e4e5;
+    border-radius: 3px;
+    padding: 2px 4px;
+    font-size: 0.9em;
+}
+
+/* Better list styling */
+.simple li {
+    margin-bottom: 0.5em;
+}
+
+/* Improve header styling */
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+/* Status badges */
+.status-complete {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+/* Docker-specific styling */
+.docker-command {
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    padding: 12px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    margin: 1em 0;
+}
+
+/* Metrics table styling */
+.metrics-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.metrics-table th,
+.metrics-table td {
+    border: 1px solid #e1e4e5;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.metrics-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+/* Feature list styling */
+.feature-list {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.feature-list li {
+    margin-bottom: 0.5em;
+    padding-left: 1.5em;
+    position: relative;
+}
+
+.feature-list li:before {
+    content: "✅";
+    position: absolute;
+    left: 0;
+    top: 0;
+} 

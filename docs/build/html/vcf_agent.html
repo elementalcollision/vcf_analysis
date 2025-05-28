@@ -1,45 +1,470 @@
+
+
 <!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<html lang="en" data-content_root="./">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>vcf_agent package &mdash; VCF Analysis Agent 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=2bd36329" />
 
-    <title>vcf_agent package &#8212; VCF Analysis Agent 1.0.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
-    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
-    <script src="_static/documentation_options.js?v=8d563738"></script>
-    <script src="_static/doctools.js?v=9bcbadda"></script>
-    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="SAMspec Compliance Validation" href="samspec_compliance.html" />
-    <link rel="prev" title="VCF Analysis Agent Documentation" href="index.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
+    <link rel="next" title="Docker Deployment Guide" href="docker.html" />
+    <link rel="prev" title="VCF Analysis Agent Documentation" href="index.html" /> 
+</head>
 
-  
-  
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
 
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
           
+          
+          <a href="index.html" class="icon icon-home">
+            VCF Analysis Agent
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">vcf_agent package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.agent">vcf_agent.agent module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#output-mode-toggling-chain-of-thought-vs-raw-output">Output Mode Toggling (Chain-of-Thought vs. Raw Output):</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.agent.get_agent_with_session"><code class="docutils literal notranslate"><span class="pre">get_agent_with_session()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.agent.run_llm_analysis_task"><code class="docutils literal notranslate"><span class="pre">run_llm_analysis_task()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.bcftools_integration">vcf_agent.bcftools_integration module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.run_bcftools_command"><code class="docutils literal notranslate"><span class="pre">run_bcftools_command()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_view"><code class="docutils literal notranslate"><span class="pre">bcftools_view()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_query"><code class="docutils literal notranslate"><span class="pre">bcftools_query()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_filter"><code class="docutils literal notranslate"><span class="pre">bcftools_filter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_norm"><code class="docutils literal notranslate"><span class="pre">bcftools_norm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_stats"><code class="docutils literal notranslate"><span class="pre">bcftools_stats()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_annotate"><code class="docutils literal notranslate"><span class="pre">bcftools_annotate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_isec"><code class="docutils literal notranslate"><span class="pre">bcftools_isec()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.count_variants_in_vcf"><code class="docutils literal notranslate"><span class="pre">count_variants_in_vcf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.parse_vcf_variants"><code class="docutils literal notranslate"><span class="pre">parse_vcf_variants()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.bcftools_integration.vcf_compare"><code class="docutils literal notranslate"><span class="pre">vcf_compare()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.cli">vcf_agent.cli module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.cli.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.config">vcf_agent.config module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.config.CONFIG"><code class="docutils literal notranslate"><span class="pre">CONFIG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.config.SessionConfig"><code class="docutils literal notranslate"><span class="pre">SessionConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.config.SessionConfig.raw_mode"><code class="docutils literal notranslate"><span class="pre">SessionConfig.raw_mode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.config.SessionConfig.model_provider"><code class="docutils literal notranslate"><span class="pre">SessionConfig.model_provider</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.config.SessionConfig.credentials_file"><code class="docutils literal notranslate"><span class="pre">SessionConfig.credentials_file</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.config.SessionConfig.reference_fasta"><code class="docutils literal notranslate"><span class="pre">SessionConfig.reference_fasta</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.gatk_integration">vcf_agent.gatk_integration module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.gatk_integration.run_gatk_command"><code class="docutils literal notranslate"><span class="pre">run_gatk_command()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.gatk_integration.gatk_validatevariants"><code class="docutils literal notranslate"><span class="pre">gatk_validatevariants()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.validation">vcf_agent.validation module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.validation.file_exists"><code class="docutils literal notranslate"><span class="pre">file_exists()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.validation.is_vcf_or_bcf"><code class="docutils literal notranslate"><span class="pre">is_vcf_or_bcf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.validation.has_index"><code class="docutils literal notranslate"><span class="pre">has_index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.validation.validate_with_bcftools_stats"><code class="docutils literal notranslate"><span class="pre">validate_with_bcftools_stats()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.validation.validate_with_gatk"><code class="docutils literal notranslate"><span class="pre">validate_with_gatk()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.validation.validate_with_manufacturer_tool"><code class="docutils literal notranslate"><span class="pre">validate_with_manufacturer_tool()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.validation.compliance_check"><code class="docutils literal notranslate"><span class="pre">compliance_check()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf_agent.validation.validate_vcf_file"><code class="docutils literal notranslate"><span class="pre">validate_vcf_file()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Docker Deployment Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#architecture-overview">Architecture Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#multi-stage-build-strategy">Multi-Stage Build Strategy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#key-features">Key Features</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#quick-start">Quick Start</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#basic-usage">Basic Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#building-images">Building Images</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#using-the-build-script">Using the Build Script</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#manual-docker-build">Manual Docker Build</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#build-arguments">Build Arguments</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#deployment">Deployment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#docker-compose-recommended">Docker Compose (Recommended)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="docker.html#production-deployment">Production Deployment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="docker.html#development-deployment">Development Deployment</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#standalone-container">Standalone Container</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#configuration">Configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#environment-variables">Environment Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#volume-mounts">Volume Mounts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#network-configuration">Network Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#monitoring-observability">Monitoring &amp; Observability</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#health-checks">Health Checks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#metrics">Metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#tracing">Tracing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#logs">Logs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#security">Security</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#security-features">Security Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#security-scanning">Security Scanning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#best-practices">Best Practices</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#development">Development</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#development-environment">Development Environment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#debugging">Debugging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#hot-reloading">Hot Reloading</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#performance-optimization">Performance Optimization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#resource-allocation">Resource Allocation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#performance-tuning">Performance Tuning</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="docker.html#common-issues">Common Issues</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="docker.html#container-won-t-start">Container Won’t Start</a></li>
+<li class="toctree-l4"><a class="reference internal" href="docker.html#permission-issues">Permission Issues</a></li>
+<li class="toctree-l4"><a class="reference internal" href="docker.html#memory-issues">Memory Issues</a></li>
+<li class="toctree-l4"><a class="reference internal" href="docker.html#database-connection-issues">Database Connection Issues</a></li>
+<li class="toctree-l4"><a class="reference internal" href="docker.html#performance-issues">Performance Issues</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#additional-resources">Additional Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html#contributing">Contributing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="samspec_compliance.html">SAMspec Compliance Validation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#features">Features</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#comprehensive-validation-rules">Comprehensive Validation Rules</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#file-format-validation">File Format Validation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#header-structure-validation">Header Structure Validation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#info-field-validation">INFO Field Validation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#format-field-validation">FORMAT Field Validation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#filter-field-validation">FILTER Field Validation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#data-record-validation">Data Record Validation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="samspec_compliance.html#contig-validation">Contig Validation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#file-format-support">File Format Support</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#cli-usage">CLI Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#basic-validation">Basic Validation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#output-formats">Output Formats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#batch-validation">Batch Validation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#explain-violations">Explain Violations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#python-api-usage">Python API Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#id1">Basic Validation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#advanced-usage">Advanced Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#report-structure">Report Structure</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#compliancereport">ComplianceReport</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#complianceviolation">ComplianceViolation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#example-reports">Example Reports</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#text-format">Text Format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#json-format">JSON Format</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#integration-with-ci-cd">Integration with CI/CD</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#exit-codes">Exit Codes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#example-github-actions-workflow">Example GitHub Actions Workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#performance-considerations">Performance Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#best-practices">Best Practices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#common-issues">Common Issues</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samspec_compliance.html#getting-help">Getting Help</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samspec_compliance.html#related-features">Related Features</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#module-vcf_agent.lancedb_integration">API Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="lancedb_developer_guide.html#vcf_agent.lancedb_integration.mask_sensitive_sql"><code class="docutils literal notranslate"><span class="pre">mask_sensitive_sql()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#cli-usage-guide">CLI Usage Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#data-flow-overview">Data Flow Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#schema-definition">Schema Definition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#variant-table-schema-er-diagram">Variant Table Schema (ER Diagram)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#concurrency-model">Concurrency Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#security-notes">Security Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lancedb_developer_guide.html#performance-considerations">Performance Considerations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="lancedb_developer_guide.html#vulnerability-scanning-with-pip-audit">Vulnerability Scanning with pip-audit</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#purpose">Purpose</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#ci-cd-integration">CI/CD Integration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#local-usage">Local Usage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#interpreting-results">Interpreting Results</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="lancedb_developer_guide.html#software-bill-of-materials-sbom-generation">Software Bill of Materials (SBOM) Generation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#id1">Purpose</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#id2">CI/CD Integration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#id3">Local Usage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#sbom-formats">SBOM Formats</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#best-practices">Best Practices</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="lancedb_developer_guide.html#filesystem-acls-and-secure-permissions">Filesystem ACLs and Secure Permissions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#principle-of-least-privilege">Principle of Least Privilege</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#linux-macos">Linux/macOS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#windows">Windows</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#review-and-monitoring">Review and Monitoring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lancedb_developer_guide.html#references">References</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#core-module-src-vcf-agent-graph-integration">Core Module: <code class="docutils literal notranslate"><span class="pre">src.vcf_agent.graph_integration</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kuzu_developer_guide.html#key-functions">Key Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#schema-details">Schema Details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#usage-pattern-with-lancedb">Usage Pattern with LanceDB</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kuzu_developer_guide.html#example-conceptual">Example (Conceptual):</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#security-and-auditing">Security and Auditing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#known-issues-and-workarounds">Known Issues and Workarounds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="monitoring_with_prometheus.html">Observability Stack</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#architecture">Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#configuration-examples">Configuration Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#docker-compose-configuration">Docker Compose Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#prometheus-configuration">Prometheus Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#grafana-dashboard-configuration">Grafana Dashboard Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#opentelemetry-integration">OpenTelemetry Integration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#tracing-setup">Tracing Setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#metrics-collection">Metrics Collection</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#prometheus-metrics">Prometheus Metrics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#metrics-endpoint">Metrics Endpoint</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#available-metrics">Available Metrics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#ai-interaction-metrics">AI Interaction Metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#tool-usage-metrics">Tool Usage Metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#bcftools-integration-metrics">BCFTools Integration Metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#system-metrics">System Metrics</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#metrics-configuration">Metrics Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#grafana-dashboards">Grafana Dashboards</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#accessing-grafana">Accessing Grafana</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#ai-interactions-dashboard">AI Interactions Dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#dashboard-configuration">Dashboard Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#jaeger-tracing">Jaeger Tracing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#accessing-jaeger">Accessing Jaeger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#trace-exploration-patterns">Trace Exploration Patterns</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#common-search-patterns">Common Search Patterns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#trace-structure">Trace Structure</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#trace-context-in-logs">Trace Context in Logs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#docker-compose-setup">Docker Compose Setup</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#starting-the-observability-stack">Starting the Observability Stack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#service-configuration">Service Configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#id1">Prometheus Configuration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#grafana-data-source">Grafana Data Source</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#development-and-debugging">Development and Debugging</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#adding-custom-metrics">Adding Custom Metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#adding-custom-traces">Adding Custom Traces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#local-development">Local Development</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#common-issues">Common Issues</a></li>
+<li class="toctree-l4"><a class="reference internal" href="monitoring_with_prometheus.html#debugging-commands">Debugging Commands</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#performance-considerations">Performance Considerations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#id2">Metrics Collection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#tracing-overhead">Tracing Overhead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#resource-usage">Resource Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#security-considerations">Security Considerations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#network-security">Network Security</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#data-privacy">Data Privacy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#access-control">Access Control</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="monitoring_with_prometheus.html#best-practices">Best Practices</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#metrics">Metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#tracing">Tracing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#dashboards">Dashboards</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitoring_with_prometheus.html#alerting">Alerting</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Security</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="security.html#general-principles">General Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security.html#credential-management">Credential Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security.html#data-handling-for-vcf-files">Data Handling for VCF Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security.html#database-security">Database Security</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security.html#application-security">Application Security</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security.html#secure-development-practices">Secure Development Practices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security.html#incident-response">Incident Response</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="audit.html">Auditing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="audit.html#logging-strategy">Logging Strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="audit.html#filesystem-auditing">Filesystem Auditing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="audit.html#application-level-auditing">Application-Level Auditing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="audit.html#review-and-compliance">Review and Compliance</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">vcf_agent</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">vcf_agent package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-vcf_agent.agent">vcf_agent.agent module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#output-mode-toggling-chain-of-thought-vs-raw-output">Output Mode Toggling (Chain-of-Thought vs. Raw Output):</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.agent.get_agent_with_session"><code class="docutils literal notranslate"><span class="pre">get_agent_with_session()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.agent.run_llm_analysis_task"><code class="docutils literal notranslate"><span class="pre">run_llm_analysis_task()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-vcf_agent.bcftools_integration">vcf_agent.bcftools_integration module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.run_bcftools_command"><code class="docutils literal notranslate"><span class="pre">run_bcftools_command()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_view"><code class="docutils literal notranslate"><span class="pre">bcftools_view()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_query"><code class="docutils literal notranslate"><span class="pre">bcftools_query()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_filter"><code class="docutils literal notranslate"><span class="pre">bcftools_filter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_norm"><code class="docutils literal notranslate"><span class="pre">bcftools_norm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_stats"><code class="docutils literal notranslate"><span class="pre">bcftools_stats()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_annotate"><code class="docutils literal notranslate"><span class="pre">bcftools_annotate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.bcftools_isec"><code class="docutils literal notranslate"><span class="pre">bcftools_isec()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.count_variants_in_vcf"><code class="docutils literal notranslate"><span class="pre">count_variants_in_vcf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.parse_vcf_variants"><code class="docutils literal notranslate"><span class="pre">parse_vcf_variants()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.bcftools_integration.vcf_compare"><code class="docutils literal notranslate"><span class="pre">vcf_compare()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-vcf_agent.cli">vcf_agent.cli module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.cli.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-vcf_agent.config">vcf_agent.config module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.config.CONFIG"><code class="docutils literal notranslate"><span class="pre">CONFIG</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.config.SessionConfig"><code class="docutils literal notranslate"><span class="pre">SessionConfig</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-vcf_agent.gatk_integration">vcf_agent.gatk_integration module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.gatk_integration.run_gatk_command"><code class="docutils literal notranslate"><span class="pre">run_gatk_command()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.gatk_integration.gatk_validatevariants"><code class="docutils literal notranslate"><span class="pre">gatk_validatevariants()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-vcf_agent.validation">vcf_agent.validation module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.validation.file_exists"><code class="docutils literal notranslate"><span class="pre">file_exists()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.validation.is_vcf_or_bcf"><code class="docutils literal notranslate"><span class="pre">is_vcf_or_bcf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.validation.has_index"><code class="docutils literal notranslate"><span class="pre">has_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.validation.validate_with_bcftools_stats"><code class="docutils literal notranslate"><span class="pre">validate_with_bcftools_stats()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.validation.validate_with_gatk"><code class="docutils literal notranslate"><span class="pre">validate_with_gatk()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.validation.validate_with_manufacturer_tool"><code class="docutils literal notranslate"><span class="pre">validate_with_manufacturer_tool()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.validation.compliance_check"><code class="docutils literal notranslate"><span class="pre">compliance_check()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vcf_agent.validation.validate_vcf_file"><code class="docutils literal notranslate"><span class="pre">validate_vcf_file()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-vcf_agent">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
+</ul>
+</li>
+</ul>
 
-          <div class="body" role="main">
-            
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">VCF Analysis Agent</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">vcf_agent package</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/elementalcollision/vcf_analysis/blob/main/docs/source/vcf_agent.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   <section id="vcf-agent-package">
-<h1>vcf_agent package<a class="headerlink" href="#vcf-agent-package" title="Link to this heading">¶</a></h1>
+<h1>vcf_agent package<a class="headerlink" href="#vcf-agent-package" title="Link to this heading"></a></h1>
 <section id="submodules">
-<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
 <section id="module-vcf_agent.agent">
-<span id="vcf-agent-agent-module"></span><h2>vcf_agent.agent module<a class="headerlink" href="#module-vcf_agent.agent" title="Link to this heading">¶</a></h2>
+<span id="vcf-agent-agent-module"></span><h2>vcf_agent.agent module<a class="headerlink" href="#module-vcf_agent.agent" title="Link to this heading"></a></h2>
 <p>VCF Analysis Agent: Strands-based agent for VCF/BCF analysis, validation, and processing.</p>
 <ul class="simple">
 <li><p>Integrates bcftools and AI models for genomics workflows</p></li>
@@ -47,7 +472,7 @@
 <li><p>Extensible with additional tools and models</p></li>
 </ul>
 <section id="output-mode-toggling-chain-of-thought-vs-raw-output">
-<h3>Output Mode Toggling (Chain-of-Thought vs. Raw Output):<a class="headerlink" href="#output-mode-toggling-chain-of-thought-vs-raw-output" title="Link to this heading">¶</a></h3>
+<h3>Output Mode Toggling (Chain-of-Thought vs. Raw Output):<a class="headerlink" href="#output-mode-toggling-chain-of-thought-vs-raw-output" title="Link to this heading"></a></h3>
 <dl class="simple">
 <dt>The agent supports three ways to control output mode:</dt><dd><ol class="arabic simple">
 <li><p>Environment variable: VCF_AGENT_RAW_MODE (“1”, “true”, “yes” = raw output)</p></li>
@@ -60,13 +485,13 @@
 </section>
 <dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.agent.get_agent_with_session">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.agent.</span></span><span class="sig-name descname"><span class="pre">get_agent_with_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ollama'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.agent.get_agent_with_session" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.agent.</span></span><span class="sig-name descname"><span class="pre">get_agent_with_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ollama'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/agent.html#get_agent_with_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.agent.get_agent_with_session" title="Link to this definition"></a></dt>
 <dd><p>Factory function to create and configure a VCF Analysis Agent.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>session_config</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="#vcf_agent.config.SessionConfig" title="vcf_agent.config.SessionConfig"><em>SessionConfig</em></a><em>]</em>) – Session-specific settings.</p></li>
-<li><p><strong>model_provider</strong> (<em>str</em>) – Model provider to use (‘ollama’, ‘openai’, ‘cerebras’).</p></li>
+<li><p><strong>model_provider</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Model provider to use (‘ollama’, ‘openai’, ‘cerebras’).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -80,117 +505,77 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.agent.run_llm_analysis_task">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.agent.</span></span><span class="sig-name descname"><span class="pre">run_llm_analysis_task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">task</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ollama'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">llm_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.agent.run_llm_analysis_task" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.agent.</span></span><span class="sig-name descname"><span class="pre">run_llm_analysis_task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">task</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ollama'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">llm_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/agent.html#run_llm_analysis_task"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.agent.run_llm_analysis_task" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>task</strong> (<em>str</em>)</p></li>
-<li><p><strong>file_paths</strong> (<em>list</em>)</p></li>
-<li><p><strong>extra_context</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>task</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+<li><p><strong>file_paths</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a>)</p></li>
+<li><p><strong>extra_context</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
 <li><p><strong>session_config</strong> (<a class="reference internal" href="#vcf_agent.config.SessionConfig" title="vcf_agent.config.SessionConfig"><em>SessionConfig</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>model_provider</strong> (<em>Literal</em><em>[</em><em>'ollama'</em><em>, </em><em>'openai'</em><em>, </em><em>'cerebras'</em><em>]</em>)</p></li>
+<li><p><strong>model_provider</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.13)"><em>Literal</em></a><em>[</em><em>'ollama'</em><em>, </em><em>'openai'</em><em>, </em><em>'cerebras'</em><em>]</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>str</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 </section>
 <section id="module-vcf_agent.bcftools_integration">
-<span id="vcf-agent-bcftools-integration-module"></span><h2>vcf_agent.bcftools_integration module<a class="headerlink" href="#module-vcf_agent.bcftools_integration" title="Link to this heading">¶</a></h2>
+<span id="vcf-agent-bcftools-integration-module"></span><h2>vcf_agent.bcftools_integration module<a class="headerlink" href="#module-vcf_agent.bcftools_integration" title="Link to this heading"></a></h2>
 <p>Python wrapper for bcftools view, query, and filter commands.
 Uses subprocess for robust execution and output/error capture.
 Extensible for additional bcftools commands.</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.bcftools_annotate">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_annotate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_annotate" title="Link to this definition">¶</a></dt>
-<dd><p>Run bcftools annotate with the given arguments.</p>
+<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.run_bcftools_command">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">run_bcftools_command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/bcftools_integration.html#run_bcftools_command"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.bcftools_integration.run_bcftools_command" title="Link to this definition"></a></dt>
+<dd><p>Run a bcftools command and capture output and errors.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>args</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – Arguments for bcftools annotate.</p></li>
-<li><p><strong>input_data</strong> (<em>Optional</em><em>[</em><em>bytes</em><em>]</em>) – Optional bytes to pass to stdin.</p></li>
+<li><p><strong>command</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – List of command arguments (e.g., [“view”, “-h”, “file.vcf”])</p></li>
+<li><p><strong>input_data</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.13)"><em>bytes</em></a><em>]</em>) – Optional bytes to pass to stdin.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>(returncode, stdout, stderr)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[int, str, str]</p>
+<dd class="field-odd"><p>Tuple[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.13)"><strong>FileNotFoundError</strong></a> – If bcftools is not installed.</p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bcftools_annotate</span><span class="p">([</span><span class="s2">&quot;-a&quot;</span><span class="p">,</span> <span class="s2">&quot;annots.vcf&quot;</span><span class="p">,</span> <span class="s2">&quot;sample_data/HG00098.vcf.gz&quot;</span><span class="p">])</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">run_bcftools_command</span><span class="p">([</span><span class="s2">&quot;view&quot;</span><span class="p">,</span> <span class="s2">&quot;-h&quot;</span><span class="p">,</span> <span class="s2">&quot;sample_data/HG00098.vcf.gz&quot;</span><span class="p">])</span>
 <span class="go">(0, &#39;...&#39;, &#39;&#39;)</span>
 </pre></div>
 </div>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.bcftools_filter">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_filter" title="Link to this definition">¶</a></dt>
-<dd><p>Run bcftools filter with the given arguments.</p>
+<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.bcftools_view">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/bcftools_integration.html#bcftools_view"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_view" title="Link to this definition"></a></dt>
+<dd><p>Run bcftools view with the given arguments.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>args</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – Arguments for bcftools filter.</p></li>
-<li><p><strong>input_data</strong> (<em>Optional</em><em>[</em><em>bytes</em><em>]</em>) – Optional bytes to pass to stdin.</p></li>
+<li><p><strong>args</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – Arguments for bcftools view.</p></li>
+<li><p><strong>input_data</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.13)"><em>bytes</em></a><em>]</em>) – Optional bytes to pass to stdin.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>(returncode, stdout, stderr)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[int, str, str]</p>
+<dd class="field-odd"><p>Tuple[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bcftools_filter</span><span class="p">([</span><span class="s2">&quot;-e&quot;</span><span class="p">,</span> <span class="s2">&quot;QUAL&lt;20&quot;</span><span class="p">,</span> <span class="s2">&quot;sample_data/HG00098.vcf.gz&quot;</span><span class="p">])</span>
-<span class="go">(0, &#39;...&#39;, &#39;&#39;)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.bcftools_isec">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_isec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_isec" title="Link to this definition">¶</a></dt>
-<dd><p>Run bcftools isec to compare two VCF files.
-Returns paths to unique and common VCFs in a temp directory.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>file1</strong> (<em>str</em>)</p></li>
-<li><p><strong>file2</strong> (<em>str</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.bcftools_norm">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_norm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_norm" title="Link to this definition">¶</a></dt>
-<dd><p>Run bcftools norm with the given arguments.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>args</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – Arguments for bcftools norm.</p></li>
-<li><p><strong>input_data</strong> (<em>Optional</em><em>[</em><em>bytes</em><em>]</em>) – Optional bytes to pass to stdin.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>(returncode, stdout, stderr)</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[int, str, str]</p>
-</dd>
-</dl>
-<p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bcftools_norm</span><span class="p">([</span><span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="s2">&quot;-any&quot;</span><span class="p">,</span> <span class="s2">&quot;sample_data/HG00098.vcf.gz&quot;</span><span class="p">])</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bcftools_view</span><span class="p">([</span><span class="s2">&quot;-h&quot;</span><span class="p">,</span> <span class="s2">&quot;sample_data/HG00098.vcf.gz&quot;</span><span class="p">])</span>
 <span class="go">(0, &#39;...&#39;, &#39;&#39;)</span>
 </pre></div>
 </div>
@@ -198,7 +583,7 @@ Returns paths to unique and common VCFs in a temp directory.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.bcftools_integration.bcftools_query">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_query" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/bcftools_integration.html#bcftools_query"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_query" title="Link to this definition"></a></dt>
 <dd><blockquote>
 <div><p>Run bcftools query with the given arguments.</p>
 <dl class="simple">
@@ -220,32 +605,82 @@ input_data (Optional[bytes]): Optional bytes to pass to stdin.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>args</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>)</p></li>
-<li><p><strong>input_data</strong> (<em>bytes</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><em>List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>)</p></li>
+<li><p><strong>input_data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.13)"><em>bytes</em></a><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>Tuple</em>[int, str, str]</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.13)"><em>Tuple</em></a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.bcftools_stats">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_stats" title="Link to this definition">¶</a></dt>
-<dd><p>Run bcftools stats with the given arguments.</p>
+<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.bcftools_filter">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/bcftools_integration.html#bcftools_filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_filter" title="Link to this definition"></a></dt>
+<dd><p>Run bcftools filter with the given arguments.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>args</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – Arguments for bcftools stats.</p></li>
-<li><p><strong>input_data</strong> (<em>Optional</em><em>[</em><em>bytes</em><em>]</em>) – Optional bytes to pass to stdin.</p></li>
+<li><p><strong>args</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – Arguments for bcftools filter.</p></li>
+<li><p><strong>input_data</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.13)"><em>bytes</em></a><em>]</em>) – Optional bytes to pass to stdin.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>(returncode, stdout, stderr)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[int, str, str]</p>
+<dd class="field-odd"><p>Tuple[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bcftools_filter</span><span class="p">([</span><span class="s2">&quot;-e&quot;</span><span class="p">,</span> <span class="s2">&quot;QUAL&lt;20&quot;</span><span class="p">,</span> <span class="s2">&quot;sample_data/HG00098.vcf.gz&quot;</span><span class="p">])</span>
+<span class="go">(0, &#39;...&#39;, &#39;&#39;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.bcftools_norm">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_norm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/bcftools_integration.html#bcftools_norm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_norm" title="Link to this definition"></a></dt>
+<dd><p>Run bcftools norm with the given arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – Arguments for bcftools norm.</p></li>
+<li><p><strong>input_data</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.13)"><em>bytes</em></a><em>]</em>) – Optional bytes to pass to stdin.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(returncode, stdout, stderr)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bcftools_norm</span><span class="p">([</span><span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="s2">&quot;-any&quot;</span><span class="p">,</span> <span class="s2">&quot;sample_data/HG00098.vcf.gz&quot;</span><span class="p">])</span>
+<span class="go">(0, &#39;...&#39;, &#39;&#39;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.bcftools_stats">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/bcftools_integration.html#bcftools_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_stats" title="Link to this definition"></a></dt>
+<dd><p>Run bcftools stats with the given arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – Arguments for bcftools stats.</p></li>
+<li><p><strong>input_data</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.13)"><em>bytes</em></a><em>]</em>) – Optional bytes to pass to stdin.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(returncode, stdout, stderr)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
@@ -256,101 +691,91 @@ input_data (Optional[bytes]): Optional bytes to pass to stdin.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.bcftools_view">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_view" title="Link to this definition">¶</a></dt>
-<dd><p>Run bcftools view with the given arguments.</p>
+<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.bcftools_annotate">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_annotate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/bcftools_integration.html#bcftools_annotate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_annotate" title="Link to this definition"></a></dt>
+<dd><p>Run bcftools annotate with the given arguments.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>args</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – Arguments for bcftools view.</p></li>
-<li><p><strong>input_data</strong> (<em>Optional</em><em>[</em><em>bytes</em><em>]</em>) – Optional bytes to pass to stdin.</p></li>
+<li><p><strong>args</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – Arguments for bcftools annotate.</p></li>
+<li><p><strong>input_data</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.13)"><em>bytes</em></a><em>]</em>) – Optional bytes to pass to stdin.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>(returncode, stdout, stderr)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[int, str, str]</p>
+<dd class="field-odd"><p>Tuple[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bcftools_view</span><span class="p">([</span><span class="s2">&quot;-h&quot;</span><span class="p">,</span> <span class="s2">&quot;sample_data/HG00098.vcf.gz&quot;</span><span class="p">])</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bcftools_annotate</span><span class="p">([</span><span class="s2">&quot;-a&quot;</span><span class="p">,</span> <span class="s2">&quot;annots.vcf&quot;</span><span class="p">,</span> <span class="s2">&quot;sample_data/HG00098.vcf.gz&quot;</span><span class="p">])</span>
 <span class="go">(0, &#39;...&#39;, &#39;&#39;)</span>
 </pre></div>
 </div>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.bcftools_isec">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">bcftools_isec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/bcftools_integration.html#bcftools_isec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.bcftools_integration.bcftools_isec" title="Link to this definition"></a></dt>
+<dd><p>Run bcftools isec to compare two VCF files.
+Returns paths to unique and common VCFs in a temp directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file1</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+<li><p><strong>file2</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.bcftools_integration.count_variants_in_vcf">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">count_variants_in_vcf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vcf_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.count_variants_in_vcf" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">count_variants_in_vcf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vcf_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/bcftools_integration.html#count_variants_in_vcf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.bcftools_integration.count_variants_in_vcf" title="Link to this definition"></a></dt>
 <dd><p>Count the number of variant records in a VCF file using bcftools view.
 This is generally more robust than manual parsing.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>vcf_path</strong> (<em>str</em>)</p>
+<dd class="field-odd"><p><strong>vcf_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>int</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.bcftools_integration.parse_vcf_variants">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">parse_vcf_variants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vcf_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.parse_vcf_variants" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">parse_vcf_variants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vcf_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/bcftools_integration.html#parse_vcf_variants"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.bcftools_integration.parse_vcf_variants" title="Link to this definition"></a></dt>
 <dd><p>Parse a VCF file and return a list of variant dicts (CHROM, POS, REF, ALT).
 Skips header lines.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="vcf_agent.bcftools_integration.run_bcftools_command">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">run_bcftools_command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.run_bcftools_command" title="Link to this definition">¶</a></dt>
-<dd><p>Run a bcftools command and capture output and errors.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>command</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – List of command arguments (e.g., [“view”, “-h”, “file.vcf”])</p></li>
-<li><p><strong>input_data</strong> (<em>Optional</em><em>[</em><em>bytes</em><em>]</em>) – Optional bytes to pass to stdin.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>(returncode, stdout, stderr)</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[int, str, str]</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>FileNotFoundError</strong> – If bcftools is not installed.</p>
-</dd>
-</dl>
-<p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">run_bcftools_command</span><span class="p">([</span><span class="s2">&quot;view&quot;</span><span class="p">,</span> <span class="s2">&quot;-h&quot;</span><span class="p">,</span> <span class="s2">&quot;sample_data/HG00098.vcf.gz&quot;</span><span class="p">])</span>
-<span class="go">(0, &#39;...&#39;, &#39;&#39;)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.bcftools_integration.vcf_compare">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">vcf_compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.bcftools_integration.vcf_compare" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.bcftools_integration.</span></span><span class="sig-name descname"><span class="pre">vcf_compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/bcftools_integration.html#vcf_compare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.bcftools_integration.vcf_compare" title="Link to this definition"></a></dt>
 <dd><p>Compare two VCF files using bcftools isec and return concordant/discordant/unique counts and lists.
 Returns a JSON-ready dict. Always returns all required fields, even on error.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>file1</strong> (<em>str</em>)</p></li>
-<li><p><strong>file2</strong> (<em>str</em>)</p></li>
+<li><p><strong>file1</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+<li><p><strong>file2</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 </section>
 <section id="module-vcf_agent.cli">
-<span id="vcf-agent-cli-module"></span><h2>vcf_agent.cli module<a class="headerlink" href="#module-vcf_agent.cli" title="Link to this heading">¶</a></h2>
+<span id="vcf-agent-cli-module"></span><h2>vcf_agent.cli module<a class="headerlink" href="#module-vcf_agent.cli" title="Link to this heading"></a></h2>
 <p>VCF Analysis Agent CLI Entrypoint</p>
 <ul class="simple">
 <li><p>Provides a command-line interface for interacting with the agent</p></li>
@@ -375,7 +800,7 @@ $ python -m vcf_agent.cli search-embedding –embedding 0.1,0.2,…</p>
 </dl>
 <dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.cli.main">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.cli.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.cli.main" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.cli.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/cli.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.cli.main" title="Link to this definition"></a></dt>
 <dd><p>Command-line interface for the VCF Analysis Agent.</p>
 <p>Accepts a prompt string to invoke agent tools (e.g., validation, echo).
 Supports mock response for testing via the VCF_AGENT_CLI_MOCK_RESPONSE environment variable.
@@ -386,7 +811,7 @@ Provides LanceDB integration commands.</p>
 
 </section>
 <section id="module-vcf_agent.config">
-<span id="vcf-agent-config-module"></span><h2>vcf_agent.config module<a class="headerlink" href="#module-vcf_agent.config" title="Link to this heading">¶</a></h2>
+<span id="vcf-agent-config-module"></span><h2>vcf_agent.config module<a class="headerlink" href="#module-vcf_agent.config" title="Link to this heading"></a></h2>
 <p>Configuration module for VCF Analysis Agent.</p>
 <ul class="simple">
 <li><p>Stores global configuration for compliance tools and references</p></li>
@@ -394,7 +819,7 @@ Provides LanceDB integration commands.</p>
 </ul>
 <dl class="py data">
 <dt class="sig sig-object py" id="vcf_agent.config.CONFIG">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.config.</span></span><span class="sig-name descname"><span class="pre">CONFIG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'compliance_tool':</span> <span class="pre">'bcftools',</span> <span class="pre">'gatk_reference':</span> <span class="pre">None,</span> <span class="pre">'manufacturer_tool':</span> <span class="pre">None}</span></em><a class="headerlink" href="#vcf_agent.config.CONFIG" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.config.</span></span><span class="sig-name descname"><span class="pre">CONFIG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'compliance_tool':</span> <span class="pre">'bcftools',</span> <span class="pre">'gatk_reference':</span> <span class="pre">None,</span> <span class="pre">'manufacturer_tool':</span> <span class="pre">None}</span></em><a class="headerlink" href="#vcf_agent.config.CONFIG" title="Link to this definition"></a></dt>
 <dd><p>Global configuration dictionary for the VCF Analysis Agent.</p>
 <dl>
 <dt>Keys:</dt><dd><p>compliance_tool (str): Compliance tool to use (‘bcftools’, ‘gatk’, or manufacturer/tool name)
@@ -412,26 +837,26 @@ manufacturer_tool (Optional[str]): Name of manufacturer-specific tool</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="vcf_agent.config.SessionConfig">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">vcf_agent.config.</span></span><span class="sig-name descname"><span class="pre">SessionConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ollama'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credentials_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_fasta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ollama_model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'qwen3:4b'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ollama_base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'http://localhost:11434'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.config.SessionConfig" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">vcf_agent.config.</span></span><span class="sig-name descname"><span class="pre">SessionConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ollama'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credentials_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_fasta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ollama_model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'qwen3:4b'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ollama_base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'http://localhost:11434'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/config.html#SessionConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.config.SessionConfig" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Session configuration for VCF Analysis Agent.</p>
 <p>Controls session-specific settings, including output mode toggling (chain-of-thought vs. raw output),
 model provider selection, and reference FASTA for normalization.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>raw_mode</strong> (<em>bool</em><em> | </em><em>None</em>)</p></li>
-<li><p><strong>model_provider</strong> (<em>Literal</em><em>[</em><em>'ollama'</em><em>, </em><em>'openai'</em><em>, </em><em>'cerebras'</em><em>]</em>)</p></li>
-<li><p><strong>credentials_file</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
-<li><p><strong>reference_fasta</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
-<li><p><strong>ollama_model_name</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
-<li><p><strong>ollama_base_url</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>raw_mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>model_provider</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.13)"><em>Literal</em></a><em>[</em><em>'ollama'</em><em>, </em><em>'openai'</em><em>, </em><em>'cerebras'</em><em>]</em>)</p></li>
+<li><p><strong>credentials_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>reference_fasta</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>ollama_model_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>ollama_base_url</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="vcf_agent.config.SessionConfig.raw_mode">
-<span class="sig-name descname"><span class="pre">raw_mode</span></span><a class="headerlink" href="#vcf_agent.config.SessionConfig.raw_mode" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">raw_mode</span></span><a class="headerlink" href="#vcf_agent.config.SessionConfig.raw_mode" title="Link to this definition"></a></dt>
 <dd><ul class="simple">
 <li><p>True: disables chain-of-thought reasoning (raw output mode)</p></li>
 <li><p>False: enables chain-of-thought (CoT, default)</p></li>
@@ -439,14 +864,14 @@ model provider selection, and reference FASTA for normalization.</p>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Optional[bool]</p>
+<dd class="field-odd"><p>Optional[<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a>]</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="vcf_agent.config.SessionConfig.model_provider">
-<span class="sig-name descname"><span class="pre">model_provider</span></span><a class="headerlink" href="#vcf_agent.config.SessionConfig.model_provider" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">model_provider</span></span><a class="headerlink" href="#vcf_agent.config.SessionConfig.model_provider" title="Link to this definition"></a></dt>
 <dd><ul class="simple">
 <li><p>“ollama”: Use local Ollama models (default)</p></li>
 <li><p>“openai”: Use OpenAI API</p></li>
@@ -454,34 +879,34 @@ model provider selection, and reference FASTA for normalization.</p>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="vcf_agent.config.SessionConfig.credentials_file">
-<span class="sig-name descname"><span class="pre">credentials_file</span></span><a class="headerlink" href="#vcf_agent.config.SessionConfig.credentials_file" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">credentials_file</span></span><a class="headerlink" href="#vcf_agent.config.SessionConfig.credentials_file" title="Link to this definition"></a></dt>
 <dd><ul class="simple">
 <li><p>Path to JSON file with API credentials</p></li>
 <li><p>If None, will use environment variables</p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Optional[str]</p>
+<dd class="field-odd"><p>Optional[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="vcf_agent.config.SessionConfig.reference_fasta">
-<span class="sig-name descname"><span class="pre">reference_fasta</span></span><a class="headerlink" href="#vcf_agent.config.SessionConfig.reference_fasta" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">reference_fasta</span></span><a class="headerlink" href="#vcf_agent.config.SessionConfig.reference_fasta" title="Link to this definition"></a></dt>
 <dd><ul class="simple">
 <li><p>Path to reference FASTA for normalization (required for some tools)</p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Optional[str]</p>
+<dd class="field-odd"><p>Optional[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -500,54 +925,29 @@ model provider selection, and reference FASTA for normalization.</p>
 
 </section>
 <section id="module-vcf_agent.gatk_integration">
-<span id="vcf-agent-gatk-integration-module"></span><h2>vcf_agent.gatk_integration module<a class="headerlink" href="#module-vcf_agent.gatk_integration" title="Link to this heading">¶</a></h2>
+<span id="vcf-agent-gatk-integration-module"></span><h2>vcf_agent.gatk_integration module<a class="headerlink" href="#module-vcf_agent.gatk_integration" title="Link to this heading"></a></h2>
 <p>Python wrapper for GATK ValidateVariants command.
 Uses subprocess for robust execution and output/error capture.
 Extensible for additional GATK commands.</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="vcf_agent.gatk_integration.gatk_validatevariants">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.gatk_integration.</span></span><span class="sig-name descname"><span class="pre">gatk_validatevariants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.gatk_integration.gatk_validatevariants" title="Link to this definition">¶</a></dt>
-<dd><p>Run GATK ValidateVariants with the given arguments.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>args</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – Arguments for GATK ValidateVariants.</p></li>
-<li><p><strong>input_data</strong> (<em>Optional</em><em>[</em><em>bytes</em><em>]</em>) – Optional bytes to pass to stdin.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>(returncode, stdout, stderr)</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[int, str, str]</p>
-</dd>
-</dl>
-<p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gatk_validatevariants</span><span class="p">([</span><span class="s2">&quot;-V&quot;</span><span class="p">,</span> <span class="s2">&quot;sample_data/HG00098.vcf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;-R&quot;</span><span class="p">,</span> <span class="s2">&quot;ref.fasta&quot;</span><span class="p">])</span>
-<span class="go">(0, &#39;...&#39;, &#39;&#39;)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.gatk_integration.run_gatk_command">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.gatk_integration.</span></span><span class="sig-name descname"><span class="pre">run_gatk_command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.gatk_integration.run_gatk_command" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.gatk_integration.</span></span><span class="sig-name descname"><span class="pre">run_gatk_command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/gatk_integration.html#run_gatk_command"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.gatk_integration.run_gatk_command" title="Link to this definition"></a></dt>
 <dd><p>Run a GATK command and capture output and errors.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>command</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – List of command arguments (e.g., [“ValidateVariants”, “-V”, “file.vcf”])</p></li>
-<li><p><strong>input_data</strong> (<em>Optional</em><em>[</em><em>bytes</em><em>]</em>) – Optional bytes to pass to stdin.</p></li>
+<li><p><strong>command</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – List of command arguments (e.g., [“ValidateVariants”, “-V”, “file.vcf”])</p></li>
+<li><p><strong>input_data</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.13)"><em>bytes</em></a><em>]</em>) – Optional bytes to pass to stdin.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>(returncode, stdout, stderr)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[int, str, str]</p>
+<dd class="field-odd"><p>Tuple[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>FileNotFoundError</strong> – If GATK is not installed.</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.13)"><strong>FileNotFoundError</strong></a> – If GATK is not installed.</p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
@@ -557,53 +957,52 @@ Extensible for additional GATK commands.</p>
 </div>
 </dd></dl>
 
-</section>
-<section id="module-vcf_agent.validation">
-<span id="vcf-agent-validation-module"></span><h2>vcf_agent.validation module<a class="headerlink" href="#module-vcf_agent.validation" title="Link to this heading">¶</a></h2>
-<p>VCF/BCF File I/O and Validation Logic
-- File existence and format checks
-- Index detection (bgzip, CSI/TBI)
-- Integration with bcftools stats/validate
-- Error reporting</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="vcf_agent.validation.compliance_check">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.validation.</span></span><span class="sig-name descname"><span class="pre">compliance_check</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.validation.compliance_check" title="Link to this definition">¶</a></dt>
-<dd><p>Unified compliance checker for VCF/BCF files.
-Selects backend based on config or argument.</p>
+<dt class="sig sig-object py" id="vcf_agent.gatk_integration.gatk_validatevariants">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.gatk_integration.</span></span><span class="sig-name descname"><span class="pre">gatk_validatevariants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/gatk_integration.html#gatk_validatevariants"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.gatk_integration.gatk_validatevariants" title="Link to this definition"></a></dt>
+<dd><p>Run GATK ValidateVariants with the given arguments.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>filepath</strong> (<em>str</em>) – Path to the VCF/BCF file.</p></li>
-<li><p><strong>tool</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Compliance tool to use (‘bcftools’, ‘gatk’, etc.).</p></li>
+<li><p><strong>args</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – Arguments for GATK ValidateVariants.</p></li>
+<li><p><strong>input_data</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.13)"><em>bytes</em></a><em>]</em>) – Optional bytes to pass to stdin.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>(returncode, stdout, stderr)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[int, str, str]</p>
+<dd class="field-odd"><p>Tuple[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">compliance_check</span><span class="p">(</span><span class="s1">&#39;sample_data/HG00098.vcf.gz&#39;</span><span class="p">,</span> <span class="n">tool</span><span class="o">=</span><span class="s1">&#39;bcftools&#39;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gatk_validatevariants</span><span class="p">([</span><span class="s2">&quot;-V&quot;</span><span class="p">,</span> <span class="s2">&quot;sample_data/HG00098.vcf.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;-R&quot;</span><span class="p">,</span> <span class="s2">&quot;ref.fasta&quot;</span><span class="p">])</span>
 <span class="go">(0, &#39;...&#39;, &#39;&#39;)</span>
 </pre></div>
 </div>
 </dd></dl>
 
+</section>
+<section id="module-vcf_agent.validation">
+<span id="vcf-agent-validation-module"></span><h2>vcf_agent.validation module<a class="headerlink" href="#module-vcf_agent.validation" title="Link to this heading"></a></h2>
+<p>VCF/BCF File I/O and Validation Logic
+- File existence and format checks
+- Index detection (bgzip, CSI/TBI)
+- Integration with bcftools stats/validate
+- Error reporting</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.validation.file_exists">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.validation.</span></span><span class="sig-name descname"><span class="pre">file_exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.validation.file_exists" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.validation.</span></span><span class="sig-name descname"><span class="pre">file_exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/validation.html#file_exists"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.validation.file_exists" title="Link to this definition"></a></dt>
 <dd><p>Check if the file exists and is readable.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>filepath</strong> (<em>str</em>) – Path to the file.</p>
+<dd class="field-odd"><p><strong>filepath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>True if the file exists and is readable, False otherwise.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
@@ -614,40 +1013,18 @@ Selects backend based on config or argument.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="vcf_agent.validation.has_index">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.validation.</span></span><span class="sig-name descname"><span class="pre">has_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.validation.has_index" title="Link to this definition">¶</a></dt>
-<dd><p>Check for the presence of a CSI or TBI index for bgzipped VCF/BCF files.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>filepath</strong> (<em>str</em>) – Path to the file.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if index is present or not required, False otherwise.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-<p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">has_index</span><span class="p">(</span><span class="s1">&#39;sample_data/HG00098.vcf.gz&#39;</span><span class="p">)</span>
-<span class="go">True</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.validation.is_vcf_or_bcf">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.validation.</span></span><span class="sig-name descname"><span class="pre">is_vcf_or_bcf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.validation.is_vcf_or_bcf" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.validation.</span></span><span class="sig-name descname"><span class="pre">is_vcf_or_bcf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/validation.html#is_vcf_or_bcf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.validation.is_vcf_or_bcf" title="Link to this definition"></a></dt>
 <dd><p>Check if the file has a VCF, VCF.GZ, or BCF extension.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>filepath</strong> (<em>str</em>) – Path to the file.</p>
+<dd class="field-odd"><p><strong>filepath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>True if the file has a recognized VCF/BCF extension, False otherwise.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
@@ -658,43 +1035,40 @@ Selects backend based on config or argument.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="vcf_agent.validation.validate_vcf_file">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.validation.</span></span><span class="sig-name descname"><span class="pre">validate_vcf_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.validation.validate_vcf_file" title="Link to this definition">¶</a></dt>
-<dd><p>High-level validation: checks existence, format, index, and compliance (configurable backend).</p>
+<dt class="sig sig-object py" id="vcf_agent.validation.has_index">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.validation.</span></span><span class="sig-name descname"><span class="pre">has_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/validation.html#has_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.validation.has_index" title="Link to this definition"></a></dt>
+<dd><p>Check for the presence of a CSI or TBI index for bgzipped VCF/BCF files.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>filepath</strong> (<em>str</em>) – Path to the VCF/BCF file.</p></li>
-<li><p><strong>tool</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Compliance tool to use (‘bcftools’, ‘gatk’, etc.).</p></li>
-</ul>
+<dd class="field-odd"><p><strong>filepath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>(is_valid, error_message_if_any)</p>
+<dd class="field-even"><p>True if index is present or not required, False otherwise.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[bool, Optional[str]]</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">validate_vcf_file</span><span class="p">(</span><span class="s1">&#39;sample_data/HG00098.vcf.gz&#39;</span><span class="p">)</span>
-<span class="go">(True, None)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">has_index</span><span class="p">(</span><span class="s1">&#39;sample_data/HG00098.vcf.gz&#39;</span><span class="p">)</span>
+<span class="go">True</span>
 </pre></div>
 </div>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.validation.validate_with_bcftools_stats">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.validation.</span></span><span class="sig-name descname"><span class="pre">validate_with_bcftools_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.validation.validate_with_bcftools_stats" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.validation.</span></span><span class="sig-name descname"><span class="pre">validate_with_bcftools_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/validation.html#validate_with_bcftools_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.validation.validate_with_bcftools_stats" title="Link to this definition"></a></dt>
 <dd><p>Run bcftools stats on the file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>filepath</strong> (<em>str</em>) – Path to the VCF/BCF file.</p>
+<dd class="field-odd"><p><strong>filepath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the VCF/BCF file.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>(returncode, stdout, stderr)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[int, str, str]</p>
+<dd class="field-odd"><p>Tuple[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
@@ -706,23 +1080,23 @@ Selects backend based on config or argument.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.validation.validate_with_gatk">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.validation.</span></span><span class="sig-name descname"><span class="pre">validate_with_gatk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.validation.validate_with_gatk" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.validation.</span></span><span class="sig-name descname"><span class="pre">validate_with_gatk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/validation.html#validate_with_gatk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.validation.validate_with_gatk" title="Link to this definition"></a></dt>
 <dd><p>Run GATK ValidateVariants on the file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>filepath</strong> (<em>str</em>) – Path to the VCF/BCF file.</p></li>
-<li><p><strong>reference</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Path to reference FASTA. If None, uses config.</p></li>
+<li><p><strong>filepath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the VCF/BCF file.</p></li>
+<li><p><strong>reference</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – Path to reference FASTA. If None, uses config.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>(returncode, stdout, stderr)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[int, str, str]</p>
+<dd class="field-odd"><p>Tuple[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If reference FASTA is not provided.</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> – If reference FASTA is not provided.</p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
@@ -734,20 +1108,20 @@ Selects backend based on config or argument.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="vcf_agent.validation.validate_with_manufacturer_tool">
-<span class="sig-prename descclassname"><span class="pre">vcf_agent.validation.</span></span><span class="sig-name descname"><span class="pre">validate_with_manufacturer_tool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vcf_agent.validation.validate_with_manufacturer_tool" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.validation.</span></span><span class="sig-name descname"><span class="pre">validate_with_manufacturer_tool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/validation.html#validate_with_manufacturer_tool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.validation.validate_with_manufacturer_tool" title="Link to this definition"></a></dt>
 <dd><p>Placeholder for manufacturer-specific compliance tool integration.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>filepath</strong> (<em>str</em>) – Path to the VCF/BCF file.</p></li>
-<li><p><strong>tool_name</strong> (<em>str</em>) – Name of the manufacturer tool.</p></li>
+<li><p><strong>filepath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the VCF/BCF file.</p></li>
+<li><p><strong>tool_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Name of the manufacturer tool.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>(returncode, stdout, stderr)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[int, str, str]</p>
+<dd class="field-odd"><p>Tuple[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
@@ -757,9 +1131,60 @@ Selects backend based on config or argument.</p>
 </div>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="vcf_agent.validation.compliance_check">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.validation.</span></span><span class="sig-name descname"><span class="pre">compliance_check</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/validation.html#compliance_check"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.validation.compliance_check" title="Link to this definition"></a></dt>
+<dd><p>Unified compliance checker for VCF/BCF files.
+Selects backend based on config or argument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filepath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the VCF/BCF file.</p></li>
+<li><p><strong>tool</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – Compliance tool to use (‘bcftools’, ‘gatk’, etc.).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(returncode, stdout, stderr)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">compliance_check</span><span class="p">(</span><span class="s1">&#39;sample_data/HG00098.vcf.gz&#39;</span><span class="p">,</span> <span class="n">tool</span><span class="o">=</span><span class="s1">&#39;bcftools&#39;</span><span class="p">)</span>
+<span class="go">(0, &#39;...&#39;, &#39;&#39;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="vcf_agent.validation.validate_vcf_file">
+<span class="sig-prename descclassname"><span class="pre">vcf_agent.validation.</span></span><span class="sig-name descname"><span class="pre">validate_vcf_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vcf_agent/validation.html#validate_vcf_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vcf_agent.validation.validate_vcf_file" title="Link to this definition"></a></dt>
+<dd><p>High-level validation: checks existence, format, index, and compliance (configurable backend).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filepath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the VCF/BCF file.</p></li>
+<li><p><strong>tool</strong> (<em>Optional</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – Compliance tool to use (‘bcftools’, ‘gatk’, etc.).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(is_valid, error_message_if_any)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a>, Optional[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]]</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">validate_vcf_file</span><span class="p">(</span><span class="s1">&#39;sample_data/HG00098.vcf.gz&#39;</span><span class="p">)</span>
+<span class="go">(True, None)</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </section>
 <section id="module-vcf_agent">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-vcf_agent" title="Link to this heading">¶</a></h2>
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-vcf_agent" title="Link to this heading"></a></h2>
 <p>vcf_agent package</p>
 <ul class="simple">
 <li><p>Provides tools and wrappers for VCF/BCF analysis, validation, and compliance</p></li>
@@ -769,7 +1194,7 @@ Selects backend based on config or argument.</p>
 </section>
 </section>
 <section id="agent-integration-prompt-contracts-api-integration-and-testing">
-<h1>Agent Integration, Prompt Contracts, API Integration, and Testing<a class="headerlink" href="#agent-integration-prompt-contracts-api-integration-and-testing" title="Link to this heading">¶</a></h1>
+<h1>Agent Integration, Prompt Contracts, API Integration, and Testing<a class="headerlink" href="#agent-integration-prompt-contracts-api-integration-and-testing" title="Link to this heading"></a></h1>
 <p>The VCF Analysis Agent implements:</p>
 <ul class="simple">
 <li><p><strong>Tool Registration:</strong> Decorators and schemas for clear tool definitions (see <cite>src/vcf_agent/agent.py</cite>).</p></li>
@@ -782,98 +1207,34 @@ Selects backend based on config or argument.</p>
 </section>
 
 
+           </div>
           </div>
-          
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="VCF Analysis Agent Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="docker.html" class="btn btn-neutral float-right" title="Docker Deployment Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, VCF Agent Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="index.html">VCF Analysis Agent</a></h1>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
 
-
-
-
-
-
-
-
-
-<search id="searchbox" style="display: none" role="search">
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
-<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">vcf_agent package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.agent">vcf_agent.agent module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.bcftools_integration">vcf_agent.bcftools_integration module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.cli">vcf_agent.cli module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.config">vcf_agent.config module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.gatk_integration">vcf_agent.gatk_integration module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent.validation">vcf_agent.validation module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-vcf_agent">Module contents</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="samspec_compliance.html">SAMspec Compliance Validation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="lancedb_developer_guide.html">LanceDB Developer Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#core-module-src-vcf-agent-graph-integration">Core Module: <code class="docutils literal notranslate"><span class="pre">src.vcf_agent.graph_integration</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#schema-details">Schema Details</a></li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#usage-pattern-with-lancedb">Usage Pattern with LanceDB</a></li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#security-and-auditing">Security and Auditing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="kuzu_developer_guide.html#known-issues-and-workarounds">Known Issues and Workarounds</a></li>
-<li class="toctree-l1"><a class="reference internal" href="monitoring_with_prometheus.html">Observability Stack</a></li>
-<li class="toctree-l1"><a class="reference internal" href="security.html">Security</a></li>
-<li class="toctree-l1"><a class="reference internal" href="audit.html">Auditing</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="modules.html">vcf_agent</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">vcf_agent package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#agent-integration-prompt-contracts-api-integration-and-testing">Agent Integration, Prompt Contracts, API Integration, and Testing</a></li>
-</ul>
-</li>
-</ul>
-
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="previous chapter">VCF Analysis Agent Documentation</a></li>
-      <li>Next: <a href="samspec_compliance.html" title="next chapter">SAMspec Compliance Validation</a></li>
-  </ul></li>
-</ul>
-</div>
-
-
-
-
-
-
-
-
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &#169;2025, VCF Agent Team.
-      
-      |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
-      
-      |
-      <a href="_sources/vcf_agent.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
-  </body>
+</body>
 </html>

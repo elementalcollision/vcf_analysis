@@ -1,20 +1,112 @@
 """
-Kuzu Graph Database Integration for VCF Agent
+Enhanced Kuzu Graph Database Integration for VCF Agent
 
-This module provides functions to interact with a Kuzu graph database,
-including schema definition, data loading (variants, samples), and querying
-using Cypher.
+This module provides comprehensive functions to interact with a Kuzu graph database,
+implementing the DECISION-001 specifications for genomic relationship modeling.
+Includes schema definition, data loading, and optimized querying for VCF analysis.
 """
 import kuzu
 import pandas as pd # Added for DataFrame conversion
 import pyarrow as pa # Ensure pyarrow is imported
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional, Union, Tuple
+import logging
+from datetime import datetime
+import time
+from concurrent.futures import ThreadPoolExecutor
+import threading
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Default path for the Kuzu database
 DEFAULT_KUZU_DB_PATH = "./kuzu_db"
 
 # Global variable to hold the managed Kuzu connection
 _kuzu_main_connection: Optional[kuzu.Connection] = None
+_kuzu_lock = threading.Lock()  # Thread safety for connection management
+
+# Enhanced schema based on DECISION-001 specifications
+ENHANCED_SCHEMA_QUERIES = [
+    # Sample node table
+    """CREATE NODE TABLE IF NOT EXISTS Sample(
+        id STRING, 
+        name STRING, 
+        type STRING, 
+        created_at TIMESTAMP,
+        metadata STRING,
+        PRIMARY KEY (id)
+    )""",
+    
+    # Variant node table with comprehensive genomic information
+    """CREATE NODE TABLE IF NOT EXISTS Variant(
+        id STRING, 
+        chr STRING, 
+        pos INT64, 
+        ref STRING, 
+        alt STRING,
+        variant_type STRING,
+        quality_score DOUBLE,
+        filter_status STRING,
+        allele_frequency DOUBLE,
+        created_at TIMESTAMP,
+        PRIMARY KEY (id)
+    )""",
+    
+    # Gene node table for genomic context
+    """CREATE NODE TABLE IF NOT EXISTS Gene(
+        id STRING, 
+        symbol STRING, 
+        name STRING, 
+        chromosome STRING,
+        start_pos INT64,
+        end_pos INT64,
+        biotype STRING,
+        PRIMARY KEY (id)
+    )""",
+    
+    # Analysis node table for AI-generated insights
+    """CREATE NODE TABLE IF NOT EXISTS Analysis(
+        id STRING,
+        type STRING,
+        summary STRING,
+        confidence_score DOUBLE,
+        created_at TIMESTAMP,
+        PRIMARY KEY (id)
+    )""",
+    
+    # HasVariant relationship: Sample -> Variant
+    """CREATE REL TABLE IF NOT EXISTS HasVariant(
+        FROM Sample TO Variant, 
+        genotype STRING, 
+        quality DOUBLE,
+        depth INT64,
+        allele_depth STRING,
+        created_at TIMESTAMP
+    )""",
+    
+    # LocatedIn relationship: Variant -> Gene
+    """CREATE REL TABLE IF NOT EXISTS LocatedIn(
+        FROM Variant TO Gene, 
+        impact STRING, 
+        consequence STRING,
+        amino_acid_change STRING,
+        codon_change STRING
+    )""",
+    
+    # AnalyzedBy relationship: Variant -> Analysis
+    """CREATE REL TABLE IF NOT EXISTS AnalyzedBy(
+        FROM Variant TO Analysis,
+        created_at TIMESTAMP
+    )""",
+    
+    # SimilarTo relationship: Variant -> Variant (for similarity networks)
+    """CREATE REL TABLE IF NOT EXISTS SimilarTo(
+        FROM Variant TO Variant,
+        similarity_score DOUBLE,
+        similarity_type STRING,
+        created_at TIMESTAMP
+    )"""
+]
 
 def get_managed_kuzu_connection() -> kuzu.Connection:
     """
@@ -326,6 +418,527 @@ def close_kuzu_connection(db_path: str = DEFAULT_KUZU_DB_PATH):
     except Exception as e:
         print(f"Error closing Kuzu connection to {db_path}: {e}")
         raise
+
+# Enhanced functions based on DECISION-001 specifications
+
+def create_enhanced_schema(conn: kuzu.Connection) -> None:
+    """
+    Creates the enhanced schema for genomic data based on DECISION-001 specifications.
+    
+    Args:
+        conn: Active Kuzu connection.
+        
+    Raises:
+        Exception: If schema creation fails.
+    """
+    logger.info("Creating enhanced Kuzu schema based on DECISION-001 specifications...")
+    
+    try:
+        for i, query in enumerate(ENHANCED_SCHEMA_QUERIES):
+            logger.debug(f"Executing schema query {i+1}/{len(ENHANCED_SCHEMA_QUERIES)}: {query[:100]}...")
+            qr = conn.execute(query)
+            if qr: 
+                del qr
+        
+        logger.info("Enhanced Kuzu schema created/verified successfully.")
+        
+    except Exception as e:
+        logger.error(f"Error creating enhanced Kuzu schema: {e}")
+        raise
+
+def add_enhanced_sample(conn: kuzu.Connection, sample_data: Dict[str, Any]) -> None:
+    """
+    Adds a sample node using the enhanced schema.
+    
+    Args:
+        conn: Active Kuzu connection.
+        sample_data: Dictionary containing sample properties.
+                    Required: id, name, type
+                    Optional: metadata
+    """
+    try:
+        query = """
+        CREATE (s:Sample {
+            id: $id,
+            name: $name,
+            type: $type,
+            created_at: $created_at,
+            metadata: $metadata
+        })
+        """
+        
+        params = {
+            "id": sample_data['id'],
+            "name": sample_data.get('name', sample_data['id']),
+            "type": sample_data.get('type', 'unknown'),
+            "created_at": datetime.now(),
+            "metadata": sample_data.get('metadata', '')
+        }
+        
+        qr = conn.execute(query, parameters=params)
+        if qr: 
+            del qr
+            
+        logger.info(f"Added enhanced sample: {sample_data['id']}")
+        
+    except Exception as e:
+        logger.error(f"Error adding enhanced sample {sample_data.get('id', 'UNKNOWN')}: {e}")
+        raise
+
+def add_enhanced_variant(conn: kuzu.Connection, variant_data: Dict[str, Any]) -> None:
+    """
+    Adds a variant node using the enhanced schema.
+    
+    Args:
+        conn: Active Kuzu connection.
+        variant_data: Dictionary containing variant properties.
+                     Required: id, chr, pos, ref, alt
+                     Optional: variant_type, quality_score, filter_status, allele_frequency
+    """
+    try:
+        query = """
+        CREATE (v:Variant {
+            id: $id,
+            chr: $chr,
+            pos: $pos,
+            ref: $ref,
+            alt: $alt,
+            variant_type: $variant_type,
+            quality_score: $quality_score,
+            filter_status: $filter_status,
+            allele_frequency: $allele_frequency,
+            created_at: $created_at
+        })
+        """
+        
+        params = {
+            "id": variant_data['id'],
+            "chr": variant_data['chr'],
+            "pos": variant_data['pos'],
+            "ref": variant_data['ref'],
+            "alt": variant_data['alt'],
+            "variant_type": variant_data.get('variant_type', 'SNV'),
+            "quality_score": variant_data.get('quality_score', 0.0),
+            "filter_status": variant_data.get('filter_status', 'UNKNOWN'),
+            "allele_frequency": variant_data.get('allele_frequency', 0.0),
+            "created_at": datetime.now()
+        }
+        
+        qr = conn.execute(query, parameters=params)
+        if qr: 
+            del qr
+            
+        logger.info(f"Added enhanced variant: {variant_data['id']}")
+        
+    except Exception as e:
+        logger.error(f"Error adding enhanced variant {variant_data.get('id', 'UNKNOWN')}: {e}")
+        raise
+
+def add_gene(conn: kuzu.Connection, gene_data: Dict[str, Any]) -> None:
+    """
+    Adds a gene node to the database.
+    
+    Args:
+        conn: Active Kuzu connection.
+        gene_data: Dictionary containing gene properties.
+                  Required: id, symbol, name, chromosome
+                  Optional: start_pos, end_pos, biotype
+    """
+    try:
+        query = """
+        CREATE (g:Gene {
+            id: $id,
+            symbol: $symbol,
+            name: $name,
+            chromosome: $chromosome,
+            start_pos: $start_pos,
+            end_pos: $end_pos,
+            biotype: $biotype
+        })
+        """
+        
+        params = {
+            "id": gene_data['id'],
+            "symbol": gene_data['symbol'],
+            "name": gene_data.get('name', gene_data['symbol']),
+            "chromosome": gene_data['chromosome'],
+            "start_pos": gene_data.get('start_pos', 0),
+            "end_pos": gene_data.get('end_pos', 0),
+            "biotype": gene_data.get('biotype', 'protein_coding')
+        }
+        
+        qr = conn.execute(query, parameters=params)
+        if qr: 
+            del qr
+            
+        logger.info(f"Added gene: {gene_data['symbol']} ({gene_data['id']})")
+        
+    except Exception as e:
+        logger.error(f"Error adding gene {gene_data.get('symbol', 'UNKNOWN')}: {e}")
+        raise
+
+def add_analysis(conn: kuzu.Connection, analysis_data: Dict[str, Any]) -> None:
+    """
+    Adds an analysis node to the database.
+    
+    Args:
+        conn: Active Kuzu connection.
+        analysis_data: Dictionary containing analysis properties.
+                      Required: id, type, summary
+                      Optional: confidence_score
+    """
+    try:
+        query = """
+        CREATE (a:Analysis {
+            id: $id,
+            type: $type,
+            summary: $summary,
+            confidence_score: $confidence_score,
+            created_at: $created_at
+        })
+        """
+        
+        params = {
+            "id": analysis_data['id'],
+            "type": analysis_data['type'],
+            "summary": analysis_data['summary'],
+            "confidence_score": analysis_data.get('confidence_score', 0.0),
+            "created_at": datetime.now()
+        }
+        
+        qr = conn.execute(query, parameters=params)
+        if qr: 
+            del qr
+            
+        logger.info(f"Added analysis: {analysis_data['id']}")
+        
+    except Exception as e:
+        logger.error(f"Error adding analysis {analysis_data.get('id', 'UNKNOWN')}: {e}")
+        raise
+
+def create_has_variant_relationship(
+    conn: kuzu.Connection, 
+    sample_id: str, 
+    variant_id: str, 
+    relationship_data: Dict[str, Any]
+) -> None:
+    """
+    Creates a HasVariant relationship between a Sample and a Variant.
+    
+    Args:
+        conn: Active Kuzu connection.
+        sample_id: ID of the Sample node.
+        variant_id: ID of the Variant node.
+        relationship_data: Dictionary containing relationship properties.
+                          Required: genotype
+                          Optional: quality, depth, allele_depth
+    """
+    try:
+        query = """
+        MATCH (s:Sample {id: $sample_id}), (v:Variant {id: $variant_id})
+        CREATE (s)-[r:HasVariant {
+            genotype: $genotype,
+            quality: $quality,
+            depth: $depth,
+            allele_depth: $allele_depth,
+            created_at: $created_at
+        }]->(v)
+        """
+        
+        params = {
+            "sample_id": sample_id,
+            "variant_id": variant_id,
+            "genotype": relationship_data['genotype'],
+            "quality": relationship_data.get('quality', 0.0),
+            "depth": relationship_data.get('depth', 0),
+            "allele_depth": relationship_data.get('allele_depth', ''),
+            "created_at": datetime.now()
+        }
+        
+        qr = conn.execute(query, parameters=params)
+        if qr: 
+            del qr
+            
+        logger.info(f"Created HasVariant relationship: {sample_id} -> {variant_id}")
+        
+    except Exception as e:
+        logger.error(f"Error creating HasVariant relationship {sample_id} -> {variant_id}: {e}")
+        raise
+
+def create_located_in_relationship(
+    conn: kuzu.Connection, 
+    variant_id: str, 
+    gene_id: str, 
+    relationship_data: Dict[str, Any]
+) -> None:
+    """
+    Creates a LocatedIn relationship between a Variant and a Gene.
+    
+    Args:
+        conn: Active Kuzu connection.
+        variant_id: ID of the Variant node.
+        gene_id: ID of the Gene node.
+        relationship_data: Dictionary containing relationship properties.
+                          Optional: impact, consequence, amino_acid_change, codon_change
+    """
+    try:
+        query = """
+        MATCH (v:Variant {id: $variant_id}), (g:Gene {id: $gene_id})
+        CREATE (v)-[r:LocatedIn {
+            impact: $impact,
+            consequence: $consequence,
+            amino_acid_change: $amino_acid_change,
+            codon_change: $codon_change
+        }]->(g)
+        """
+        
+        params = {
+            "variant_id": variant_id,
+            "gene_id": gene_id,
+            "impact": relationship_data.get('impact', ''),
+            "consequence": relationship_data.get('consequence', ''),
+            "amino_acid_change": relationship_data.get('amino_acid_change', ''),
+            "codon_change": relationship_data.get('codon_change', '')
+        }
+        
+        qr = conn.execute(query, parameters=params)
+        if qr: 
+            del qr
+            
+        logger.info(f"Created LocatedIn relationship: {variant_id} -> {gene_id}")
+        
+    except Exception as e:
+        logger.error(f"Error creating LocatedIn relationship {variant_id} -> {gene_id}: {e}")
+        raise
+
+def batch_add_genomic_data(
+    conn: kuzu.Connection,
+    samples: List[Dict[str, Any]],
+    variants: List[Dict[str, Any]],
+    genes: List[Dict[str, Any]],
+    relationships: List[Dict[str, Any]],
+    batch_size: int = 1000
+) -> Dict[str, int]:
+    """
+    Batch add genomic data with optimized performance.
+    Target: <500ms for complex operations as per DECISION-001.
+    
+    Args:
+        conn: Active Kuzu connection.
+        samples: List of sample data dictionaries.
+        variants: List of variant data dictionaries.
+        genes: List of gene data dictionaries.
+        relationships: List of relationship data dictionaries.
+        batch_size: Number of items to process in each batch.
+        
+    Returns:
+        Dictionary with counts of added items.
+    """
+    start_time = time.time()
+    logger.info(f"Starting batch genomic data insertion: {len(samples)} samples, {len(variants)} variants, {len(genes)} genes, {len(relationships)} relationships")
+    
+    counts = {"samples": 0, "variants": 0, "genes": 0, "relationships": 0}
+    
+    try:
+        # Add samples in batches
+        for i in range(0, len(samples), batch_size):
+            batch = samples[i:i + batch_size]
+            for sample_data in batch:
+                add_enhanced_sample(conn, sample_data)
+                counts["samples"] += 1
+        
+        # Add variants in batches
+        for i in range(0, len(variants), batch_size):
+            batch = variants[i:i + batch_size]
+            for variant_data in batch:
+                add_enhanced_variant(conn, variant_data)
+                counts["variants"] += 1
+        
+        # Add genes in batches
+        for i in range(0, len(genes), batch_size):
+            batch = genes[i:i + batch_size]
+            for gene_data in batch:
+                add_gene(conn, gene_data)
+                counts["genes"] += 1
+        
+        # Add relationships in batches
+        for i in range(0, len(relationships), batch_size):
+            batch = relationships[i:i + batch_size]
+            for rel_data in batch:
+                if rel_data['type'] == 'HasVariant':
+                    create_has_variant_relationship(
+                        conn, 
+                        rel_data['sample_id'], 
+                        rel_data['variant_id'], 
+                        rel_data['properties']
+                    )
+                elif rel_data['type'] == 'LocatedIn':
+                    create_located_in_relationship(
+                        conn, 
+                        rel_data['variant_id'], 
+                        rel_data['gene_id'], 
+                        rel_data['properties']
+                    )
+                counts["relationships"] += 1
+        
+        elapsed_time = time.time() - start_time
+        logger.info(f"Batch genomic data insertion completed in {elapsed_time:.2f}s: {counts}")
+        
+        return counts
+        
+    except Exception as e:
+        logger.error(f"Error in batch genomic data insertion: {e}")
+        raise
+
+def find_sample_variants(conn: kuzu.Connection, sample_id: str, limit: int = 100) -> List[Dict[str, Any]]:
+    """
+    Find all variants for a specific sample with relationship details.
+    
+    Args:
+        conn: Active Kuzu connection.
+        sample_id: ID of the sample.
+        limit: Maximum number of variants to return.
+        
+    Returns:
+        List of variant dictionaries with relationship properties.
+    """
+    try:
+        query = """
+        MATCH (s:Sample {id: $sample_id})-[r:HasVariant]->(v:Variant)
+        RETURN v.id as variant_id, v.chr as chromosome, v.pos as position,
+               v.ref as reference, v.alt as alternate, v.quality_score,
+               r.genotype, r.quality as relationship_quality, r.depth
+        LIMIT $limit
+        """
+        
+        params = {"sample_id": sample_id, "limit": limit}
+        results = execute_query(conn, query, params)
+        
+        logger.info(f"Found {len(results)} variants for sample {sample_id}")
+        return results
+        
+    except Exception as e:
+        logger.error(f"Error finding variants for sample {sample_id}: {e}")
+        raise
+
+def find_variant_genes(conn: kuzu.Connection, variant_id: str) -> List[Dict[str, Any]]:
+    """
+    Find all genes associated with a specific variant.
+    
+    Args:
+        conn: Active Kuzu connection.
+        variant_id: ID of the variant.
+        
+    Returns:
+        List of gene dictionaries with relationship properties.
+    """
+    try:
+        query = """
+        MATCH (v:Variant {id: $variant_id})-[r:LocatedIn]->(g:Gene)
+        RETURN g.id as gene_id, g.symbol, g.name, g.chromosome,
+               r.impact, r.consequence, r.amino_acid_change, r.codon_change
+        """
+        
+        params = {"variant_id": variant_id}
+        results = execute_query(conn, query, params)
+        
+        logger.info(f"Found {len(results)} genes for variant {variant_id}")
+        return results
+        
+    except Exception as e:
+        logger.error(f"Error finding genes for variant {variant_id}: {e}")
+        raise
+
+def find_similar_samples(conn: kuzu.Connection, sample_id: str, min_shared_variants: int = 5) -> List[Dict[str, Any]]:
+    """
+    Find samples that share variants with the given sample.
+    
+    Args:
+        conn: Active Kuzu connection.
+        sample_id: ID of the reference sample.
+        min_shared_variants: Minimum number of shared variants.
+        
+    Returns:
+        List of similar samples with shared variant counts.
+    """
+    try:
+        query = """
+        MATCH (s1:Sample {id: $sample_id})-[:HasVariant]->(v:Variant)<-[:HasVariant]-(s2:Sample)
+        WHERE s1.id <> s2.id
+        WITH s2, COUNT(v) as shared_variants
+        WHERE shared_variants >= $min_shared_variants
+        RETURN s2.id as sample_id, s2.name, s2.type, shared_variants
+        ORDER BY shared_variants DESC
+        """
+        
+        params = {"sample_id": sample_id, "min_shared_variants": min_shared_variants}
+        results = execute_query(conn, query, params)
+        
+        logger.info(f"Found {len(results)} similar samples for {sample_id}")
+        return results
+        
+    except Exception as e:
+        logger.error(f"Error finding similar samples for {sample_id}: {e}")
+        raise
+
+def get_genomic_statistics(conn: kuzu.Connection) -> Dict[str, Any]:
+    """
+    Get comprehensive statistics about the genomic data in the graph.
+    
+    Args:
+        conn: Active Kuzu connection.
+        
+    Returns:
+        Dictionary containing various statistics.
+    """
+    try:
+        stats = {}
+        
+        # Count nodes
+        node_counts = {}
+        for node_type in ['Sample', 'Variant', 'Gene', 'Analysis']:
+            query = f"MATCH (n:{node_type}) RETURN COUNT(n) as count"
+            result = execute_query(conn, query)
+            node_counts[node_type.lower()] = result[0]['count'] if result else 0
+        
+        stats['node_counts'] = node_counts
+        
+        # Count relationships
+        rel_counts = {}
+        for rel_type in ['HasVariant', 'LocatedIn', 'AnalyzedBy', 'SimilarTo']:
+            query = f"MATCH ()-[r:{rel_type}]->() RETURN COUNT(r) as count"
+            result = execute_query(conn, query)
+            rel_counts[rel_type] = result[0]['count'] if result else 0
+        
+        stats['relationship_counts'] = rel_counts
+        
+        # Variant distribution by chromosome
+        query = """
+        MATCH (v:Variant)
+        RETURN v.chr as chromosome, COUNT(v) as variant_count
+        ORDER BY variant_count DESC
+        LIMIT 25
+        """
+        chrom_dist = execute_query(conn, query)
+        stats['chromosome_distribution'] = chrom_dist
+        
+        # Sample variant counts
+        query = """
+        MATCH (s:Sample)-[:HasVariant]->(v:Variant)
+        WITH s, COUNT(v) as variant_count
+        RETURN AVG(variant_count) as avg_variants_per_sample,
+               MIN(variant_count) as min_variants,
+               MAX(variant_count) as max_variants
+        """
+        sample_stats = execute_query(conn, query)
+        stats['sample_statistics'] = sample_stats[0] if sample_stats else {}
+        
+        logger.info(f"Generated genomic statistics: {stats['node_counts']}")
+        return stats
+        
+    except Exception as e:
+        logger.error(f"Error generating genomic statistics: {e}")
+        return {"error": str(e)}
 
 if __name__ == '__main__':
     # Example Usage (illustrative, to be updated for get_variant_context)

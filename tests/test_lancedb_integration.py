@@ -1,305 +1,394 @@
-import os
-import shutil
-import subprocess
-import tempfile
-import numpy as np
+"""
+Test suite for enhanced LanceDB integration with VCF variants.
+Tests the DECISION-001 implementation including VCFVariant model, embedding service, and batch operations.
+"""
+
 import pytest
-import logging
-import json # For CLI update test
+import tempfile
+import shutil
+import os
+from datetime import datetime
+from unittest.mock import Mock, patch
+import pandas as pd
 
-from vcf_agent.lancedb_integration import (
-    get_db, 
-    get_or_create_table, 
-    add_variants, 
-    search_by_embedding, 
-    update_variant, 
-    delete_variants,
-    Variant,
-    create_scalar_index,
-    filter_variants_by_metadata
+from src.vcf_agent.lancedb_integration import (
+    VCFVariant,
+    VariantEmbeddingService,
+    get_db,
+    get_or_create_vcf_table,
+    create_vcf_variant_record,
+    batch_add_vcf_variants,
+    hybrid_search_variants,
+    search_similar_variants,
+    get_variant_statistics
 )
+from src.vcf_agent.config import SessionConfig
 
-@pytest.fixture(scope="module")
-def lancedb_tmpdir():
-    tmpdir = tempfile.mkdtemp(prefix="lancedb_test_")
-    yield tmpdir
-    shutil.rmtree(tmpdir)
 
-@pytest.fixture
-def test_variant_data():
-    return {
-        "variant_id": "rsTest1",
-        "chrom": "1",
-        "pos": 12345,
-        "ref": "A",
-        "alt": "G",
-        "embedding": np.random.rand(1024).astype(np.float32).tolist(),
-        "clinical_significance": "Pathogenic",
-    }
-
-@pytest.fixture
-def caplog_fixture(caplog):
-    caplog.set_level(logging.INFO)
-    return caplog
-
-def test_lancedb_python_api_happy_path(lancedb_tmpdir, test_variant_data, caplog_fixture):
-    db = get_db(lancedb_tmpdir)
-    assert f"Successfully connected to LanceDB at {lancedb_tmpdir}" in caplog_fixture.text
-    table = get_or_create_table(db)
-    assert "Created new table: 'variants' with schema Variant." in caplog_fixture.text
+class TestVCFVariantModel:
+    """Test the VCFVariant Pydantic model."""
     
-    add_variants(table, [test_variant_data])
-    assert f"Successfully added 1 variants to table '{table.name}'." in caplog_fixture.text
-
-    results = search_by_embedding(table, test_variant_data["embedding"], limit=1)
-    assert f"Search in table '{table.name}' completed. Found 1 results for limit: 1, filter_sql: '[MASKED_SQL]'." in caplog_fixture.text
-    assert not results.empty
-    assert results.iloc[0]["variant_id"] == test_variant_data["variant_id"]
-
-      # db.close()
-
-def test_lancedb_python_api_update_variant(lancedb_tmpdir, test_variant_data, caplog_fixture):
-    db = get_db(lancedb_tmpdir)
-    table_name = "update_test_table"
-    if table_name in db.table_names():
-        db.drop_table(table_name)
-    table = get_or_create_table(db, table_name=table_name)
+    def test_vcf_variant_creation(self):
+        """Test creating a VCFVariant instance."""
+        now = datetime.now()
+        variant = VCFVariant(
+            variant_id="chr1-123456-A-G",
+            chromosome="1",
+            position=123456,
+            reference="A",
+            alternate="G",
+            variant_description="Test variant",
+            variant_vector=[0.1] * 1536,  # 1536-dimensional vector
+            analysis_summary="Test analysis",
+            sample_id="sample_001",
+            created_at=now,
+            updated_at=now
+        )
+        
+        assert variant.variant_id == "chr1-123456-A-G"
+        assert variant.chromosome == "1"
+        assert variant.position == 123456
+        assert len(variant.variant_vector) == 1536
     
-    add_variants(table, [test_variant_data])
+    def test_vcf_variant_optional_fields(self):
+        """Test VCFVariant with optional fields."""
+        now = datetime.now()
+        variant = VCFVariant(
+            variant_id="chr1-123456-A-G",
+            chromosome="1",
+            position=123456,
+            reference="A",
+            alternate="G",
+            variant_description="Test variant",
+            variant_vector=[0.1] * 1536,
+            analysis_summary="Test analysis",
+            sample_id="sample_001",
+            quality_score=99.5,
+            filter_status="PASS",
+            genotype="0/1",
+            allele_frequency=0.25,
+            clinical_significance="Pathogenic",
+            gene_symbol="BRCA1",
+            consequence="missense_variant",
+            created_at=now,
+            updated_at=now
+        )
+        
+        assert variant.quality_score == 99.5
+        assert variant.filter_status == "PASS"
+        assert variant.clinical_significance == "Pathogenic"
+        assert variant.gene_symbol == "BRCA1"
+
+
+class TestVariantEmbeddingService:
+    """Test the VariantEmbeddingService."""
     
-    variant_id_to_update = test_variant_data["variant_id"]
-    updates = {"clinical_significance": "Benign", "pos": 54321}
-    update_variant(table, variant_id_to_update, updates)
-    assert f"Successfully updated variant '{variant_id_to_update}' in table '{table_name}' with keys: ['clinical_significance', 'pos']" in caplog_fixture.text
+    def test_embedding_service_initialization(self):
+        """Test embedding service initialization."""
+        service = VariantEmbeddingService()
+        assert service.session_config is not None
+        assert service.embedding_cache == {}
     
-    # Verify update by searching for the record and checking updated fields
-    results = table.search().where(f"variant_id = '{variant_id_to_update}'").to_pandas()
-    assert not results.empty
-    assert results.iloc[0]["clinical_significance"] == "Benign"
-    assert results.iloc[0]["pos"] == 54321
-
-def test_lancedb_python_api_delete_variant(lancedb_tmpdir, test_variant_data, caplog_fixture):
-    db = get_db(lancedb_tmpdir)
-    table_name = "delete_test_table"
-    if table_name in db.table_names():
-        db.drop_table(table_name)
-    table = get_or_create_table(db, table_name=table_name)
+    def test_generate_variant_description(self):
+        """Test variant description generation."""
+        service = VariantEmbeddingService()
+        variant_data = {
+            "chromosome": "1",
+            "position": 123456,
+            "reference": "A",
+            "alternate": "G",
+            "gene_symbol": "BRCA1",
+            "consequence": "missense_variant",
+            "clinical_significance": "Pathogenic"
+        }
+        
+        description = service.generate_variant_description(variant_data)
+        
+        assert "chromosome 1" in description
+        assert "position 123456" in description
+        assert "reference allele A" in description
+        assert "alternate allele G" in description
+        assert "gene BRCA1" in description
+        assert "missense_variant" in description
+        assert "Pathogenic" in description
     
-    # Add multiple variants for deletion test
-    variant1 = test_variant_data.copy()
-    variant2 = test_variant_data.copy()
-    variant2["variant_id"] = "rsTest2"
-    variant2["clinical_significance"] = "Uncertain"
-    add_variants(table, [variant1, variant2])
-    assert table.count_rows() == 2
+    def test_generate_variant_description_minimal(self):
+        """Test variant description with minimal data."""
+        service = VariantEmbeddingService()
+        variant_data = {
+            "chromosome": "X",
+            "position": 789,
+            "reference": "T",
+            "alternate": "C"
+        }
+        
+        description = service.generate_variant_description(variant_data)
+        
+        assert "chromosome X" in description
+        assert "position 789" in description
+        assert "reference allele T" in description
+        assert "alternate allele C" in description
     
-    # Delete one variant by ID
-    delete_variants(table, f"variant_id = '{variant1['variant_id']}'")
-    assert f"Successfully deleted variants from table '{table.name}' matching filter: 'variant_id = \'{variant1['variant_id']}\''." in caplog_fixture.text
-    assert table.count_rows() == 1
+    @patch('src.vcf_agent.lancedb_integration.np.random.normal')
+    def test_generate_embedding_fallback(self, mock_random):
+        """Test embedding generation fallback to random vector."""
+        mock_random.return_value.tolist.return_value = [0.1] * 1536
+        
+        service = VariantEmbeddingService()
+        embedding = service.generate_embedding_sync("test text")
+        
+        assert len(embedding) == 1536
+        mock_random.assert_called_once()
+
+
+class TestLanceDBOperations:
+    """Test LanceDB database operations."""
     
-    # Verify only the correct variant was deleted
-    remaining_results = table.search().to_pandas()
-    assert not remaining_results.empty
-    assert remaining_results.iloc[0]["variant_id"] == variant2["variant_id"]
-
-    # Test deleting with a non-existent ID (should not fail, just log)
-    delete_variants(table, "variant_id = 'non_existent_id'")
-    assert table.count_rows() == 1 # Count should remain the same
-
-def test_add_variants_empty_list(lancedb_tmpdir, caplog_fixture):
-    db = get_db(lancedb_tmpdir)
-    # Use a unique table name for this test to ensure it starts empty
-    empty_test_table_name = "empty_test_table"
-    # Ensure the table is created fresh for this test
-    if empty_test_table_name in db.table_names():
-        db.drop_table(empty_test_table_name)
-    table = get_or_create_table(db, table_name=empty_test_table_name)
+    @pytest.fixture
+    def temp_db_path(self):
+        """Create a temporary directory for test database."""
+        temp_dir = tempfile.mkdtemp()
+        yield temp_dir
+        shutil.rmtree(temp_dir)
     
-    initial_count = table.count_rows()
-    add_variants(table, [])
-    assert f"add_variants called for table '{empty_test_table_name}' with an empty list. No data will be added." in caplog_fixture.text
-    assert table.count_rows() == initial_count  # No rows should be added
-
-def test_add_variants_schema_mismatch(lancedb_tmpdir, caplog_fixture):
-    db = get_db(lancedb_tmpdir)
-    table = get_or_create_table(db)
-    bad_variant_data = {"wrong_field": "value"}
-    with pytest.raises(Exception): # LanceDB might raise a specific error, adjust if known
-        add_variants(table, [bad_variant_data])
-    assert f"Failed to add batch of 1 variants to table '{table.name}': Field 'wrong_field' not found in target schema" in caplog_fixture.text
-
-# Simplified CLI tests, focusing on core functionality with less stdout parsing
-def test_lancedb_cli_init(tmp_path):
-    db_path = tmp_path / "lancedb_cli_init"
-    result = subprocess.run([
-        "python", "-m", "vcf_agent.cli", "init-lancedb",
-        "--db_path", str(db_path)
-    ], capture_output=True, text=True, check=True)
-    # Make assertion more flexible, just check for key phrases
-    assert "Initialized LanceDB table" in result.stdout
-    assert "variants" in result.stdout # Check that the default table name is mentioned
-
-def test_lancedb_cli_add_and_search(tmp_path, test_variant_data):
-    db_path = tmp_path / "lancedb_cli_as"
-    subprocess.run([
-        "python", "-m", "vcf_agent.cli", "init-lancedb",
-        "--db_path", str(db_path)
-    ], check=True)
-
-    embedding_str = ",".join(map(str, test_variant_data["embedding"]))
-    add_command = [
-        "python", "-m", "vcf_agent.cli", "add-variant",
-        "--db_path", str(db_path),
-        "--variant_id", test_variant_data["variant_id"],
-        "--chrom", test_variant_data["chrom"],
-        "--pos", str(test_variant_data["pos"]),
-        "--ref", test_variant_data["ref"],
-        "--alt", test_variant_data["alt"],
-        "--embedding", embedding_str,
-        "--clinical_significance", test_variant_data["clinical_significance"]
-    ]
-    result = subprocess.run(add_command, capture_output=True, text=True, check=True)
-    assert f"Added variant {test_variant_data['variant_id']}" in result.stdout
-
-    search_command = [
-        "python", "-m", "vcf_agent.cli", "search-embedding",
-        "--db_path", str(db_path),
-        "--embedding", embedding_str,
-        "--limit", "1"
-    ]
-    result = subprocess.run(search_command, capture_output=True, text=True, check=True)
-    assert test_variant_data["variant_id"] in result.stdout 
-
-def test_lancedb_cli_update_and_delete(tmp_path, test_variant_data):
-    db_path = tmp_path / "lancedb_cli_upd_del"
-    subprocess.run([
-        "python", "-m", "vcf_agent.cli", "init-lancedb",
-        "--db_path", str(db_path)
-    ], check=True)
-
-    # Add initial variant via CLI
-    embedding_str = ",".join(map(str, test_variant_data["embedding"]))
-    add_command = [
-        "python", "-m", "vcf_agent.cli", "add-variant",
-        "--db_path", str(db_path),
-        "--variant_id", test_variant_data["variant_id"],
-        "--chrom", test_variant_data["chrom"],
-        "--pos", str(test_variant_data["pos"]),
-        "--ref", test_variant_data["ref"],
-        "--alt", test_variant_data["alt"],
-        "--embedding", embedding_str,
-        "--clinical_significance", test_variant_data["clinical_significance"]
-    ]
-    subprocess.run(add_command, check=True)
-
-    # Update variant via CLI
-    variant_id_to_update = test_variant_data["variant_id"]
-    updates_dict = {"clinical_significance": "Likely Benign", "pos": 11111}
-    updates_json_str = json.dumps(updates_dict)
-    update_command = [
-        "python", "-m", "vcf_agent.cli", "update-variant",
-        "--db_path", str(db_path),
-        "--variant_id", variant_id_to_update,
-        "--updates", updates_json_str
-    ]
-    result = subprocess.run(update_command, capture_output=True, text=True, check=True)
-    assert f"Update command processed for variant {variant_id_to_update}" in result.stdout
-
-    # Verify update by searching (Python API for simplicity here, or complex CLI search)
-    db = get_db(db_path)
-    table = get_or_create_table(db)
-    updated_results = table.search().where(f"variant_id = '{variant_id_to_update}'").to_pandas()
-    assert not updated_results.empty
-    assert updated_results.iloc[0]["clinical_significance"] == "Likely Benign"
-    assert updated_results.iloc[0]["pos"] == 11111
-
-    # Delete variant via CLI
-    delete_filter = f"variant_id = '{variant_id_to_update}'"
-    delete_command = [
-        "python", "-m", "vcf_agent.cli", "delete-variants",
-        "--db_path", str(db_path),
-        "--filter_sql", delete_filter
-    ]
-    result = subprocess.run(delete_command, capture_output=True, text=True, check=True)
-    assert f"Delete command processed with filter: {delete_filter}" in result.stdout
-
-    # Verify deletion
-    # Re-open the table to get the latest state after CLI modification
-    db_after_delete = get_db(db_path)
-    table_after_delete = get_or_create_table(db_after_delete) # Assuming default table name 'variants'
-    assert table_after_delete.count_rows() == 0
-
-def test_lancedb_python_api_create_scalar_index(lancedb_tmpdir, test_variant_data, caplog_fixture):
-    db = get_db(lancedb_tmpdir)
-    table_name = "index_test_table_py"
-    if table_name in db.table_names():
-        db.drop_table(table_name)
-    table = get_or_create_table(db, table_name=table_name)
-    add_variants(table, [test_variant_data])
-
-    column_to_index = "clinical_significance"
-    create_scalar_index(table, column_to_index)
-    assert f"Successfully created/updated scalar index on column '{column_to_index}'" in caplog_fixture.text
+    def test_get_db_connection(self, temp_db_path):
+        """Test database connection."""
+        db = get_db(temp_db_path)
+        assert db is not None
     
-    # Verify by trying to create again, this time with replace=True
-    caplog_fixture.clear() # Clear previous log messages
-    create_scalar_index(table, column_to_index, replace=True)
-    assert f"Successfully created/updated scalar index on column '{column_to_index}'" in caplog_fixture.text
-    assert f"in table '{table_name}' using type 'BTREE'" in caplog_fixture.text # Verify default type was used
+    def test_get_or_create_vcf_table(self, temp_db_path):
+        """Test VCF table creation."""
+        db = get_db(temp_db_path)
+        table = get_or_create_vcf_table(db, "test_variants")
+        
+        assert table is not None
+        assert "test_variants" in db.table_names()
+    
+    @patch('src.vcf_agent.lancedb_integration.VariantEmbeddingService')
+    def test_create_vcf_variant_record(self, mock_embedding_service):
+        """Test VCF variant record creation."""
+        # Mock the embedding service
+        mock_service = Mock()
+        mock_service.generate_variant_description.return_value = "Test description"
+        mock_service.generate_embedding_sync.return_value = [0.1] * 1536
+        mock_embedding_service.return_value = mock_service
+        
+        variant_data = {
+            "chromosome": "1",
+            "position": 123456,
+            "reference": "A",
+            "alternate": "G",
+            "sample_id": "sample_001",
+            "quality_score": 99.5,
+            "filter_status": "PASS"
+        }
+        
+        record = create_vcf_variant_record(variant_data, mock_service, "Test analysis")
+        
+        assert record["variant_id"] == "1-123456-A-G"
+        assert record["chromosome"] == "1"
+        assert record["position"] == 123456
+        assert record["reference"] == "A"
+        assert record["alternate"] == "G"
+        assert record["variant_description"] == "Test description"
+        assert len(record["variant_vector"]) == 1536
+        assert record["analysis_summary"] == "Test analysis"
+        assert record["sample_id"] == "sample_001"
+        assert record["quality_score"] == 99.5
+        assert record["filter_status"] == "PASS"
+        assert isinstance(record["created_at"], datetime)
+        assert isinstance(record["updated_at"], datetime)
 
-    # Test creating an index with a specific type and ensure it's logged
-    specific_index_type = "BITMAP" # Example, assuming BITMAP is a valid scalar index type
-    if specific_index_type in ['BTREE', 'BITMAP', 'LABEL_LIST']: # Check if it's a valid type for the test
-        caplog_fixture.clear()
-        create_scalar_index(table, column_to_index, index_type=specific_index_type, replace=True) # Use the Literal type
-        assert f"Successfully created/updated scalar index on column '{column_to_index}'" in caplog_fixture.text
-        assert f"in table '{table_name}' using type '{specific_index_type}'" in caplog_fixture.text
-    else:
-        pytest.skip(f"Skipping specific index type test for {specific_index_type} as it's not in Literal")
 
-    # Test attempting to create an index on a non-existent column (should fail gracefully)
-    caplog_fixture.clear()
-    with pytest.raises(Exception):
-        create_scalar_index(table, "non_existent_column")
-    assert "Failed to create scalar index" in caplog_fixture.text
+class TestBatchOperations:
+    """Test batch operations for performance."""
+    
+    @pytest.fixture
+    def temp_db_path(self):
+        """Create a temporary directory for test database."""
+        temp_dir = tempfile.mkdtemp()
+        yield temp_dir
+        shutil.rmtree(temp_dir)
+    
+    @patch('src.vcf_agent.lancedb_integration.VariantEmbeddingService')
+    def test_batch_add_vcf_variants_empty(self, mock_embedding_service, temp_db_path):
+        """Test batch addition with empty data."""
+        db = get_db(temp_db_path)
+        table = get_or_create_vcf_table(db, "test_variants")
+        
+        result = batch_add_vcf_variants(table, [])
+        assert result == 0
+    
+    @patch('src.vcf_agent.lancedb_integration.VariantEmbeddingService')
+    def test_batch_add_vcf_variants_small_batch(self, mock_embedding_service, temp_db_path):
+        """Test batch addition with small dataset."""
+        # Mock the embedding service
+        mock_service = Mock()
+        mock_service.generate_variant_description.return_value = "Test description"
+        mock_service.generate_embedding_sync.return_value = [0.1] * 1536
+        mock_embedding_service.return_value = mock_service
+        
+        db = get_db(temp_db_path)
+        table = get_or_create_vcf_table(db, "test_variants")
+        
+        variants_data = [
+            {
+                "chromosome": "1",
+                "position": 123456,
+                "reference": "A",
+                "alternate": "G",
+                "sample_id": "sample_001"
+            },
+            {
+                "chromosome": "2",
+                "position": 789012,
+                "reference": "T",
+                "alternate": "C",
+                "sample_id": "sample_002"
+            }
+        ]
+        
+        result = batch_add_vcf_variants(table, variants_data, mock_service, batch_size=1, max_workers=1)
+        assert result == 2
 
-def test_lancedb_cli_create_index(tmp_path, test_variant_data):
-    db_path = tmp_path / "lancedb_cli_idx"
-    table_name = "cli_idx_table"
 
-    # Init and add data first
-    subprocess.run([
-        "python", "-m", "vcf_agent.cli", "init-lancedb",
-        "--db_path", str(db_path), "--table_name", table_name
-    ], check=True)
-    embedding_str = ",".join(map(str, test_variant_data["embedding"]))
-    add_command = [
-        "python", "-m", "vcf_agent.cli", "add-variant",
-        "--db_path", str(db_path), "--table_name", table_name,
-        "--variant_id", test_variant_data["variant_id"],
-        "--chrom", test_variant_data["chrom"],
-        "--pos", str(test_variant_data["pos"]),
-        "--ref", test_variant_data["ref"],
-        "--alt", test_variant_data["alt"],
-        "--embedding", embedding_str,
-        "--clinical_significance", test_variant_data["clinical_significance"]
-    ]
-    subprocess.run(add_command, check=True)
+class TestSearchOperations:
+    """Test search and query operations."""
+    
+    @pytest.fixture
+    def temp_db_path(self):
+        """Create a temporary directory for test database."""
+        temp_dir = tempfile.mkdtemp()
+        yield temp_dir
+        shutil.rmtree(temp_dir)
+    
+    @patch('src.vcf_agent.lancedb_integration.VariantEmbeddingService')
+    def test_hybrid_search_variants(self, mock_embedding_service, temp_db_path):
+        """Test hybrid search functionality."""
+        # Mock the embedding service
+        mock_service = Mock()
+        mock_service.generate_embedding_sync.return_value = [0.1] * 1536
+        mock_embedding_service.return_value = mock_service
+        
+        db = get_db(temp_db_path)
+        table = get_or_create_vcf_table(db, "test_variants")
+        
+        # Add some test data first
+        test_variants = [
+            {
+                "chromosome": "1",
+                "position": 123456,
+                "reference": "A",
+                "alternate": "G",
+                "sample_id": "sample_001",
+                "gene_symbol": "BRCA1"
+            }
+        ]
+        
+        batch_add_vcf_variants(table, test_variants, mock_service)
+        
+        # Test search
+        results = hybrid_search_variants(
+            table,
+            "pathogenic variant in BRCA1",
+            mock_service,
+            metadata_filter="chromosome = '1'",
+            limit=5
+        )
+        
+        assert isinstance(results, pd.DataFrame)
 
-    column_to_index = "pos"
-    index_command = [
-        "python", "-m", "vcf_agent.cli", "create-lancedb-index",
-        "--db_path", str(db_path), "--table_name", table_name,
-        "--column", column_to_index,
-        "--replace" # Test with replace
-    ]
-    result = subprocess.run(index_command, capture_output=True, text=True, check=True)
-    assert f"Index creation command processed for column '{column_to_index}'" in result.stdout
 
-    # Verify by trying to query (Python API for simplicity here)
-    db = get_db(db_path)
-    table = db.open_table(table_name) # Open existing table
-    results = table.search().where(f"{column_to_index} = {test_variant_data['pos']}").limit(1).to_pandas()
-    assert not results.empty
-    assert results.iloc[0]["variant_id"] == test_variant_data["variant_id"] 
+class TestStatistics:
+    """Test statistics and analytics functions."""
+    
+    @pytest.fixture
+    def temp_db_path(self):
+        """Create a temporary directory for test database."""
+        temp_dir = tempfile.mkdtemp()
+        yield temp_dir
+        shutil.rmtree(temp_dir)
+    
+    def test_get_variant_statistics_empty_table(self, temp_db_path):
+        """Test statistics on empty table."""
+        db = get_db(temp_db_path)
+        table = get_or_create_vcf_table(db, "test_variants")
+        
+        stats = get_variant_statistics(table)
+        
+        assert stats["total_variants"] == 0
+        assert stats["sample_size"] == 0
+        assert stats["chromosomes"] == {}
+
+
+class TestIntegration:
+    """Integration tests for the complete workflow."""
+    
+    @pytest.fixture
+    def temp_db_path(self):
+        """Create a temporary directory for test database."""
+        temp_dir = tempfile.mkdtemp()
+        yield temp_dir
+        shutil.rmtree(temp_dir)
+    
+    @patch('src.vcf_agent.lancedb_integration.VariantEmbeddingService')
+    def test_complete_workflow(self, mock_embedding_service, temp_db_path):
+        """Test complete workflow from data ingestion to search."""
+        # Mock the embedding service
+        mock_service = Mock()
+        mock_service.generate_variant_description.return_value = "Test variant description"
+        mock_service.generate_embedding_sync.return_value = [0.1] * 1536
+        mock_embedding_service.return_value = mock_service
+        
+        # 1. Create database and table
+        db = get_db(temp_db_path)
+        table = get_or_create_vcf_table(db, "integration_test")
+        
+        # 2. Prepare test data
+        variants_data = [
+            {
+                "chromosome": "1",
+                "position": 123456,
+                "reference": "A",
+                "alternate": "G",
+                "sample_id": "sample_001",
+                "quality_score": 99.5,
+                "filter_status": "PASS",
+                "gene_symbol": "BRCA1",
+                "clinical_significance": "Pathogenic"
+            },
+            {
+                "chromosome": "17",
+                "position": 789012,
+                "reference": "T",
+                "alternate": "C",
+                "sample_id": "sample_002",
+                "quality_score": 95.0,
+                "filter_status": "PASS",
+                "gene_symbol": "TP53",
+                "clinical_significance": "Likely pathogenic"
+            }
+        ]
+        
+        # 3. Batch insert variants
+        inserted_count = batch_add_vcf_variants(table, variants_data, mock_service)
+        assert inserted_count == 2
+        
+        # 4. Get statistics
+        stats = get_variant_statistics(table)
+        assert stats["total_variants"] == 2
+        
+        # 5. Test search
+        search_results = hybrid_search_variants(
+            table,
+            "pathogenic variant",
+            mock_service,
+            limit=10
+        )
+        assert isinstance(search_results, pd.DataFrame)
+        
+        print("✅ Complete LanceDB integration workflow test passed!")
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"]) 
