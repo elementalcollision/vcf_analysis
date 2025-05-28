@@ -34,6 +34,11 @@ ENV/
 /kuzu_db/
 /lancedb/
 **/kuzu_db/
+**/lancedb/
+lancedb_test/
+**/lancedb_test/
+*.lance/
+**/*.lance/
 
 # Containers
 *.img

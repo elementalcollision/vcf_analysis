@@ -1,4 +1,0 @@
-$ed8ca913-63bd-4dc3-a898-2cbc87e6b3e8²“*
-variant_id ÿÿÿÿÿÿÿÿÿ*string8ZdefaultA	embedding ÿÿÿÿÿÿÿÿÿ*fixed_size_list:float:102408Zdefault'chrom ÿÿÿÿÿÿÿÿÿ*string8Zdefault$pos ÿÿÿÿÿÿÿÿÿ*int648Zdefault%ref ÿÿÿÿÿÿÿÿÿ*string8Zdefault%alt ÿÿÿÿÿÿÿÿÿ*string8Zdefault9clinical_significance ÿÿÿÿÿÿÿÿÿ*string08Zdefault"!
-lance.auto_cleanup.interval20"'
-lance.auto_cleanup.older_than14days
