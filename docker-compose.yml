@@ -2,11 +2,93 @@ version: '3.8'
 
 volumes:
   grafana_data: {}
+  lancedb_data: {}
+  kuzu_data: {}
+  vcf_data: {}
+
+networks:
+  vcf_network:
+    driver: bridge
 
 services:
+  # =============================================================================
+  # VCF Analysis Agent - Main Application
+  # =============================================================================
+  vcf-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        - BCFTOOLS_VERSION=1.19
+        - HTSLIB_VERSION=1.19
+    container_name: vcf_analysis_agent
+    restart: unless-stopped
+    networks:
+      - vcf_network
+    ports:
+      - "8000:8000"  # Main application port
+    volumes:
+      - vcf_data:/app/data
+      - lancedb_data:/app/lancedb
+      - kuzu_data:/app/kuzu_db
+      - ./sample_data:/app/sample_data:ro  # Read-only sample data
+      - ./config:/app/config:ro  # Read-only configuration
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LANCEDB_PATH=/app/lancedb
+      - KUZU_PATH=/app/kuzu_db
+      - PROMETHEUS_GATEWAY=http://prometheus:9090
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - LOG_LEVEL=INFO
+    depends_on:
+      - prometheus
+      - jaeger
+    healthcheck:
+      test: ["CMD", "python", "-c", "import vcf_agent; print('healthy')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # =============================================================================
+  # VCF Analysis Agent - Development Version
+  # =============================================================================
+  vcf-agent-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: vcf_analysis_agent_dev
+    restart: "no"
+    networks:
+      - vcf_network
+    ports:
+      - "8001:8000"  # Development port
+      - "8888:8888"  # Jupyter notebook
+    volumes:
+      - .:/app/src:rw  # Mount source code for development
+      - vcf_data:/app/data
+      - lancedb_data:/app/lancedb
+      - kuzu_data:/app/kuzu_db
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DEVELOPMENT=true
+      - LANCEDB_PATH=/app/lancedb
+      - KUZU_PATH=/app/kuzu_db
+    profiles:
+      - development
+    command: ["bash"]
+
+  # =============================================================================
+  # Observability Stack
+  # =============================================================================
   jaeger:
-    image: jaegertracing/all-in-one:latest # Using the latest version, consider pinning to a specific version for stability
+    image: jaegertracing/all-in-one:1.52
     container_name: jaeger_vcf_agent
+    restart: unless-stopped
+    networks:
+      - vcf_network
     ports:
       # OTLP gRPC receiver
       - "4317:4317"
@@ -14,55 +96,111 @@ services:
       - "4318:4318"
       # Jaeger UI
       - "16686:16686"
-      # Zipkin compatible port (optional, if you need to send Zipkin format traces)
-      # - "9411:9411"
-      # Prometheus metrics from Jaeger itself (optional)
+      # Prometheus metrics from Jaeger itself
       - "16687:16687"
     environment:
       - COLLECTOR_OTLP_ENABLED=true
-      # You can set sampling strategies here if needed, e.g.:
-      # - COLLECTOR_SAMPLING_STRATEGY_TYPE=const
-      # - COLLECTOR_SAMPLING_STRATEGY_PARAM=1 # Sample all
-      # Or for probabilistic:
-      # - COLLECTOR_SAMPLING_STRATEGY_TYPE=probabilistic
-      # - COLLECTOR_SAMPLING_STRATEGY_PARAM=0.1 # Sample 10%
-      - LOG_LEVEL=info # Adjust log level as needed (e.g., debug, warn, error)
-    # volumes:
-      # - ./jaeger-ui.json:/etc/jaeger/jaeger-ui.json # Optional: For custom UI configuration
-    restart: unless-stopped
+      - LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:16686/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.48.0
     container_name: prometheus_vcf_agent
+    restart: unless-stopped
+    networks:
+      - vcf_network
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/prometheus:/etc/prometheus/config:ro
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
-    restart: unless-stopped
-    # For Linux hosts, if host.docker.internal doesn't work for vcf_agent scraping:
-    # network_mode: "host" 
-    # Or add depends_on if Prometheus should wait for Jaeger (though not strictly necessary for scraping)
-    # depends_on:
-    #   - jaeger 
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   grafana:
-    image: grafana/grafana-oss:latest # Using latest OSS version
+    image: grafana/grafana-oss:10.2.2
     container_name: grafana_vcf_agent
+    restart: unless-stopped
+    networks:
+      - vcf_network
     ports:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
-      # You can also mount provisioning files for data sources and dashboards here
-      # - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
-      # - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
     environment:
-      # GF_SECURITY_ADMIN_USER: admin # Default is admin
-      # GF_SECURITY_ADMIN_PASSWORD: admin # Default is admin, will be asked to change on first login
-      GF_PATHS_PROVISIONING: /etc/grafana/provisioning # If using provisioning
-      # GF_AUTH_ANONYMOUS_ENABLED: true # If anonymous access is desired for viewing
-      # GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
-    restart: unless-stopped
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
     depends_on:
-      - prometheus # Grafana depends on Prometheus for its data source 
+      - prometheus
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =============================================================================
+  # Optional: Ollama for Local LLM Support
+  # =============================================================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama_vcf_agent
+    restart: unless-stopped
+    networks:
+      - vcf_network
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    profiles:
+      - ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =============================================================================
+  # Optional: MinIO for S3-compatible Storage
+  # =============================================================================
+  minio:
+    image: minio/minio:RELEASE.2023-12-02T10-51-33Z
+    container_name: minio_vcf_agent
+    restart: unless-stopped
+    networks:
+      - vcf_network
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./minio_data:/data
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin123
+    command: server /data --console-address ":9001"
+    profiles:
+      - storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3 
