@@ -8,94 +8,94 @@ The VCF Agent implements a dual-database architecture as specified in [DECISION-
 
 ### Dual-Database Design
 
-```mermaid
-graph TB
-    subgraph "VCF Agent Data Layer"
-        DSM[UnifiedDataStoreManager]
-        
-        subgraph "Vector Database"
-            LDB[(LanceDB)]
-            VCF[VCFVariant Records]
-            EMB[1536-dim Embeddings]
-            VEC[Vector Search]
+.. mermaid::
+
+    graph TB
+        subgraph "VCF Agent Data Layer"
+            DSM[UnifiedDataStoreManager]
+            
+            subgraph "Vector Database"
+                LDB[(LanceDB)]
+                VCF[VCFVariant Records]
+                EMB[1536-dim Embeddings]
+                VEC[Vector Search]
+            end
+            
+            subgraph "Graph Database"
+                KDB[(Kuzu)]
+                SAM[Sample Nodes]
+                VAR[Variant Nodes]
+                GEN[Gene Nodes]
+                ANA[Analysis Nodes]
+                REL[Relationships]
+            end
+            
+            subgraph "Services"
+                ES[EmbeddingService]
+                PS[PerformanceMonitor]
+            end
         end
         
-        subgraph "Graph Database"
-            KDB[(Kuzu)]
-            SAM[Sample Nodes]
-            VAR[Variant Nodes]
-            GEN[Gene Nodes]
-            ANA[Analysis Nodes]
-            REL[Relationships]
+        subgraph "External Interfaces"
+            API[VCF Agent API]
+            CLI[Command Line]
+            WEB[Web Interface]
         end
         
-        subgraph "Services"
-            ES[EmbeddingService]
-            PS[PerformanceMonitor]
-        end
-    end
-    
-    subgraph "External Interfaces"
-        API[VCF Agent API]
-        CLI[Command Line]
-        WEB[Web Interface]
-    end
-    
-    API --> DSM
-    CLI --> DSM
-    WEB --> DSM
-    
-    DSM --> LDB
-    DSM --> KDB
-    DSM --> ES
-    DSM --> PS
-    
-    LDB --> VCF
-    LDB --> EMB
-    LDB --> VEC
-    
-    KDB --> SAM
-    KDB --> VAR
-    KDB --> GEN
-    KDB --> ANA
-    KDB --> REL
-    
-    ES --> EMB
-```
+        API --> DSM
+        CLI --> DSM
+        WEB --> DSM
+        
+        DSM --> LDB
+        DSM --> KDB
+        DSM --> ES
+        DSM --> PS
+        
+        LDB --> VCF
+        LDB --> EMB
+        LDB --> VEC
+        
+        KDB --> SAM
+        KDB --> VAR
+        KDB --> GEN
+        KDB --> ANA
+        KDB --> REL
+        
+        ES --> EMB
 
 ### Data Flow Architecture
 
-```mermaid
-sequenceDiagram
-    participant Client
-    participant DSM as UnifiedDataStoreManager
-    participant ES as EmbeddingService
-    participant LDB as LanceDB
-    participant KDB as Kuzu
-    
-    Client->>DSM: add_sample_with_variants(sample, variants)
-    
-    par Parallel Processing
-        DSM->>ES: generate_embeddings(variants)
-        ES-->>DSM: embeddings
-        DSM->>LDB: batch_add_vcf_variants(variants)
-        LDB-->>DSM: success
-    and
-        DSM->>KDB: batch_add_genomic_data(samples, variants, relationships)
-        KDB-->>DSM: success
-    end
-    
-    DSM-->>Client: operation_results
-    
-    Client->>DSM: search_variants(query)
-    DSM->>ES: generate_embedding(query)
-    ES-->>DSM: query_embedding
-    DSM->>LDB: hybrid_search(embedding, filters)
-    LDB-->>DSM: similar_variants
-    DSM->>KDB: get_variant_context(variant_ids)
-    KDB-->>DSM: graph_context
-    DSM-->>Client: enriched_results
-```
+.. mermaid::
+
+    sequenceDiagram
+        participant Client
+        participant DSM as UnifiedDataStoreManager
+        participant ES as EmbeddingService
+        participant LDB as LanceDB
+        participant KDB as Kuzu
+        
+        Client->>DSM: add_sample_with_variants(sample, variants)
+        
+        par Parallel Processing
+            DSM->>ES: generate_embeddings(variants)
+            ES-->>DSM: embeddings
+            DSM->>LDB: batch_add_vcf_variants(variants)
+            LDB-->>DSM: success
+        and
+            DSM->>KDB: batch_add_genomic_data(samples, variants, relationships)
+            KDB-->>DSM: success
+        end
+        
+        DSM-->>Client: operation_results
+        
+        Client->>DSM: search_variants(query)
+        DSM->>ES: generate_embedding(query)
+        ES-->>DSM: query_embedding
+        DSM->>LDB: hybrid_search(embedding, filters)
+        LDB-->>DSM: similar_variants
+        DSM->>KDB: get_variant_context(variant_ids)
+        KDB-->>DSM: graph_context
+        DSM-->>Client: enriched_results
 
 ## Core Components
 
@@ -141,29 +141,29 @@ Vector database for similarity search and AI embeddings.
 
 #### Enhanced VCFVariant Schema:
 
-```mermaid
-classDiagram
-    class VCFVariant {
-        +str variant_id
-        +str chromosome
-        +int position
-        +str reference
-        +str alternate
-        +str variant_description
-        +Vector[1536] variant_vector
-        +str analysis_summary
-        +str sample_id
-        +float quality_score
-        +str filter_status
-        +str genotype
-        +float allele_frequency
-        +str clinical_significance
-        +str gene_symbol
-        +str consequence
-        +datetime created_at
-        +datetime updated_at
-    }
-```
+.. mermaid::
+
+    classDiagram
+        class VCFVariant {
+            +str variant_id
+            +str chromosome
+            +int position
+            +str reference
+            +str alternate
+            +str variant_description
+            +Vector[1536] variant_vector
+            +str analysis_summary
+            +str sample_id
+            +float quality_score
+            +str filter_status
+            +str genotype
+            +float allele_frequency
+            +str clinical_significance
+            +str gene_symbol
+            +str consequence
+            +datetime created_at
+            +datetime updated_at
+        }
 
 #### Key Functions:
 
@@ -202,80 +202,81 @@ Graph database for complex genomic relationships.
 
 #### Enhanced Graph Schema:
 
-```mermaid
-erDiagram
-    Sample {
-        string id PK
-        string name
-        string type
-        timestamp created_at
-        string metadata
-    }
-    
-    Variant {
-        string id PK
-        string chr
-        int64 pos
-        string ref
-        string alt
-        string variant_type
-        double quality_score
-        string filter_status
-        double allele_frequency
-        timestamp created_at
-    }
-    
-    Gene {
-        string id PK
-        string symbol
-        string name
-        string chromosome
-        int64 start_pos
-        int64 end_pos
-        string biotype
-    }
-    
-    Analysis {
-        string id PK
-        string type
-        string summary
-        double confidence_score
-        timestamp created_at
-    }
-    
-    Sample ||--o{ HasVariant : contains
-    HasVariant }o--|| Variant : references
-    Variant ||--o{ LocatedIn : maps_to
-    LocatedIn }o--|| Gene : targets
-    Variant ||--o{ AnalyzedBy : analyzed_by
-    AnalyzedBy }o--|| Analysis : produces
-    Variant ||--o{ SimilarTo : similar_to
-    SimilarTo }o--|| Variant : references
-    
-    HasVariant {
-        string genotype
-        double quality
-        int64 depth
-        string allele_depth
-        timestamp created_at
-    }
-    
-    LocatedIn {
-        string impact
-        string consequence
-        string amino_acid_change
-        string codon_change
-    }
-    
-    AnalyzedBy {
-        timestamp created_at
-    }
-    
-    SimilarTo {
-        double similarity_score
-        string similarity_type
-        timestamp created_at
-    }
+.. mermaid::
+
+    erDiagram
+        Sample {
+            string id PK
+            string name
+            string type
+            timestamp created_at
+            string metadata
+        }
+        
+        Variant {
+            string id PK
+            string chr
+            int64 pos
+            string ref
+            string alt
+            string variant_type
+            double quality_score
+            string filter_status
+            double allele_frequency
+            timestamp created_at
+        }
+        
+        Gene {
+            string id PK
+            string symbol
+            string name
+            string chromosome
+            int64 start_pos
+            int64 end_pos
+            string biotype
+        }
+        
+        Analysis {
+            string id PK
+            string type
+            string summary
+            double confidence_score
+            timestamp created_at
+        }
+        
+        Sample ||--o{ HasVariant : contains
+        HasVariant }o--|| Variant : references
+        Variant ||--o{ LocatedIn : maps_to
+        LocatedIn }o--|| Gene : targets
+        Variant ||--o{ AnalyzedBy : analyzed_by
+        AnalyzedBy }o--|| Analysis : produces
+        Variant ||--o{ SimilarTo : similar_to
+        SimilarTo }o--|| Variant : references
+        
+        HasVariant {
+            string genotype
+            double quality
+            int64 depth
+            string allele_depth
+            timestamp created_at
+        }
+        
+        LocatedIn {
+            string impact
+            string consequence
+            string amino_acid_change
+            string codon_change
+        }
+        
+        AnalyzedBy {
+            timestamp created_at
+        }
+        
+        SimilarTo {
+            double similarity_score
+            string similarity_type
+            timestamp created_at
+        }
 ```
 
 #### Key Functions:
@@ -342,31 +343,31 @@ Based on DECISION-001 requirements:
 
 ### Performance Monitoring
 
-```mermaid
-graph LR
-    subgraph "Performance Metrics"
-        PM[PerformanceMetrics]
-        OP[Operation Type]
-        DUR[Duration]
-        RPS[Records/Second]
-        SUC[Success Rate]
-    end
-    
-    subgraph "Monitoring"
-        MT[Metrics Tracking]
-        AL[Alerting]
-        RP[Reporting]
-    end
-    
-    PM --> MT
-    OP --> MT
-    DUR --> MT
-    RPS --> MT
-    SUC --> MT
-    
-    MT --> AL
-    MT --> RP
-```
+.. mermaid::
+
+    graph LR
+        subgraph "Performance Metrics"
+            PM[PerformanceMetrics]
+            OP[Operation Type]
+            DUR[Duration]
+            RPS[Records/Second]
+            SUC[Success Rate]
+        end
+        
+        subgraph "Monitoring"
+            MT[Metrics Tracking]
+            AL[Alerting]
+            RP[Reporting]
+        end
+        
+        PM --> MT
+        OP --> MT
+        DUR --> MT
+        RPS --> MT
+        SUC --> MT
+        
+        MT --> AL
+        MT --> RP
 
 ## Usage Examples
 
@@ -494,28 +495,28 @@ for operation, metrics in stats['performance_stats'].items():
 
 The UnifiedDataStoreManager ensures data consistency between LanceDB and Kuzu:
 
-```mermaid
-graph TD
-    subgraph "Data Synchronization Flow"
-        IN[Input Data]
-        PREP[Data Preparation]
-        
-        subgraph "Parallel Processing"
-            LP[LanceDB Processing]
-            KP[Kuzu Processing]
+.. mermaid::
+
+    graph TD
+        subgraph "Data Synchronization Flow"
+            IN[Input Data]
+            PREP[Data Preparation]
+            
+            subgraph "Parallel Processing"
+                LP[LanceDB Processing]
+                KP[Kuzu Processing]
+            end
+            
+            SYNC[Synchronization Check]
+            RESULT[Operation Result]
         end
         
-        SYNC[Synchronization Check]
-        RESULT[Operation Result]
-    end
-    
-    IN --> PREP
-    PREP --> LP
-    PREP --> KP
-    LP --> SYNC
-    KP --> SYNC
-    SYNC --> RESULT
-```
+        IN --> PREP
+        PREP --> LP
+        PREP --> KP
+        LP --> SYNC
+        KP --> SYNC
+        SYNC --> RESULT
 
 ### Consistency Guarantees:
 - **Atomic operations**: Both databases updated or neither
@@ -527,31 +528,31 @@ graph TD
 
 ### Test Coverage:
 
-```mermaid
-graph TB
-    subgraph "Test Suite"
-        UT[Unit Tests]
-        IT[Integration Tests]
-        PT[Performance Tests]
-        E2E[End-to-End Tests]
-    end
-    
-    subgraph "Components Tested"
-        VCF[VCFVariant Model]
-        ES[EmbeddingService]
-        LDB[LanceDB Operations]
-        KDB[Kuzu Operations]
-        DSM[DataStoreManager]
-    end
-    
-    UT --> VCF
-    UT --> ES
-    IT --> LDB
-    IT --> KDB
-    IT --> DSM
-    PT --> DSM
-    E2E --> DSM
-```
+.. mermaid::
+
+    graph TB
+        subgraph "Test Suite"
+            UT[Unit Tests]
+            IT[Integration Tests]
+            PT[Performance Tests]
+            E2E[End-to-End Tests]
+        end
+        
+        subgraph "Components Tested"
+            VCF[VCFVariant Model]
+            ES[EmbeddingService]
+            LDB[LanceDB Operations]
+            KDB[Kuzu Operations]
+            DSM[DataStoreManager]
+        end
+        
+        UT --> VCF
+        UT --> ES
+        IT --> LDB
+        IT --> KDB
+        IT --> DSM
+        PT --> DSM
+        E2E --> DSM
 
 ### Performance Benchmarks:
 - **Batch ingestion**: 10,000+ variants/second

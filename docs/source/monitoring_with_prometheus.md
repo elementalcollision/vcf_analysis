@@ -17,23 +17,23 @@ The observability stack is designed to provide insights into:
 
 ## Architecture
 
-```mermaid
-graph TB
-    A[VCF Agent Application] --> B[OpenTelemetry SDK]
-    B --> C[Prometheus Metrics]
-    B --> D[Jaeger Traces]
-    C --> E[Prometheus Server]
-    D --> F[Jaeger Collector]
-    E --> G[Grafana Dashboards]
-    F --> H[Jaeger UI]
-    
-    subgraph "Observability Stack"
-        E
-        F
-        G
-        H
-    end
-```
+.. mermaid::
+
+    graph TB
+        A[VCF Agent Application] --> B[OpenTelemetry SDK]
+        B --> C[Prometheus Metrics]
+        B --> D[Jaeger Traces]
+        C --> E[Prometheus Server]
+        D --> F[Jaeger Collector]
+        E --> G[Grafana Dashboards]
+        F --> H[Jaeger UI]
+        
+        subgraph "Observability Stack"
+            E
+            F
+            G
+            H
+        end
 
 ## Configuration Examples
 
