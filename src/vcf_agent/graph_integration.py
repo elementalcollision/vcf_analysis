@@ -130,12 +130,12 @@ def get_managed_kuzu_connection() -> kuzu.Connection:
             # if db_path is different, but here we use a fixed path.
             # Kuzu's Database object itself handles the singleton nature for a given path.
             conn = get_kuzu_db_connection(db_path=DEFAULT_KUZU_DB_PATH)
-            create_schema(conn) # Ensure schema exists on this connection
+            create_enhanced_schema(conn) # Use enhanced schema instead of basic schema
             _kuzu_main_connection = conn
-            print("Managed Kuzu connection initialized and schema verified.")
+            print("Managed Kuzu connection initialized and enhanced schema verified.")
         except Exception as e:
             # Log the error appropriately in a real application
-            print(f"Failed to initialize managed Kuzu connection or create schema: {e}")
+            print(f"Failed to initialize managed Kuzu connection or create enhanced schema: {e}")
             raise RuntimeError(f"Kuzu setup failed: {e}") from e
     
     if _kuzu_main_connection is None: # Should not be reached if logic above is correct
