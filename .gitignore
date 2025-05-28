@@ -71,16 +71,13 @@ Thumbs.db
 
 # Project/Editor
 .cursor/
-.context/
 
+# Temporary test data and cache
 sample_data/
 golden/
 .hypothesis/
 
-# Edge-case documentation is now versioned in .context/plan/EDGECASE_VCF_DESCRIPTIONS.md
-
 # Ignore test agent script and credentials
-
 test_agent.py
 test_credentials.json
 
@@ -108,7 +105,12 @@ demo/
 demo_script.md
 DEMO_READINESS_CHECKLIST.md
 APACHE_IGGY_IMPLEMENTATION_PLAN.md
+
+# Temporary test and validation files
+test_phase1_memory_optimization.py
 performance_validation.py
+test_*.py
+*_test.py
 
 # Session and development summary files
 *_SESSION_SUMMARY.md
@@ -118,9 +120,17 @@ LOAD_TESTING_SESSION_SUMMARY.md
 PATH_FIXES_SUMMARY.md
 KUZU_SCHEMA_FIX_SUMMARY.md
 
-# Performance and Security Reports
-performance_reports/
+# Temporary performance reports (keep important milestone reports)
+performance_reports/temp_*
+performance_reports/*_temp*
+performance_reports/test_*
+
+# Security reports (may contain sensitive info)
 security-reports/
 
 # Large cache files
-.embedding_cache.json 
+.embedding_cache.json
+
+# Memory profiling artifacts
+memory_profiles/
+*.memray 

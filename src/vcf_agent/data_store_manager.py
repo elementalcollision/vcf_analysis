@@ -28,6 +28,11 @@ from .graph_integration import (
 )
 from .config import SessionConfig
 from .optimizations import get_optimizer, OptimizationConfig
+from .memory_optimization import (
+    memory_optimized_batch_add_vcf_variants,
+    Phase1MemoryOptimizer,
+    PHASE1_CONFIG
+)
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -80,12 +85,21 @@ class UnifiedDataStoreManager:
         self.config = config or DataStoreConfig()
         self.session_config = session_config or SessionConfig()
         
+        # Initialize Phase 1 Memory Optimization
+        self.phase1_optimizer = Phase1MemoryOptimizer()
+        logger.info(f"Phase 1 Memory Optimization enabled: {PHASE1_CONFIG}")
+        
+        # Update config with Phase 1 optimized batch size
+        if self.config.sync_batch_size > PHASE1_CONFIG["batch_size"]:
+            logger.info(f"Reducing batch size from {self.config.sync_batch_size} to {PHASE1_CONFIG['batch_size']} for Phase 1 optimization")
+            self.config.sync_batch_size = PHASE1_CONFIG["batch_size"]
+        
         # Initialize performance optimizer
         optimization_config = OptimizationConfig(
             enable_embedding_cache=True,
             enable_query_batching=True,
             enable_async_processing=True,
-            max_concurrent_tasks=self.config.max_workers
+            max_concurrent_tasks=PHASE1_CONFIG["max_workers"]  # Use Phase 1 optimized worker count
         )
         self.optimizer = get_optimizer(optimization_config)
         
@@ -218,14 +232,14 @@ class UnifiedDataStoreManager:
             
             # Execute database operations in parallel
             with ThreadPoolExecutor(max_workers=2) as executor:
-                # Submit LanceDB operation
+                # Submit LanceDB operation with Phase 1 memory optimization
                 lance_future = executor.submit(
-                    batch_add_vcf_variants,
+                    memory_optimized_batch_add_vcf_variants,  # Use Phase 1 optimized function
                     self.lance_table,
                     lance_variants,
                     self.embedding_service,
-                    self.config.sync_batch_size,
-                    self.config.max_workers
+                    PHASE1_CONFIG["batch_size"],  # Use Phase 1 optimized batch size
+                    PHASE1_CONFIG["max_workers"]  # Use Phase 1 optimized worker count
                 )
                 
                 # Submit Kuzu operation
