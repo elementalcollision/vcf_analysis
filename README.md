@@ -10,6 +10,40 @@
 [![Enterprise Ready](https://img.shields.io/badge/enterprise-ready-blue.svg)](#enterprise-deployment)
 [![OpenTelemetry](https://img.shields.io/badge/observability-enabled-blue.svg)](#monitoring)
 
+## 📚 Documentation Index
+
+**Core Documentation**
+- [🚀 **Production Deployment Guide**](docs/deployment/production-deployment-runbook.md) - Complete production deployment procedures
+- [🔧 **GitHub Environments Setup**](docs/deployment/github-environments-setup.md) - CI/CD environment configuration guide
+- [⚡ **Memory Optimization Guide**](MEMORY_OPTIMIZATION_GUIDE.md) - Complete memory optimization strategies (>95% reduction)
+- [🧠 **Memory Optimization Features**](docs/MEMORY_OPTIMIZATION_FEATURES.md) - Detailed feature documentation and usage examples
+- [📊 **Production Monitoring**](docs/PRODUCTION_MONITORING.md) - Complete observability stack and monitoring guide
+- [🏗️ **Phase 5.2 Architecture**](PHASE5_2_ARCHITECTURE_SUMMARY.md) - Dual platform coordination (Apache Iggy + Kafka)
+- [📊 **Project Status**](PROJECT_STATUS.md) - Current development status and achievements
+
+**Architecture & Development**
+- [🎯 **Product Requirements**](PRD%20-%20%20VCF%20Analysis%20Agent.md) - Complete product specification and requirements
+- [🏢 **Enterprise Deployment**](docs/ENTERPRISE_DEPLOYMENT.md) - Enterprise-grade deployment strategies
+- [🛡️ **Security Documentation**](docs/SECURITY.md) - Security hardening and best practices
+- [🐳 **Docker Guide**](docs/DOCKER.md) - Container deployment and configuration
+- [👨‍💻 **Developer Guide**](docs/DEVELOPER_GUIDE.md) - Development setup and contribution guide
+
+**Testing & Quality**
+- [🧪 **Testing Guide**](docs/TESTING.md) - Comprehensive testing strategies and procedures
+- [⚡ **Load Testing Summary**](LOAD_TESTING_SESSION_SUMMARY.md) - Performance testing results and analysis
+- [🔍 **Prompt Contracts Demo**](test_prompt_contracts_demo.py) - AI prompt validation system
+
+**Project Evolution**
+- [📅 **Changelog**](CHANGELOG.md) - Complete project history and version changes
+- [🔧 **Apache Iggy Implementation**](APACHE_IGGY_IMPLEMENTATION_PLAN.md) - Streaming architecture implementation
+- [📁 **Codebase Streamlining**](CODEBASE_STREAMLINING_SUMMARY.md) - Code optimization and cleanup summary
+- [🐛 **Path Fixes Summary**](PATH_FIXES_SUMMARY.md) - Critical path resolution documentation
+
+**Monitoring & Operations**  
+- [📊 **Performance Reports**](performance_reports/) - Detailed performance analysis and benchmarks
+- [🔐 **Security Reports**](security-reports/) - Security scanning and vulnerability assessments
+- [📈 **Memory Profiles**](memory_profiles/) - Memory usage analysis and optimization tracking
+
 ## 🚀 Quick Start
 
 ### Production Deployment (New!)
@@ -202,193 +236,72 @@ Security Implementation:
 - **Processing Speed**: Maintained at 27.6+ variants/sec
 - **Production Stability**: Tested and validated in production configuration
 
-## 🔍 Production Monitoring & Observability
+## 🔍 Production Monitoring & Observability Overview
 
-The VCF Analysis Agent includes comprehensive production monitoring designed for enterprise genomic workloads.
+**Enterprise-Grade Observability**: **100% coverage** ✅
 
-### Monitoring Dashboard Features
+The VCF Analysis Agent includes comprehensive production monitoring designed for enterprise genomic workloads with complete observability stack.
 
-Access real-time monitoring at `http://localhost:3000` after production deployment:
+### Monitoring Stack
+- **Grafana Dashboards**: Real-time VCF-specific metrics and visualization
+- **Prometheus Alerting**: Tuned alert rules with appropriate thresholds  
+- **Jaeger Tracing**: Distributed tracing across all components
+- **OpenTelemetry**: Complete instrumentation and data collection
 
+### Key Capabilities
+| Component | Feature | Status |
+|-----------|---------|--------|
+| **Dashboard Metrics** | Request rate, VCF processing, AI latency | ✅ Production |
+| **Alert Rules** | Critical/Warning/Info alerts with smart thresholds | ✅ Production |
+| **Security Hardening** | Non-root execution, read-only filesystem | ✅ Production |
+| **Health Checks** | <2 second response time validation | ✅ Production |
+
+### Quick Access
 ```yaml
-VCF Agent Dashboard Metrics:
-  - Request rate and error percentage
-  - VCF processing performance (variants/second)
-  - AI embedding generation latency (P50, P95, P99)
-  - Memory optimization effectiveness
-  - AI provider request distribution
-  - System resource utilization (CPU, Memory)
-
-Alert Rules (Prometheus):
-  Critical: Error rate >10%, Service down, Memory optimization <40%
-  Warning: Latency >2s, CPU >80%, Memory >85%
-  Info: High request rate, Low cache hit rate
+Production Services:
+  Grafana Dashboard: http://localhost:3000
+  Prometheus Metrics: http://localhost:9090  
+  Jaeger Tracing: http://localhost:16686
+  VCF Agent API: http://localhost:8080
 ```
 
-### Production Security Features
+**📖 For complete monitoring setup, alert configuration, and troubleshooting**: [Production Monitoring Documentation](docs/PRODUCTION_MONITORING.md)
 
-```yaml
-Security Hardening:
-  Container: Non-root execution (appuser:1000)
-  Filesystem: Read-only with temporary mounts
-  Capabilities: Minimal (dropped ALL, added NET_BIND_SERVICE)
-  Networks: Isolated observability and application networks
-  Secrets: External file management with 600 permissions
-  TLS: Production-ready certificate configuration
-```
+## 🧠 Memory Optimization Overview
 
-## 🧠 Memory Optimization Features
+**Production-Ready Memory Optimization**: **>95% memory reduction achieved** ✅
 
-The VCF Analysis Agent includes production-ready memory optimization capabilities designed for enterprise genomic workloads.
+The VCF Analysis Agent includes enterprise-grade memory optimization capabilities that have delivered outstanding results:
 
-### Optimization Configuration
+### Key Achievements
+- **Memory Reduction**: >95% (150MB → 1-3MB per 100 variants)
+- **Performance**: Maintained 27.6+ variants/sec processing speed
+- **Accuracy**: >95% preservation with PCA dimension reduction
+- **Production Status**: Fully validated and deployed
 
-Configure memory optimizations through the `MemoryOptimizationConfig` system:
-
+### Quick Start
 ```python
 from vcf_agent.config import SessionConfig, MemoryOptimizationConfig
 
-# Standard optimization (recommended for production)
+# Production-ready configuration
 memory_config = MemoryOptimizationConfig(
-    optimization_level="standard",           # basic|standard|aggressive
-    memory_management_enabled=True,          # Enable memory monitoring
-    dimension_reduction_enabled=True,        # Enable embedding compression
-    target_dimensions=768,                   # 50% embedding reduction
-    caching_strategy="memory_aware",         # Advanced caching
-    cache_max_size_mb=40,                   # Cache size limit
-    streaming_batch_size=25                 # Memory-efficient batching
+    optimization_level="standard",      # Recommended for production
+    target_dimensions=768,              # 50% embedding reduction
+    memory_management_enabled=True      # Real-time monitoring
 )
 
 session_config = SessionConfig(memory_optimization=memory_config)
 ```
 
-### Key Optimization Features
+### Optimization Features
+| Feature | Benefit | Status |
+|---------|---------|--------|
+| **Memory-Aware Caching** | 90%+ memory recovery | ✅ Production |
+| **PCA Dimension Reduction** | 50% embedding reduction | ✅ Production |
+| **Streaming Processing** | Bounded memory growth | ✅ Production |
+| **Real-time Monitoring** | Automatic cleanup | ✅ Production |
 
-#### 1. Memory-Aware Caching System
-- **Automatic cache management** with LRU eviction policies
-- **Real-time memory monitoring** with configurable thresholds
-- **Intelligent cleanup** prevents memory accumulation
-- **Cache efficiency tracking** with hit rate monitoring
-
-```python
-# Memory-aware cache automatically manages size
-service = VariantEmbeddingService(session_config)
-stats = service.get_optimization_stats()
-print(f"Cache hit rate: {stats['cache_hit_rate']:.1f}%")
-print(f"Memory usage: {stats['cache_stats']['memory_usage_mb']}MB")
-```
-
-#### 2. PCA Dimension Reduction
-- **50% embedding memory reduction** (1536 → 768 dimensions)
-- **Research-validated PCA approach** with minimal accuracy loss
-- **Automatic model training** on collected embedding data
-- **Graceful fallback** when optimization unavailable
-
-```python
-# Embeddings automatically use optimized dimensions
-embedding = service.generate_embedding_sync("Pathogenic BRCA1 variant")
-print(f"Dimensions: {len(embedding)}")  # 768 instead of 1536
-```
-
-#### 3. Streaming Batch Processing
-- **Memory-efficient batch processing** for large datasets
-- **Configurable batch sizes** based on available memory
-- **Automatic memory cleanup** between batches
-- **Performance monitoring** with comprehensive metrics
-
-```python
-# Process thousands of variants efficiently
-variants = ["variant1", "variant2", ...]  # Large dataset
-embeddings = service.generate_embeddings_batch(variants)
-# Uses streaming processing to minimize memory usage
-```
-
-### Optimization Levels
-
-| Level | Use Case | Memory Management | Dimension Reduction | Caching |
-|-------|----------|------------------|-------------------|---------|
-| **Basic** | Development/Testing | Disabled | Disabled | Simple |
-| **Standard** | Production | Enabled | Enabled (768-dim) | Memory-Aware |
-| **Aggressive** | Large-Scale Enterprise | Enhanced | Enabled + Streaming | Advanced |
-
-### Performance Impact
-
-| Feature | Memory Reduction | Accuracy Preservation | Performance Impact |
-|---------|------------------|---------------------|-------------------|
-| Memory-Aware Caching | 90%+ recovery | 100% | Improved (caching) |
-| PCA Dimension Reduction | 50% embeddings | >95% | Negligible |
-| Streaming Processing | Bounded growth | 100% | Enhanced |
-| **Combined** | **>95% total** | **>95%** | **Significantly Enhanced** |
-
-### Dependencies
-
-Memory optimizations use optional dependencies for enhanced functionality:
-
-```bash
-# Install optimization dependencies
-pip install scikit-learn  # For PCA dimension reduction
-pip install psutil        # For memory monitoring
-
-# Core functionality works without these
-pip install -e .          # Base installation
-```
-
-### Usage Examples
-
-#### Basic Configuration
-```python
-from vcf_agent.lancedb_integration import VariantEmbeddingService
-
-# Service automatically detects and applies optimizations
-service = VariantEmbeddingService()
-
-# Generate optimized embeddings
-embedding = service.generate_embedding_sync("Variant description")
-dimensions = service.get_embedding_dimensions()  # 768 if optimized
-```
-
-#### Advanced Configuration
-```python
-# Custom optimization configuration
-advanced_config = MemoryOptimizationConfig(
-    optimization_level="aggressive",
-    memory_cleanup_threshold_mb=30,      # Trigger cleanup at 30MB
-    streaming_batch_size=50,             # Larger batches for high memory
-    target_dimensions=512                # More aggressive reduction
-)
-
-session = SessionConfig(memory_optimization=advanced_config)
-service = VariantEmbeddingService(session)
-```
-
-#### Performance Monitoring
-```python
-# Comprehensive optimization statistics
-stats = service.get_optimization_stats()
-
-print(f"Optimization Level: {stats['optimization_level']}")
-print(f"Embedding Dimensions: {stats['embedding_dimensions']}")
-print(f"Cache Hit Rate: {stats['cache_hit_rate']:.1f}%")
-print(f"Memory Reduction: {stats['dimension_reduction_stats']['memory_reduction_percent']:.1f}%")
-print(f"Variance Retained: {stats['dimension_reduction_stats']['variance_retained']:.1%}")
-```
-
-### Migration from Legacy Systems
-
-The memory optimization system is fully backward compatible:
-
-```python
-# Legacy code continues to work
-old_service = VariantEmbeddingService()  # Uses default optimizations
-embedding = old_service.generate_embedding_sync(text)
-
-# New code can leverage advanced features
-new_config = MemoryOptimizationConfig(optimization_level="aggressive")
-new_session = SessionConfig(memory_optimization=new_config)
-new_service = VariantEmbeddingService(new_session)
-```
-
-All existing VCF processing code automatically benefits from memory optimizations without any code changes.
+**📖 For detailed configuration, usage examples, and troubleshooting**: [Memory Optimization Features Documentation](docs/MEMORY_OPTIMIZATION_FEATURES.md)
 
 ## 🗄️ Data Architecture & Schemas
 
