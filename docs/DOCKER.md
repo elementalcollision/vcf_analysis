@@ -65,9 +65,9 @@ graph TB
         end
         
         subgraph Storage ["💿 Storage Volumes"]
-            Data[/app/data]
-            Logs2[/app/logs]
-            Tmp[/app/tmp]
+            Data[Data Volume]
+            Logs2[Logs Volume]
+            Tmp[Temp Volume]
         end
         
         subgraph AI ["🤖 AI Services"]
