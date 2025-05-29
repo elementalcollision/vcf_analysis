@@ -81,3 +81,10 @@ httpx
 httpcore
 h11
 litellm
+
+# Phase 5: Apache Iggy + Streaming Dependencies
+iggy-py>=0.4.0
+msgpack>=1.0.0
+zstandard>=0.21.0
+kafka-python>=2.0.2
+asyncio-mqtt>=0.16.0
