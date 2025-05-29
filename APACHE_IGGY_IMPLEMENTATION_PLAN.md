@@ -41,24 +41,71 @@ This comprehensive implementation plan outlines the integration of Apache Iggy m
 ## 🏗️ Technical Architecture
 
 ### Stream Topology
-```
-VCF Files → vcf-variants → AI Analysis Router
-                ↓
-ai-analysis-requests → [OpenAI, Claude, Ollama] Consumers
-                ↓
-ai-analysis-results → Result Aggregator
-                ↓
-database-writes → Batch Database Writer
-                ↓
-user-notifications → WebSocket Service
+
+```mermaid
+flowchart TD
+    VCF[📁 VCF Files] --> VARIANTS[vcf-variants<br/>Stream]
+    VARIANTS --> ROUTER[🤖 AI Analysis Router]
+    
+    ROUTER --> OPENAI[ai-analysis-requests<br/>OpenAI Queue]
+    ROUTER --> CLAUDE[ai-analysis-requests<br/>Claude Queue] 
+    ROUTER --> OLLAMA[ai-analysis-requests<br/>Ollama Queue]
+    
+    OPENAI --> RESULTS[ai-analysis-results<br/>Aggregator]
+    CLAUDE --> RESULTS
+    OLLAMA --> RESULTS
+    
+    RESULTS --> DATABASE[database-writes<br/>Batch Writer]
+    RESULTS --> NOTIFICATIONS[user-notifications<br/>WebSocket Service]
+    
+    DATABASE --> LANCEDB[(🔍 LanceDB)]
+    DATABASE --> KUZU[(🕸️ Kuzu)]
+    
+    style VCF fill:#00bf7d,color:#000000
+    style VARIANTS fill:#00b4c5,color:#000000
+    style ROUTER fill:#0073e6,color:#ffffff
+    style OPENAI fill:#2546f0,color:#ffffff
+    style CLAUDE fill:#2546f0,color:#ffffff
+    style OLLAMA fill:#2546f0,color:#ffffff
+    style RESULTS fill:#5928ed,color:#ffffff
+    style DATABASE fill:#00bf7d,color:#000000
+    style NOTIFICATIONS fill:#00b4c5,color:#000000
+    style LANCEDB fill:#0073e6,color:#ffffff
+    style KUZU fill:#2546f0,color:#ffffff
 ```
 
 ### Message Flow Architecture
-1. **VCF Ingestion**: Files parsed into individual variant messages
-2. **AI Distribution**: Variants routed to available AI providers
-3. **Result Collection**: AI results aggregated and correlated
-4. **Database Persistence**: Batched writes to LanceDB/Kuzu
-5. **User Notification**: Real-time updates via WebSocket
+
+```mermaid
+sequenceDiagram
+    participant VCF as 📁 VCF Files
+    participant Parser as 🔄 Stream Parser
+    participant Iggy as ⚡ Apache Iggy
+    participant Router as 🤖 AI Router
+    participant OpenAI as 🧠 OpenAI
+    participant Claude as 🤖 Claude
+    participant Ollama as 🏠 Ollama
+    participant Aggregator as 📊 Aggregator
+    participant DB as 🗄️ Database
+    participant WS as 🔔 WebSocket
+    
+    VCF->>Parser: Parse VCF file
+    Parser->>Iggy: Stream variants
+    Iggy->>Router: Route to AI providers
+    
+    par Parallel AI Processing
+        Router->>OpenAI: Analysis request
+        Router->>Claude: Analysis request  
+        Router->>Ollama: Analysis request
+    end
+    
+    OpenAI->>Aggregator: Analysis result
+    Claude->>Aggregator: Analysis result
+    Ollama->>Aggregator: Analysis result
+    
+    Aggregator->>DB: Batch write results
+    Aggregator->>WS: Real-time notifications
+```
 
 ### Stream Configuration
 ```python
@@ -641,29 +688,75 @@ asyncio.run(check_health())
 
 ### Phase 5.1 Hybrid Streaming Architecture
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   VCF Files     │    │  Streaming      │    │   Analysis      │
-│                 │───▶│  Coordinator    │───▶│   Results       │
-│  • Variants     │    │                 │    │                 │
-│  • Metadata     │    │  ┌───────────┐  │    │  • Patterns     │
-│  • Samples      │    │  │   Iggy    │  │    │  • Insights     │
-└─────────────────┘    │  │ (Primary) │  │    │  • Reports      │
-                       │  └───────────┘  │    └─────────────────┘
-                       │  ┌───────────┐  │
-                       │  │   Kafka   │  │
-                       │  │(Fallback) │  │
-                       │  └───────────┘  │
-                       └─────────────────┘
+```mermaid
+graph TB
+    subgraph "Data Ingestion"
+        VCF[📁 VCF Files<br/>• Variants<br/>• Metadata<br/>• Samples]
+    end
+    
+    subgraph "Streaming Coordinator"
+        COORD[🎯 Streaming Coordinator<br/>Intelligent Routing]
+        
+        subgraph "Primary Platform"
+            IGGY[⚡ Apache Iggy<br/>Ultra-High Performance<br/>• <1ms latency<br/>• QUIC transport<br/>• 5M+ msg/sec]
+        end
+        
+        subgraph "Fallback Platform"
+            KAFKA[📨 Apache Kafka<br/>Reliable Fallback<br/>• Battle-tested<br/>• Enterprise ready<br/>• Auto failover]
+        end
+    end
+    
+    subgraph "Processing Layer"
+        PROCESSOR[🔄 VCF Processor<br/>• Message serialization<br/>• Batch optimization<br/>• Error recovery]
+    end
+    
+    subgraph "Analysis Results"
+        RESULTS[📊 Analysis Results<br/>• Patterns<br/>• Insights<br/>• Reports]
+    end
+    
+    VCF --> COORD
+    COORD --> IGGY
+    COORD --> KAFKA
+    IGGY --> PROCESSOR
+    KAFKA --> PROCESSOR
+    PROCESSOR --> RESULTS
+    
+    style VCF fill:#00bf7d,color:#000000
+    style COORD fill:#00b4c5,color:#000000
+    style IGGY fill:#0073e6,color:#ffffff
+    style KAFKA fill:#2546f0,color:#ffffff
+    style PROCESSOR fill:#5928ed,color:#ffffff
+    style RESULTS fill:#00bf7d,color:#000000
 ```
 
 ### Component Overview
 
-- **StreamingCoordinator**: Intelligent routing and failover management
-- **IggyVCFProcessor**: Primary ultra-high-performance processor
-- **KafkaVCFProcessor**: Reliable fallback processor  
-- **VCFMessageSerializer**: Optimized genomic data serialization
-- **PerformanceMonitor**: Real-time monitoring and alerting
+```mermaid
+graph LR
+    subgraph "Core Components"
+        SC[🎯 StreamingCoordinator<br/>Intelligent routing<br/>and failover management]
+        
+        IVP[⚡ IggyVCFProcessor<br/>Primary ultra-high<br/>performance processor]
+        
+        KVP[📨 KafkaVCFProcessor<br/>Reliable fallback<br/>processor]
+        
+        VMS[🔄 VCFMessageSerializer<br/>Optimized genomic<br/>data serialization]
+        
+        PM[📊 PerformanceMonitor<br/>Real-time monitoring<br/>and alerting]
+    end
+    
+    SC --> IVP
+    SC --> KVP
+    IVP --> VMS
+    KVP --> VMS
+    SC --> PM
+    
+    style SC fill:#00bf7d,color:#000000
+    style IVP fill:#00b4c5,color:#000000
+    style KVP fill:#0073e6,color:#ffffff
+    style VMS fill:#2546f0,color:#ffffff
+    style PM fill:#5928ed,color:#ffffff
+```
 
 ## Performance Benchmarks
 
