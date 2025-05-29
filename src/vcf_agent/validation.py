@@ -13,7 +13,17 @@ from .gatk_integration import gatk_validatevariants
 from .config import CONFIG
 import logging
 
+# Enhanced tracing imports - Phase 4.2 integration
+from .enhanced_tracing import (
+    vcf_operation_span,
+    vcf_operation_context,
+    get_enhanced_trace_service
+)
+
 logger = logging.getLogger(__name__)
+
+# Initialize enhanced tracing service for validation operations
+trace_service = get_enhanced_trace_service("vcf-validation")
 
 
 def file_exists(filepath: str) -> bool:
@@ -160,6 +170,7 @@ def compliance_check(filepath: str, tool: Optional[str] = None) -> Tuple[int, st
         return validate_with_manufacturer_tool(filepath, tool_name)
 
 
+@vcf_operation_span("vcf_file_validation")
 def validate_vcf_file(filepath: str, tool: Optional[str] = None) -> Tuple[bool, Optional[str]]:
     """
     High-level validation: checks existence, format, index, and compliance (configurable backend).
@@ -175,45 +186,94 @@ def validate_vcf_file(filepath: str, tool: Optional[str] = None) -> Tuple[bool, 
         >>> validate_vcf_file('sample_data/HG00098.vcf.gz')
         (True, None)
     """
-    if not file_exists(filepath):
-        return False, f"File not found or not readable: {filepath}"
-    if not is_vcf_or_bcf(filepath):
-        return False, f"File does not have a recognized VCF/BCF extension: {filepath}"
-    if not has_index(filepath):
-        return False, f"Missing CSI or TBI index for bgzipped VCF/BCF file: {filepath}"
-    
-    rc, out, err = compliance_check(filepath, tool)
-    
-    # Determine the tool name used for logging/messaging
-    tool_name = tool or CONFIG.get('compliance_tool', 'bcftools')
+    with vcf_operation_context("validation_workflow", filepath) as span:
+        # Set initial validation attributes
+        span.set_vcf_attributes(
+            operation="file_validation",
+            file_path=filepath,
+            validation_tool=tool or CONFIG.get("compliance_tool", "bcftools")
+        )
+        
+        # Get file stats for tracing
+        if os.path.exists(filepath):
+            file_size = os.path.getsize(filepath)
+            span.set_vcf_attributes(
+                file_exists=True,
+                file_size_bytes=file_size
+            )
+        else:
+            span.set_vcf_attributes(file_exists=False)
+        
+        try:
+            # Check file existence
+            if not file_exists(filepath):
+                span.set_vcf_attributes(
+                    validation_result=False,
+                    validation_stage="file_existence",
+                    error_type="file_not_found"
+                )
+                return False, f"File not found or not readable: {filepath}"
+            
+            # Check file format
+            if not is_vcf_or_bcf(filepath):
+                span.set_vcf_attributes(
+                    validation_result=False,
+                    validation_stage="format_check",
+                    error_type="invalid_format"
+                )
+                return False, f"File does not have a recognized VCF/BCF extension: {filepath}"
+            
+            # Check index requirement
+            if not has_index(filepath):
+                span.set_vcf_attributes(
+                    validation_result=False,
+                    validation_stage="index_check",
+                    error_type="missing_index"
+                )
+                return False, f"Missing CSI or TBI index for bgzipped VCF/BCF file: {filepath}"
+            
+            # Perform compliance check
+            rc, out, err = compliance_check(filepath, tool)
+            
+            # Determine the tool name used for logging/messaging
+            tool_name = tool or CONFIG.get('compliance_tool', 'bcftools')
 
-    logger.debug(f"Compliance check with {tool_name} completed")
-    logger.debug(f"Exit code: {rc}")
-    logger.debug(f"stdout: {out}")
-    logger.debug(f"stderr: {err}")
+            logger.debug(f"Compliance check with {tool_name} completed")
+            logger.debug(f"Exit code: {rc}")
+            logger.debug(f"stdout: {out}")
+            logger.debug(f"stderr: {err}")
 
-    # Check if the command succeeded
-    if rc != 0:
-        error_msg = f"Compliance check ({tool_name}) failed with exit code {rc}: {err}"
-        logger.error(error_msg)
-        return False, error_msg
+            # Check if the command succeeded
+            if rc != 0:
+                error_msg = f"Compliance check ({tool_name}) failed with exit code {rc}: {err}"
+                logger.error(error_msg)
+                span.set_vcf_attributes(
+                    validation_result=False,
+                    validation_stage="compliance_check",
+                    error_type="compliance_failure",
+                    exit_code=rc,
+                    tool_output_length=len(out) if out else 0,
+                    tool_error_length=len(err) if err else 0
+                )
+                return False, error_msg
 
-    # Check for specific warnings/errors in the output even if rc=0
-    bcftools_output_warnings = []
-    combined_output = (out + '\n' + (err or '')).lower()
-    warning_keywords = ['warning', 'error', 'malformed', 'invalid', 'corrupt']
-    for line in combined_output.split('\n'):
-        if any(keyword in line for keyword in warning_keywords):
-            bcftools_output_warnings.append(line.strip())
-
-    if err:  # Also check stderr in case warnings ended up there with rc=0
-        for line in err.split('\n'):
-            if line.strip() and any(keyword in line.lower() for keyword in warning_keywords):
-                bcftools_output_warnings.append(line.strip())
-
-    if bcftools_output_warnings:
-        warning_msg = ("Compliance check ({}) passed with rc=0 but contained warnings: {}".format(
-                       tool_name, '; '.join(bcftools_output_warnings)))
-        return False, warning_msg
-
-    return True, None 
+            # All checks passed
+            logger.debug(f"All validation checks passed for {filepath}")
+            span.set_vcf_attributes(
+                validation_result=True,
+                validation_stage="completed",
+                exit_code=rc,
+                tool_output_length=len(out) if out else 0,
+                processing_time_ms=span.get_duration_ms()
+            )
+            return True, None
+            
+        except Exception as e:
+            span.set_vcf_attributes(
+                validation_result=False,
+                validation_stage="unexpected_error",
+                error_type=type(e).__name__,
+                error_message=str(e)
+            )
+            logger.error(f"Unexpected error during validation of {filepath}: {e}")
+            return False, f"Unexpected error during validation: {e}" 

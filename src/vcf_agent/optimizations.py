@@ -175,21 +175,56 @@ class EmbeddingCache:
                 "utilization": len(self._cache) / self.max_size
             }
 
+# Phase 2 Memory Recovery Integration
+try:
+    from .phase2_memory_optimization import (
+        phase2_embedding_recovery,
+        MemoryAwareEmbeddingCache,
+        PHASE2_CONFIG
+    )
+    PHASE2_AVAILABLE = True
+    logger.info("Phase 2 Memory Recovery integration available")
+except ImportError as e:
+    PHASE2_AVAILABLE = False
+    logger.info(f"Phase 2 Memory Recovery not available: {e}")
+
 class OptimizedEmbeddingService:
-    """Optimized embedding service with caching and batching."""
+    """
+    Optimized embedding service with caching and batching.
+    
+    Phase 2 Enhancement: Integrated with Enhanced Embedding Recovery system
+    for improved memory management and long-term stability.
+    """
     
     def __init__(self, base_service, config: OptimizationConfig):
         self.base_service = base_service
         self.config = config
-        self.cache = EmbeddingCache(
-            max_size=config.embedding_cache_size,
-            persist_file=".embedding_cache.json" if config.enable_embedding_cache else None
-        ) if config.enable_embedding_cache else None
+        
+        # Phase 2: Use MemoryAwareEmbeddingCache if available
+        if PHASE2_AVAILABLE and config.enable_embedding_cache:
+            self.cache = MemoryAwareEmbeddingCache(
+                max_size_mb=PHASE2_CONFIG["embedding_cache_max_mb"],
+                max_entries=config.embedding_cache_size
+            )
+            # Register with Phase 2 recovery system
+            phase2_embedding_recovery.register_embedding_cache(self.cache)
+            logger.info("OptimizedEmbeddingService using Phase 2 MemoryAwareEmbeddingCache")
+        elif config.enable_embedding_cache:
+            # Fallback to original cache if Phase 2 not available
+            self.cache = EmbeddingCache(
+                max_size=config.embedding_cache_size,
+                persist_file=".embedding_cache.json" if config.enable_embedding_cache else None
+            )
+            logger.info("OptimizedEmbeddingService using original EmbeddingCache")
+        else:
+            self.cache = None
+        
         self._stats = {
             "cache_hits": 0,
             "cache_misses": 0,
             "batch_requests": 0,
-            "total_embeddings": 0
+            "total_embeddings": 0,
+            "phase2_cleanups": 0
         }
     
     def __getattr__(self, name):
@@ -201,12 +236,25 @@ class OptimizedEmbeddingService:
         return self.base_service.generate_variant_description(variant_data)
     
     def generate_embedding_sync(self, text: str) -> List[float]:
-        """Generate embedding with caching."""
+        """Generate embedding with caching and Phase 2 memory recovery."""
+        
+        # Phase 2: Track embedding operation
+        if PHASE2_AVAILABLE:
+            phase2_embedding_recovery.track_embedding_operation("optimized_sync_embedding")
+        
         # Check cache first
         if self.cache:
             # Get model name safely
             model_name = getattr(self.base_service, 'model', 'default')
-            cached = self.cache.get(text, model_name)
+            
+            if PHASE2_AVAILABLE and hasattr(self.cache, 'get'):
+                # Phase 2 MemoryAwareEmbeddingCache
+                cache_key = f"{model_name}:{text}"
+                cached = self.cache.get(cache_key)
+            else:
+                # Original EmbeddingCache
+                cached = self.cache.get(text, model_name)
+            
             if cached:
                 self._stats["cache_hits"] += 1
                 return cached
@@ -218,13 +266,31 @@ class OptimizedEmbeddingService:
         # Cache result
         if self.cache and embedding:
             model_name = getattr(self.base_service, 'model', 'default')
-            self.cache.put(text, embedding, model_name)
+            
+            if PHASE2_AVAILABLE and hasattr(self.cache, 'put'):
+                # Phase 2 MemoryAwareEmbeddingCache
+                cache_key = f"{model_name}:{text}"
+                self.cache.put(cache_key, embedding)
+            else:
+                # Original EmbeddingCache
+                self.cache.put(text, embedding, model_name)
+        
+        # Phase 2: Check memory threshold after caching
+        if PHASE2_AVAILABLE and phase2_embedding_recovery.check_memory_threshold():
+            logger.info("Memory threshold exceeded in OptimizedEmbeddingService, triggering cleanup")
+            phase2_embedding_recovery.force_embedding_cleanup()
+            self._stats["phase2_cleanups"] += 1
         
         self._stats["total_embeddings"] += 1
         return embedding
     
     def generate_embeddings_batch(self, texts: List[str]) -> List[List[float]]:
-        """Generate embeddings in batch with caching."""
+        """Generate embeddings in batch with caching and Phase 2 memory recovery."""
+        
+        # Phase 2: Track batch embedding operation
+        if PHASE2_AVAILABLE:
+            phase2_embedding_recovery.track_embedding_operation(f"optimized_batch_embedding_{len(texts)}")
+        
         if not self.config.enable_embedding_cache:
             # Fallback to individual generation
             return [self.base_service.generate_embedding_sync(text) for text in texts]
@@ -238,7 +304,14 @@ class OptimizedEmbeddingService:
         
         # Check cache for all texts
         for i, text in enumerate(texts):
-            cached = self.cache.get(text, model_name)
+            if PHASE2_AVAILABLE and hasattr(self.cache, 'get'):
+                # Phase 2 MemoryAwareEmbeddingCache
+                cache_key = f"{model_name}:{text}"
+                cached = self.cache.get(cache_key)
+            else:
+                # Original EmbeddingCache
+                cached = self.cache.get(text, model_name)
+            
             if cached:
                 results.append(cached)
                 self._stats["cache_hits"] += 1
@@ -265,19 +338,40 @@ class OptimizedEmbeddingService:
                 idx = uncached_indices[i]
                 results[idx] = embedding
                 if embedding:
-                    self.cache.put(uncached_texts[i], embedding, model_name)
+                    if PHASE2_AVAILABLE and hasattr(self.cache, 'put'):
+                        # Phase 2 MemoryAwareEmbeddingCache
+                        cache_key = f"{model_name}:{uncached_texts[i]}"
+                        self.cache.put(cache_key, embedding)
+                    else:
+                        # Original EmbeddingCache
+                        self.cache.put(uncached_texts[i], embedding, model_name)
+        
+        # Phase 2: Check memory threshold after batch processing
+        if PHASE2_AVAILABLE and phase2_embedding_recovery.check_memory_threshold():
+            logger.info("Memory threshold exceeded after batch embedding, triggering cleanup")
+            phase2_embedding_recovery.force_embedding_cleanup()
+            self._stats["phase2_cleanups"] += 1
         
         self._stats["batch_requests"] += 1
         self._stats["total_embeddings"] += len(texts)
         return results
     
     def get_stats(self) -> Dict[str, Any]:
-        """Get performance statistics."""
+        """Get performance statistics including Phase 2 metrics."""
         stats = self._stats.copy()
+        
         if self.cache:
-            stats["cache_stats"] = self.cache.stats()
+            if PHASE2_AVAILABLE and hasattr(self.cache, 'get_cache_stats'):
+                # Phase 2 MemoryAwareEmbeddingCache stats
+                stats["cache_stats"] = self.cache.get_cache_stats()
+                stats["phase2_recovery"] = phase2_embedding_recovery.get_recovery_stats()
+            else:
+                # Original EmbeddingCache stats
+                stats["cache_stats"] = self.cache.stats()
+            
             if stats["cache_hits"] + stats["cache_misses"] > 0:
                 stats["cache_hit_rate"] = stats["cache_hits"] / (stats["cache_hits"] + stats["cache_misses"])
+        
         return stats
 
 class QueryBatcher:

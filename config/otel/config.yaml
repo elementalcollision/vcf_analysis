@@ -1,0 +1,252 @@
+# OpenTelemetry Collector Configuration
+# Production-ready configuration with security and performance optimizations
+
+receivers:
+  # OTLP receiver for application traces
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+        max_recv_msg_size: 16777216  # 16MB
+        max_concurrent_streams: 16
+        read_buffer_size: 524288     # 512KB
+        write_buffer_size: 524288    # 512KB
+      http:
+        endpoint: 0.0.0.0:4318
+        max_request_body_size: 16777216  # 16MB
+        include_metadata: true
+
+  # Prometheus metrics receiver
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'vcf-agent'
+          scrape_interval: 15s
+          static_configs:
+            - targets: ['vcf-agent:8080']
+          metrics_path: '/metrics'
+          
+        - job_name: 'otel-collector'
+          scrape_interval: 30s
+          static_configs:
+            - targets: ['localhost:8888']
+
+  # Host metrics for infrastructure monitoring
+  hostmetrics:
+    collection_interval: 30s
+    scrapers:
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+      disk:
+        metrics:
+          system.disk.io:
+            enabled: true
+          system.disk.operations:
+            enabled: true
+      filesystem:
+        metrics:
+          system.filesystem.utilization:
+            enabled: true
+      memory:
+        metrics:
+          system.memory.utilization:
+            enabled: true
+      network:
+        metrics:
+          system.network.io:
+            enabled: true
+      process:
+        metrics:
+          process.cpu.utilization:
+            enabled: true
+          process.memory.utilization:
+            enabled: true
+
+processors:
+  # Batch processor for efficient export
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+    send_batch_max_size: 1024
+
+  # Memory limiter to prevent OOM
+  memory_limiter:
+    limit_mib: 512
+    spike_limit_mib: 128
+    check_interval: 5s
+
+  # Resource processor for consistent attribute naming
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: ${ENVIRONMENT}
+        action: upsert
+      - key: service.instance.id
+        from_attribute: host.name
+        action: insert
+      - key: collector.version
+        value: "0.89.0"
+        action: insert
+
+  # Attributes processor for VCF-specific attributes
+  attributes/vcf:
+    actions:
+      # Promote important VCF attributes to resource level
+      - key: vcf.file.name
+        action: insert
+        from_attribute: file.name
+      - key: vcf.variants.count
+        action: insert
+        from_attribute: variants.count
+      # Remove sensitive information
+      - key: ai.response.content
+        action: delete
+      - key: api.key
+        action: delete
+
+  # Sampling processor for production load management
+  probabilistic_sampler:
+    sampling_percentage: ${OTEL_SAMPLING_RATE:-10}
+
+  # Transform processor for metric optimization
+  transform/metrics:
+    metric_statements:
+      - context: metric
+        statements:
+          # Convert histogram to summary for better Prometheus compatibility
+          - set(description, "VCF processing latency") where name == "vcf_processing_duration"
+          # Add environment label to all metrics
+          - set(attributes["environment"], "${ENVIRONMENT}")
+
+exporters:
+  # Jaeger exporter for distributed tracing
+  jaeger:
+    endpoint: ${JAEGER_ENDPOINT:-jaeger:14250}
+    tls:
+      insecure: true
+    sending_queue:
+      enabled: true
+      num_consumers: 2
+      queue_size: 1000
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+
+  # Prometheus exporter for metrics
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    namespace: vcf_agent
+    const_labels:
+      deployment: ${ENVIRONMENT:-production}
+    send_timestamps: true
+    metric_expiration: 180m
+    enable_open_metrics: true
+    
+    # Resource attribute promotion for better correlation
+    resource_to_telemetry_conversion:
+      enabled: true
+
+  # Prometheus remote write for external systems
+  prometheusremotewrite:
+    endpoint: ${PROMETHEUS_REMOTE_WRITE_ENDPOINT:-http://prometheus:9090/api/v1/write}
+    tls:
+      insecure: true
+    sending_queue:
+      enabled: true
+      num_consumers: 5
+      queue_size: 2000
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+
+  # Logging exporter for debugging (disabled in production)
+  logging:
+    loglevel: info
+    sampling_initial: 2
+    sampling_thereafter: 500
+
+  # OTLP exporter for forwarding to external systems
+  otlp/external:
+    endpoint: ${OTEL_EXTERNAL_ENDPOINT}
+    headers:
+      authorization: "Bearer ${OTEL_EXTERNAL_TOKEN}"
+    tls:
+      insecure: false
+    sending_queue:
+      enabled: true
+      num_consumers: 4
+      queue_size: 1500
+
+connectors:
+  # Count connector for generating metrics from spans
+  count:
+    spans:
+      vcf.processing.count:
+        description: "Number of VCF processing operations"
+        conditions:
+          - 'attributes["operation.type"] == "vcf_processing"'
+      ai.requests.count:
+        description: "Number of AI provider requests"
+        conditions:
+          - 'attributes["ai.provider"] != nil'
+
+service:
+  telemetry:
+    logs:
+      level: info
+      development: false
+      sampling:
+        initial: 2
+        thereafter: 500
+    metrics:
+      level: basic
+      address: 0.0.0.0:8888
+
+  extensions: [health_check, pprof, zpages]
+  
+  pipelines:
+    # Traces pipeline
+    traces:
+      receivers: [otlp]
+      processors: 
+        - memory_limiter
+        - resource
+        - attributes/vcf
+        - probabilistic_sampler
+        - batch
+      exporters: [jaeger, logging, count]
+
+    # Metrics pipeline
+    metrics:
+      receivers: [otlp, prometheus, hostmetrics]
+      processors:
+        - memory_limiter
+        - resource
+        - transform/metrics
+        - batch
+      exporters: [prometheus, prometheusremotewrite]
+
+    # Metrics from traces pipeline
+    metrics/traces:
+      receivers: [count]
+      processors: [batch]
+      exporters: [prometheus]
+
+extensions:
+  # Health check extension
+  health_check:
+    endpoint: 0.0.0.0:13133
+    path: /health
+
+  # Performance profiling
+  pprof:
+    endpoint: 0.0.0.0:1777
+
+  # Z-Pages for debugging
+  zpages:
+    endpoint: 0.0.0.0:55679 

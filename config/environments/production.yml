@@ -1,0 +1,184 @@
+# Production Environment Configuration
+# High security, performance optimized, conservative resource usage
+
+environment: production
+
+# OpenTelemetry Tracing Configuration
+tracing:
+  # Conservative sampling for production (10%)
+  sampling_rate: 0.1
+  # Batch configuration for high throughput
+  batch_timeout: 5s
+  max_export_batch_size: 512
+  max_queue_size: 2048
+  # Export configuration
+  export_timeout: 30s
+  
+  # Service identification
+  service_name: vcf-agent
+  service_version: "${VERSION}"
+  
+  # Resource attributes for better correlation
+  resource_attributes:
+    deployment.environment: production
+    service.instance.id: "${HOSTNAME}"
+    service.namespace: genomics
+    
+# Security Configuration
+security:
+  # TLS configuration
+  tls_enabled: true
+  tls_cert_file: /etc/ssl/certs/vcf-agent.crt
+  tls_key_file: /etc/ssl/private/vcf-agent.key
+  
+  # Authentication
+  auth_required: true
+  jwt_secret_file: /run/secrets/jwt_secret
+  
+  # Secret management
+  secret_management: vault
+  secret_rotation_days: 30
+  
+  # Network security
+  allowed_origins:
+    - "https://vcf-agent.genomics.local"
+    - "https://monitoring.genomics.local"
+  
+  # API rate limiting
+  rate_limit:
+    requests_per_minute: 1000
+    burst_size: 100
+
+# Performance Configuration
+performance:
+  # Resource limits (Kubernetes style)
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  
+  # Scaling configuration
+  scaling:
+    min_replicas: 2
+    max_replicas: 10
+    target_cpu_utilization: 70
+    target_memory_utilization: 80
+  
+  # Application performance
+  worker_processes: 4
+  max_connections: 1000
+  connection_timeout: 30s
+  
+  # VCF processing optimizations
+  vcf_processing:
+    batch_size: 1000
+    max_file_size: "1GB"
+    parallel_workers: 2
+    memory_limit_per_worker: "512MB"
+
+# AI Provider Configuration
+ai_providers:
+  openai:
+    api_key_file: /run/secrets/openai_api_key
+    timeout: 30s
+    max_retries: 3
+    rate_limit: 50  # requests per minute
+    model_preferences:
+      embedding: "text-embedding-3-small"
+      analysis: "gpt-4"
+  
+  anthropic:
+    api_key_file: /run/secrets/anthropic_api_key
+    timeout: 30s
+    max_retries: 3
+    rate_limit: 30  # requests per minute
+    model_preferences:
+      analysis: "claude-3-sonnet-20240229"
+
+# Database Configuration
+database:
+  lancedb:
+    path: /app/data/lancedb
+    # Connection pooling
+    max_connections: 20
+    connection_timeout: 10s
+    # Backup configuration
+    backup_enabled: true
+    backup_interval: "6h"
+    backup_retention: "30d"
+
+# Monitoring Configuration
+monitoring:
+  # Health checks
+  health_check:
+    enabled: true
+    interval: 30s
+    timeout: 10s
+    endpoint: "/health"
+  
+  # Metrics collection
+  metrics:
+    enabled: true
+    interval: 15s
+    endpoint: "/metrics"
+    
+  # Logging configuration
+  logging:
+    level: INFO
+    format: json
+    max_file_size: "100MB"
+    max_files: 10
+    fields:
+      - timestamp
+      - level
+      - service
+      - trace_id
+      - span_id
+      - message
+  
+  # Alerting thresholds
+  alerts:
+    error_rate_threshold: 0.05  # 5%
+    latency_p95_threshold: 2.0  # 2 seconds
+    memory_usage_threshold: 0.85  # 85%
+    cpu_usage_threshold: 0.80  # 80%
+
+# Memory Optimization Configuration
+memory_optimization:
+  # Embedding optimization
+  embedding_dimensions:
+    default: 768  # Reduced from 1536
+    fallback: 384  # Further reduction if needed
+  
+  # Cache configuration
+  cache:
+    enabled: true
+    max_size: "1GB"
+    ttl: "1h"
+    eviction_policy: "lru"
+  
+  # Memory limits
+  memory_limits:
+    max_heap_size: "1.5GB"
+    gc_threshold: "1GB"
+    
+# Backup and Recovery
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention_days: 30
+  storage:
+    type: s3
+    bucket: vcf-agent-backups-prod
+    encryption: true
+
+# Feature Flags
+features:
+  enhanced_tracing: true
+  memory_optimization: true
+  ai_analysis: true
+  batch_processing: true
+  real_time_monitoring: true 

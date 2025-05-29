@@ -1,0 +1,373 @@
+name: Production Deployment
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy'
+        required: true
+        default: 'latest'
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=tag
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.production
+          target: production
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ needs.build.outputs.image-tag }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run integration tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY_TEST }}
+        run: |
+          pytest tests/integration/ -v --cov=src/vcf_agent --cov-report=xml
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: integration
+          name: integration-tests
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [build, security-scan, integration-tests]
+    if: github.event.inputs.environment == 'staging' || github.ref_type == 'tag'
+    environment: staging
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to staging
+        run: |
+          echo "Deploying to staging environment..."
+          # Add staging deployment logic here
+
+      - name: Run staging health checks
+        run: |
+          echo "Running staging health checks..."
+          # Add staging health check logic here
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [build, security-scan, integration-tests, deploy-staging]
+    if: github.event.inputs.environment == 'production' || (github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v'))
+    environment: production
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Deploy to production
+        id: deploy
+        run: |
+          echo "Starting production deployment..."
+          
+          # Set deployment variables
+          VERSION=${{ github.ref_name }}
+          IMAGE_TAG=${{ needs.build.outputs.image-tag }}
+          
+          # Create deployment directory
+          mkdir -p /tmp/deployment
+          cd /tmp/deployment
+          
+          # Copy deployment files
+          cp -r ${{ github.workspace }}/docker-compose.production.yml .
+          cp -r ${{ github.workspace }}/config ./
+          
+          # Create environment file
+          cat > .env.production << EOF
+          ENVIRONMENT=production
+          VERSION=${VERSION}
+          LOG_LEVEL=INFO
+          OTEL_SAMPLING_RATE=0.1
+          IMAGE_TAG=${IMAGE_TAG}
+          EOF
+          
+          # Deploy using Docker Compose
+          docker-compose -f docker-compose.production.yml --env-file .env.production pull
+          docker-compose -f docker-compose.production.yml --env-file .env.production up -d
+          
+          echo "deployment-id=$(date +%s)" >> $GITHUB_OUTPUT
+
+      - name: Wait for deployment to stabilize
+        run: |
+          echo "Waiting for deployment to stabilize..."
+          sleep 60
+
+      - name: Run production health checks
+        id: health-check
+        run: |
+          echo "Running production health checks..."
+          
+          # Service health checks
+          services=("vcf-agent:8080" "prometheus:9090" "grafana:3000" "jaeger:16686")
+          for service in "${services[@]}"; do
+              IFS=':' read -r name port <<< "$service"
+              echo "Checking $name on port $port..."
+              
+              max_attempts=10
+              attempt=1
+              while [ $attempt -le $max_attempts ]; do
+                  if curl -f "http://localhost:$port/health" 2>/dev/null || curl -f "http://localhost:$port/" 2>/dev/null; then
+                      echo "$name health check passed"
+                      break
+                  fi
+                  
+                  if [ $attempt -eq $max_attempts ]; then
+                      echo "ERROR: $name health check failed after $max_attempts attempts"
+                      exit 1
+                  fi
+                  
+                  echo "Attempt $attempt failed, retrying in 10 seconds..."
+                  sleep 10
+                  ((attempt++))
+              done
+          done
+          
+          # VCF Agent specific functionality test
+          echo "Testing VCF Agent functionality..."
+          curl -X POST http://localhost:8080/api/v1/validate \
+              -H "Content-Type: application/json" \
+              -d '{"vcf_content": "##fileformat=VCFv4.2\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"}' || {
+              echo "ERROR: VCF validation endpoint failed"
+              exit 1
+          }
+          
+          # Memory optimization check
+          memory_reduction=$(curl -s http://localhost:8080/metrics | grep vcf_agent_memory_optimization_reduction_percent | awk '{print $2}' || echo "0")
+          if (( $(echo "$memory_reduction < 40" | bc -l) )); then
+              echo "WARNING: Memory optimization below 40% ($memory_reduction%)"
+          fi
+          
+          echo "All health checks passed!"
+
+      - name: Run performance validation
+        run: |
+          echo "Running performance validation..."
+          
+          # Check response times
+          response_time=$(curl -w "%{time_total}" -s -o /dev/null http://localhost:8080/health)
+          if (( $(echo "$response_time > 2.0" | bc -l) )); then
+              echo "WARNING: Health endpoint response time high: ${response_time}s"
+          fi
+          
+          # Check error rate
+          sleep 30  # Wait for metrics to populate
+          error_rate=$(curl -s "http://localhost:9090/api/v1/query?query=rate(vcf_agent_http_requests_total{status=~\"5..\"}[5m])" | jq -r '.data.result[0].value[1] // "0"')
+          if (( $(echo "$error_rate > 0.05" | bc -l) )); then
+              echo "WARNING: Error rate high: ${error_rate}"
+          fi
+          
+          echo "Performance validation complete"
+
+      - name: Update deployment status
+        if: success()
+        run: |
+          echo "Deployment successful!"
+          
+          # Send success notification
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+              -H 'Content-type: application/json' \
+              --data '{
+                  "text": "✅ VCF Agent production deployment successful",
+                  "blocks": [
+                      {
+                          "type": "section",
+                          "text": {
+                              "type": "mrkdwn",
+                              "text": "*VCF Agent Production Deployment Successful* ✅\n\n*Version:* `${{ github.ref_name }}`\n*Commit:* `${{ github.sha }}`\n*Deployed by:* ${{ github.actor }}\n*Deployment ID:* `${{ steps.deploy.outputs.deployment-id }}`"
+                          }
+                      }
+                  ]
+              }'
+
+  rollback:
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: failure()
+    environment: production
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Rollback deployment
+        run: |
+          echo "Deployment failed, initiating rollback..."
+          
+          # Get previous successful version
+          PREVIOUS_VERSION=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -2 | tail -1)
+          echo "Rolling back to version: $PREVIOUS_VERSION"
+          
+          # Checkout previous version
+          git checkout $PREVIOUS_VERSION
+          
+          # Rollback using Docker Compose
+          docker-compose -f docker-compose.production.yml down
+          docker-compose -f docker-compose.production.yml up -d --force-recreate
+          
+          # Wait for rollback to complete
+          sleep 60
+          
+          # Verify rollback
+          curl -f http://localhost:8080/health || {
+              echo "ERROR: Rollback health check failed"
+              exit 1
+          }
+          
+          echo "Rollback to $PREVIOUS_VERSION completed successfully"
+
+      - name: Notify rollback
+        if: always()
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+              -H 'Content-type: application/json' \
+              --data '{
+                  "text": "🚨 VCF Agent production deployment failed - rollback initiated",
+                  "blocks": [
+                      {
+                          "type": "section",
+                          "text": {
+                              "type": "mrkdwn",
+                              "text": "*VCF Agent Production Deployment Failed* 🚨\n\n*Failed Version:* `${{ github.ref_name }}`\n*Rollback Status:* In Progress\n*Incident Response:* Please check logs and investigate\n*Runbook:* https://docs.company.com/runbooks/vcf-agent"
+                          }
+                      }
+                  ]
+              }'
+
+  post-deployment:
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: success()
+    
+    steps:
+      - name: Update monitoring dashboards
+        run: |
+          echo "Updating monitoring dashboards with new version..."
+          # Add dashboard update logic here
+
+      - name: Run smoke tests
+        run: |
+          echo "Running post-deployment smoke tests..."
+          # Add comprehensive smoke tests here
+
+      - name: Update documentation
+        run: |
+          echo "Updating deployment documentation..."
+          # Add documentation update logic here
+
+      - name: Create deployment record
+        run: |
+          echo "Creating deployment record..."
+          # Add deployment tracking logic here 

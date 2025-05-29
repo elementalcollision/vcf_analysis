@@ -22,6 +22,14 @@ from . import graph_integration
 from .api_clients import OpenAIClient, CredentialManager
 from .config import SessionConfig, MemoryOptimizationConfig
 
+# Enhanced tracing imports - Phase 4.2 integration
+from .enhanced_tracing import (
+    vcf_operation_span,
+    vcf_operation_context,
+    memory_operation_span,
+    get_enhanced_trace_service
+)
+
 # Add import for sqlparse if available
 try:
     import sqlparse  # type: ignore
@@ -144,7 +152,7 @@ class VCFVariant(LanceModel):
         reference (str): Reference allele sequence.
         alternate (str): Alternate allele sequence.
         variant_description (str): Human-readable description for embedding generation.
-        variant_vector (Vector): 1536-dimensional embedding vector for similarity search (legacy compatibility).
+        variant_vector: Annotated[List[float], Vector(1536)]  # Original dimension for backward compatibility
         analysis_summary (str): AI-generated analysis summary of the variant.
         sample_id (str): Identifier for the sample containing this variant.
         quality_score (Optional[float]): Variant quality score from VCF.
@@ -163,7 +171,7 @@ class VCFVariant(LanceModel):
     reference: str
     alternate: str
     variant_description: str
-    variant_vector: Vector(1536)  # Original dimension for backward compatibility
+    variant_vector: Annotated[List[float], Vector(1536)]  # Original dimension for backward compatibility
     analysis_summary: str
     sample_id: str
     quality_score: Optional[float] = None
@@ -189,7 +197,7 @@ class VCFVariantPhase3(LanceModel):
     reference: str
     alternate: str
     variant_description: str
-    variant_vector: Vector(768)  # Phase 3 optimized dimensions (50% reduction)
+    variant_vector: Annotated[List[float], Vector(768)]  # Phase 3 optimized dimensions (50% reduction)
     analysis_summary: str
     sample_id: str
     quality_score: Optional[float] = None
@@ -209,7 +217,7 @@ class Variant(LanceModel):
     Use VCFVariant or VCFVariantPhase3 for new implementations.
     """
     variant_id: str
-    embedding: Vector(1024)  # type: ignore[valid-type]
+    embedding: Annotated[List[float], Vector(1024)]  # type: ignore[valid-type]
     chrom: str
     pos: int
     ref: str

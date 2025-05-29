@@ -1,0 +1,204 @@
+# Development Environment Configuration
+# Debug-friendly, full observability, relaxed security
+
+environment: development
+
+# OpenTelemetry Tracing Configuration
+tracing:
+  # Full sampling for development (100%)
+  sampling_rate: 1.0
+  # Faster batch processing for immediate feedback
+  batch_timeout: 1s
+  max_export_batch_size: 100
+  max_queue_size: 1000
+  # Shorter timeouts for faster debugging
+  export_timeout: 10s
+  
+  # Service identification
+  service_name: vcf-agent-dev
+  service_version: "dev-${USER}"
+  
+  # Debug-focused attributes
+  resource_attributes:
+    deployment.environment: development
+    service.instance.id: "${HOSTNAME}-dev"
+    service.namespace: genomics-dev
+    developer: "${USER}"
+    
+# Security Configuration (Relaxed for development)
+security:
+  # No TLS for local development
+  tls_enabled: false
+  
+  # No authentication for easier testing
+  auth_required: false
+  
+  # Local secret management
+  secret_management: local
+  
+  # Allow all origins for development
+  allowed_origins:
+    - "http://localhost:*"
+    - "http://127.0.0.1:*"
+    - "http://0.0.0.0:*"
+  
+  # No rate limiting for development
+  rate_limit:
+    requests_per_minute: 10000
+    burst_size: 1000
+
+# Performance Configuration (Development optimized)
+performance:
+  # Minimal resources for local development
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  
+  # Single replica for development
+  scaling:
+    min_replicas: 1
+    max_replicas: 1
+    target_cpu_utilization: 80
+    target_memory_utilization: 90
+  
+  # Simplified application settings
+  worker_processes: 1
+  max_connections: 100
+  connection_timeout: 10s
+  
+  # VCF processing for development
+  vcf_processing:
+    batch_size: 100  # Smaller batches for faster feedback
+    max_file_size: "100MB"
+    parallel_workers: 1
+    memory_limit_per_worker: "256MB"
+
+# AI Provider Configuration (Development)
+ai_providers:
+  openai:
+    api_key_file: .env  # Load from local .env file
+    timeout: 60s  # Longer timeout for debugging
+    max_retries: 1  # Fail fast for debugging
+    rate_limit: 100  # Higher limit for testing
+    model_preferences:
+      embedding: "text-embedding-3-small"
+      analysis: "gpt-3.5-turbo"  # Cheaper model for development
+  
+  anthropic:
+    api_key_file: .env
+    timeout: 60s
+    max_retries: 1
+    rate_limit: 100
+    model_preferences:
+      analysis: "claude-3-haiku-20240307"  # Faster model for development
+
+# Database Configuration
+database:
+  lancedb:
+    path: ./dev_data/lancedb  # Local development path
+    # Minimal pooling for development
+    max_connections: 5
+    connection_timeout: 5s
+    # No backup in development
+    backup_enabled: false
+
+# Monitoring Configuration (Debug focused)
+monitoring:
+  # More frequent health checks for debugging
+  health_check:
+    enabled: true
+    interval: 10s
+    timeout: 5s
+    endpoint: "/health"
+  
+  # Detailed metrics for development
+  metrics:
+    enabled: true
+    interval: 5s  # More frequent for debugging
+    endpoint: "/metrics"
+    
+  # Verbose logging for development
+  logging:
+    level: DEBUG
+    format: pretty  # Human-readable format
+    max_file_size: "10MB"
+    max_files: 3
+    fields:
+      - timestamp
+      - level
+      - service
+      - trace_id
+      - span_id
+      - message
+      - file
+      - line
+      - function
+  
+  # Relaxed alerting thresholds
+  alerts:
+    error_rate_threshold: 0.20  # 20% (more tolerant)
+    latency_p95_threshold: 10.0  # 10 seconds
+    memory_usage_threshold: 0.95  # 95%
+    cpu_usage_threshold: 0.90  # 90%
+
+# Memory Optimization Configuration (Development)
+memory_optimization:
+  # Standard dimensions for development testing
+  embedding_dimensions:
+    default: 1536  # Full dimensions for accuracy testing
+    fallback: 768  # Reduced for memory testing
+  
+  # Smaller cache for development
+  cache:
+    enabled: true
+    max_size: "100MB"
+    ttl: "10m"  # Shorter TTL for testing
+    eviction_policy: "lru"
+  
+  # Development memory limits
+  memory_limits:
+    max_heap_size: "512MB"
+    gc_threshold: "256MB"
+    
+# Backup and Recovery (Disabled for development)
+backup:
+  enabled: false
+
+# Feature Flags (All enabled for testing)
+features:
+  enhanced_tracing: true
+  memory_optimization: true
+  ai_analysis: true
+  batch_processing: true
+  real_time_monitoring: true
+  debug_mode: true
+  hot_reload: true
+  verbose_errors: true
+
+# Development-specific settings
+development:
+  # Auto-reload on code changes
+  auto_reload: true
+  
+  # Debug endpoints
+  debug_endpoints:
+    - "/debug/traces"
+    - "/debug/metrics" 
+    - "/debug/memory"
+    - "/debug/config"
+  
+  # Test data generation
+  test_data:
+    generate_synthetic: true
+    synthetic_variants: 1000
+    synthetic_files: 10
+    
+  # Development tools
+  tools:
+    profiler: true
+    memory_profiler: true
+    trace_viewer: true 

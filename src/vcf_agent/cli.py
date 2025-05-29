@@ -28,11 +28,21 @@ from vcf_agent import metrics # Import metrics module
 from opentelemetry import trace
 from .tracing import init_tracer, setup_auto_instrumentation
 
+# Enhanced tracing imports - Phase 4.2 integration
+from .enhanced_tracing import (
+    get_enhanced_trace_service,
+    vcf_operation_context,
+    ai_provider_context
+)
+
 # Initialize OpenTelemetry Tracer for the CLI
 # This should be done once, as early as possible.
 # The service name helps distinguish traces from different components.
 cli_tracer = init_tracer(service_name="vcf-agent-cli")
 setup_auto_instrumentation() # Placeholder, will configure auto-instrumentation
+
+# Initialize enhanced tracing service for CLI operations
+cli_trace_service = get_enhanced_trace_service("vcf-agent-cli")
 
 def main():
     """
@@ -192,7 +202,7 @@ def main():
             prompt_args = [arg for arg in sys.argv[1:] if not arg.startswith('--')]
             other_args = [arg for arg in sys.argv[1:] if arg.startswith('--')]
             
-            # Filter out any already parsed known global options from prompt_args
+            # Filter out any already parsed known options from prompt_args
             # This is tricky because argparse has already consumed them.
             # A simpler approach for now: if no command, and sys.argv[1] isn't an option, it's a prompt.
             
@@ -210,35 +220,139 @@ def main():
 
     # LanceDB integration commands
     if args.command == "init-lancedb":
-        from vcf_agent.lancedb_integration import get_db, get_or_create_table
-        db = get_db(args.db_path)
-        table = get_or_create_table(db, args.table_name)
-        print(f"Initialized LanceDB table '{args.table_name}' at '{args.db_path}'")
+        with vcf_operation_context("cli_init_lancedb", args.db_path) as span:
+            span.set_vcf_attributes(
+                operation="database_initialization",
+                db_path=args.db_path,
+                table_name=args.table_name
+            )
+            
+            try:
+                from vcf_agent.lancedb_integration import get_db, get_or_create_table
+                
+                start_time = time.time()
+                db = get_db(args.db_path)
+                table = get_or_create_table(db, args.table_name)
+                
+                span.set_vcf_attributes(
+                    success=True,
+                    initialization_time_ms=(time.time() - start_time) * 1000
+                )
+                
+                print(f"Initialized LanceDB table '{args.table_name}' at '{args.db_path}'")
+                
+            except Exception as e:
+                span.set_vcf_attributes(
+                    success=False,
+                    error_message=str(e)
+                )
+                print(f"❌ Error initializing LanceDB: {e}", file=sys.stderr)
+                sys.exit(1)
         return
     elif args.command == "add-variant":
-        from vcf_agent.lancedb_integration import get_db, get_or_create_table, add_variants
-        db = get_db(args.db_path)
-        table = get_or_create_table(db, args.table_name)
-        embedding = [float(x) for x in args.embedding.split(",")]
-        variant = {
-            "variant_id": args.variant_id,
-            "chrom": args.chrom,
-            "pos": args.pos,
-            "ref": args.ref,
-            "alt": args.alt,
-            "embedding": embedding,
-            "clinical_significance": args.clinical_significance,
-        }
-        add_variants(table, [variant])
-        print(f"Added variant {args.variant_id} to LanceDB.")
+        with vcf_operation_context("cli_add_variant", args.db_path) as span:
+            span.set_vcf_attributes(
+                operation="variant_addition",
+                variant_id=args.variant_id,
+                chromosome=args.chrom,
+                position=args.pos,
+                reference=args.ref,
+                alternate=args.alt
+            )
+            
+            try:
+                from vcf_agent.lancedb_integration import get_db, get_or_create_table, add_variants
+                
+                start_time = time.time()
+                
+                # Parse embedding
+                embedding = [float(x) for x in args.embedding.split(",")]
+                span.set_vcf_attributes(embedding_dimensions=len(embedding))
+                
+                # Get database and table
+                db = get_db(args.db_path)
+                table = get_or_create_table(db, args.table_name)
+                
+                # Create variant record
+                variant = {
+                    "variant_id": args.variant_id,
+                    "chrom": args.chrom,
+                    "pos": args.pos,
+                    "ref": args.ref,
+                    "alt": args.alt,
+                    "embedding": embedding,
+                    "clinical_significance": args.clinical_significance,
+                }
+                
+                # Add variant
+                add_variants(table, [variant])
+                
+                span.set_vcf_attributes(
+                    success=True,
+                    addition_time_ms=(time.time() - start_time) * 1000,
+                    variants_added=1,
+                    has_clinical_significance=bool(args.clinical_significance)
+                )
+                
+                print(f"Added variant {args.variant_id} to LanceDB.")
+                
+            except Exception as e:
+                span.set_vcf_attributes(
+                    success=False,
+                    error_message=str(e)
+                )
+                print(f"❌ Error adding variant: {e}", file=sys.stderr)
+                sys.exit(1)
         return
     elif args.command == "search-embedding":
-        from vcf_agent.lancedb_integration import get_db, get_or_create_table, search_by_embedding
-        db = get_db(args.db_path)
-        table = get_or_create_table(db, args.table_name)
-        embedding = [float(x) for x in args.embedding.split(",")]
-        results = search_by_embedding(table, embedding, limit=args.limit, filter_sql=args.filter_sql)
-        print(results)
+        with vcf_operation_context("cli_search_embedding", args.db_path) as span:
+            span.set_vcf_attributes(
+                operation="embedding_search",
+                limit=args.limit,
+                has_filter=bool(args.filter_sql)
+            )
+            
+            if args.filter_sql:
+                # Mask sensitive data in filter for tracing
+                from vcf_agent.lancedb_integration import mask_sensitive_sql
+                masked_filter = mask_sensitive_sql(args.filter_sql)
+                span.set_vcf_attributes(filter_sql_masked=masked_filter)
+            
+            try:
+                from vcf_agent.lancedb_integration import get_db, get_or_create_table, search_by_embedding
+                
+                start_time = time.time()
+                
+                # Parse embedding
+                embedding = [float(x) for x in args.embedding.split(",")]
+                span.set_vcf_attributes(
+                    query_embedding_dimensions=len(embedding),
+                    embedding_parsed=True
+                )
+                
+                # Get database and table
+                db = get_db(args.db_path)
+                table = get_or_create_table(db, args.table_name)
+                
+                # Perform search
+                results = search_by_embedding(table, embedding, limit=args.limit, filter_sql=args.filter_sql)
+                
+                span.set_vcf_attributes(
+                    success=True,
+                    search_time_ms=(time.time() - start_time) * 1000,
+                    results_found=len(results),
+                    results_returned=min(len(results), args.limit)
+                )
+                
+                print(results)
+                
+            except Exception as e:
+                span.set_vcf_attributes(
+                    success=False,
+                    error_message=str(e)
+                )
+                print(f"❌ Error searching embeddings: {e}", file=sys.stderr)
+                sys.exit(1)
         return
     elif args.command == "update-variant":
         from vcf_agent.lancedb_integration import get_db, get_or_create_table, update_variant

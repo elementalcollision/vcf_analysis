@@ -1,0 +1,286 @@
+groups:
+  - name: vcf-agent.critical
+    rules:
+      # High error rate alert
+      - alert: VCFAgentHighErrorRate
+        expr: >
+          100 * (
+            rate(vcf_agent_http_requests_total{status=~"5.."}[5m]) /
+            rate(vcf_agent_http_requests_total[5m])
+          ) > 10
+        for: 5m
+        labels:
+          severity: critical
+          service: vcf-agent
+        annotations:
+          summary: "VCF Agent experiencing high error rate"
+          description: >
+            Error rate is {{ $value | humanizePercentage }} for service {{ $labels.service_name }}
+            on instance {{ $labels.instance }}. This indicates a critical issue requiring immediate attention.
+          runbook_url: "https://docs.genomics.local/runbooks/vcf-agent/high-error-rate"
+
+      # Service down alert
+      - alert: VCFAgentDown
+        expr: up{job="vcf-agent"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: vcf-agent
+        annotations:
+          summary: "VCF Agent instance is down"
+          description: >
+            VCF Agent instance {{ $labels.instance }} has been down for more than 1 minute.
+            This requires immediate investigation.
+          runbook_url: "https://docs.genomics.local/runbooks/vcf-agent/service-down"
+
+      # Memory optimization failure
+      - alert: VCFAgentMemoryOptimizationFailed
+        expr: vcf_agent_memory_optimization_reduction_percent < 40
+        for: 15m
+        labels:
+          severity: critical
+          service: vcf-agent
+        annotations:
+          summary: "VCF Agent memory optimization not meeting targets"
+          description: >
+            Memory reduction is only {{ $value | humanizePercentage }}, which is below the 40% minimum target.
+            This indicates potential memory optimization system failure.
+          runbook_url: "https://docs.genomics.local/runbooks/vcf-agent/memory-optimization"
+
+  - name: vcf-agent.warning
+    rules:
+      # High latency for embedding generation
+      - alert: VCFAgentEmbeddingGenerationSlow
+        expr: >
+          histogram_quantile(0.95,
+            rate(vcf_agent_embedding_generation_duration_seconds_bucket[5m])
+          ) > 2.0
+        for: 10m
+        labels:
+          severity: warning
+          service: vcf-agent
+        annotations:
+          summary: "VCF Agent embedding generation is slow"
+          description: >
+            P95 latency for embedding generation is {{ $value | humanizeDuration }}, 
+            which exceeds the 2-second threshold on instance {{ $labels.instance }}.
+          runbook_url: "https://docs.genomics.local/runbooks/vcf-agent/slow-embedding"
+
+      # High CPU usage
+      - alert: VCFAgentHighCPUUsage
+        expr: >
+          100 * (
+            1 - avg by (instance) (
+              rate(system_cpu_time_seconds_total{mode="idle",job="vcf-agent"}[5m])
+            )
+          ) > 80
+        for: 15m
+        labels:
+          severity: warning
+          service: vcf-agent
+        annotations:
+          summary: "VCF Agent high CPU usage"
+          description: >
+            CPU usage is {{ $value | humanizePercentage }} on instance {{ $labels.instance }},
+            which exceeds the 80% threshold.
+          runbook_url: "https://docs.genomics.local/runbooks/vcf-agent/high-cpu"
+
+      # High memory usage
+      - alert: VCFAgentHighMemoryUsage
+        expr: >
+          100 * (
+            1 - (system_memory_available_bytes{job="vcf-agent"} / 
+                 system_memory_total_bytes{job="vcf-agent"})
+          ) > 85
+        for: 10m
+        labels:
+          severity: warning
+          service: vcf-agent
+        annotations:
+          summary: "VCF Agent high memory usage"
+          description: >
+            Memory usage is {{ $value | humanizePercentage }} on instance {{ $labels.instance }},
+            which exceeds the 85% threshold.
+          runbook_url: "https://docs.genomics.local/runbooks/vcf-agent/high-memory"
+
+      # AI provider high latency
+      - alert: VCFAgentAIProviderSlow
+        expr: >
+          histogram_quantile(0.95,
+            rate(vcf_agent_ai_request_duration_seconds_bucket[5m])
+          ) > 5.0
+        for: 10m
+        labels:
+          severity: warning
+          service: vcf-agent
+        annotations:
+          summary: "VCF Agent AI provider requests are slow"
+          description: >
+            P95 latency for AI provider {{ $labels.provider }} is {{ $value | humanizeDuration }},
+            which exceeds the 5-second threshold.
+          runbook_url: "https://docs.genomics.local/runbooks/vcf-agent/slow-ai-provider"
+
+      # Low VCF processing throughput
+      - alert: VCFAgentLowThroughput
+        expr: rate(vcf_agent_variants_processed_total[5m]) < 100
+        for: 20m
+        labels:
+          severity: warning
+          service: vcf-agent
+        annotations:
+          summary: "VCF Agent low processing throughput"
+          description: >
+            VCF variant processing rate is {{ $value | humanizeDecimalBytes }} variants/second
+            on instance {{ $labels.instance }}, which is below the expected 100 variants/second minimum.
+          runbook_url: "https://docs.genomics.local/runbooks/vcf-agent/low-throughput"
+
+  - name: vcf-agent.info
+    rules:
+      # High request rate (informational)
+      - alert: VCFAgentHighRequestRate
+        expr: rate(vcf_agent_http_requests_total[5m]) > 50
+        for: 5m
+        labels:
+          severity: info
+          service: vcf-agent
+        annotations:
+          summary: "VCF Agent experiencing high request rate"
+          description: >
+            Request rate is {{ $value | humanizeDecimalBytes }} requests/second
+            on instance {{ $labels.instance }}. This is informational and may indicate increased usage.
+
+      # Cache hit rate below optimal
+      - alert: VCFAgentLowCacheHitRate
+        expr: >
+          100 * (
+            rate(vcf_agent_cache_hits_total[10m]) /
+            (rate(vcf_agent_cache_hits_total[10m]) + rate(vcf_agent_cache_misses_total[10m]))
+          ) < 90
+        for: 30m
+        labels:
+          severity: info
+          service: vcf-agent
+        annotations:
+          summary: "VCF Agent cache hit rate below optimal"
+          description: >
+            Cache hit rate is {{ $value | humanizePercentage }} on instance {{ $labels.instance }},
+            which is below the optimal 90% threshold. Consider cache tuning.
+
+      # Database connection pool usage
+      - alert: VCFAgentHighDBConnectionUsage
+        expr: >
+          100 * (
+            vcf_agent_db_connections_active /
+            vcf_agent_db_connections_max
+          ) > 80
+        for: 10m
+        labels:
+          severity: info
+          service: vcf-agent
+        annotations:
+          summary: "VCF Agent high database connection pool usage"
+          description: >
+            Database connection pool usage is {{ $value | humanizePercentage }}
+            on instance {{ $labels.instance }}, which may indicate need for connection pool tuning.
+
+  - name: vcf-agent.ai-providers
+    rules:
+      # OpenAI API errors
+      - alert: VCFAgentOpenAIErrors
+        expr: >
+          100 * (
+            rate(vcf_agent_ai_requests_total{provider="openai",status=~"4..|5.."}[5m]) /
+            rate(vcf_agent_ai_requests_total{provider="openai"}[5m])
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: vcf-agent
+          provider: openai
+        annotations:
+          summary: "VCF Agent OpenAI API error rate high"
+          description: >
+            OpenAI API error rate is {{ $value | humanizePercentage }} which exceeds 5% threshold.
+            This may indicate API issues or quota problems.
+          runbook_url: "https://docs.genomics.local/runbooks/vcf-agent/openai-errors"
+
+      # Anthropic API errors
+      - alert: VCFAgentAnthropicErrors
+        expr: >
+          100 * (
+            rate(vcf_agent_ai_requests_total{provider="anthropic",status=~"4..|5.."}[5m]) /
+            rate(vcf_agent_ai_requests_total{provider="anthropic"}[5m])
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: vcf-agent
+          provider: anthropic
+        annotations:
+          summary: "VCF Agent Anthropic API error rate high"
+          description: >
+            Anthropic API error rate is {{ $value | humanizePercentage }} which exceeds 5% threshold.
+            This may indicate API issues or quota problems.
+          runbook_url: "https://docs.genomics.local/runbooks/vcf-agent/anthropic-errors"
+
+      # AI provider rate limiting
+      - alert: VCFAgentAIProviderRateLimit
+        expr: >
+          rate(vcf_agent_ai_requests_total{status="429"}[5m]) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: vcf-agent
+        annotations:
+          summary: "VCF Agent hitting AI provider rate limits"
+          description: >
+            AI provider {{ $labels.provider }} is returning rate limit errors at 
+            {{ $value }} requests/second. Consider implementing backoff strategies.
+          runbook_url: "https://docs.genomics.local/runbooks/vcf-agent/rate-limiting"
+
+  - name: vcf-agent.tracing
+    rules:
+      # Tracing data loss
+      - alert: VCFAgentTracingDataLoss
+        expr: >
+          100 * (
+            rate(otelcol_exporter_sent_spans_total[5m]) /
+            rate(otelcol_receiver_accepted_spans_total[5m])
+          ) < 95
+        for: 10m
+        labels:
+          severity: warning
+          service: vcf-agent
+        annotations:
+          summary: "VCF Agent tracing data loss detected"
+          description: >
+            Tracing export success rate is {{ $value | humanizePercentage }}, indicating
+            potential data loss in the observability pipeline.
+          runbook_url: "https://docs.genomics.local/runbooks/vcf-agent/tracing-data-loss"
+
+      # High trace sampling
+      - alert: VCFAgentHighTraceSampling
+        expr: otelcol_processor_probabilistic_sampler_sampling_percentage > 50
+        for: 5m
+        labels:
+          severity: info
+          service: vcf-agent
+        annotations:
+          summary: "VCF Agent high trace sampling rate"
+          description: >
+            Trace sampling rate is {{ $value | humanizePercentage }}, which is unusually high
+            for production. Verify if this is intentional.
+
+      # OpenTelemetry Collector down
+      - alert: VCFAgentOTelCollectorDown
+        expr: up{job="otel-collector"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: vcf-agent
+        annotations:
+          summary: "VCF Agent OpenTelemetry Collector is down"
+          description: >
+            OpenTelemetry Collector instance {{ $labels.instance }} is down,
+            which will impact observability data collection.
+          runbook_url: "https://docs.genomics.local/runbooks/vcf-agent/otel-collector-down" 
