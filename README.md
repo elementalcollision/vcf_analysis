@@ -33,14 +33,10 @@
 
 **Testing & Quality**
 - [🧪 **Testing Guide**](docs/TESTING.md) - Comprehensive testing strategies and procedures
-- [⚡ **Load Testing Summary**](LOAD_TESTING_SESSION_SUMMARY.md) - Performance testing results and analysis
-- [🔍 **Prompt Contracts Demo**](test_prompt_contracts_demo.py) - AI prompt validation system
 
 **Project Evolution**
 - [📅 **Changelog**](CHANGELOG.md) - Complete project history and version changes
 - [🔧 **Apache Iggy Implementation**](APACHE_IGGY_IMPLEMENTATION_PLAN.md) - Streaming architecture implementation
-- [📁 **Codebase Streamlining**](CODEBASE_STREAMLINING_SUMMARY.md) - Code optimization and cleanup summary
-- [🐛 **Path Fixes Summary**](PATH_FIXES_SUMMARY.md) - Critical path resolution documentation
 
 **Monitoring & Operations**  
 - [📊 **Performance Reports**](performance_reports/) - Detailed performance analysis and benchmarks
