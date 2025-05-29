@@ -1012,10 +1012,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **BCFtools Team** for the excellent genomics toolkit
-- **LanceDB** for high-performance vector database
-- **Kuzu** for graph database capabilities
-- **Ollama** for local AI model serving
+- **[BCFtools Team](https://samtools.github.io/bcftools/)** for the excellent genomics toolkit
+- **[LanceDB](https://lancedb.github.io/lancedb/)** for high-performance vector database
+- **[Kuzu](https://kuzudb.com/)** for graph database capabilities
+- **[Ollama](https://ollama.com/)** for local AI model serving
+- **[Apache Iggy](https://iggy.apache.org/)** for ultra-high-performance message streaming
 - **Open Source Community** for continuous inspiration
 
 ---
