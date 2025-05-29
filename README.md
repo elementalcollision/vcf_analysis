@@ -19,6 +19,8 @@
 - [🧠 **Memory Optimization Features**](docs/MEMORY_OPTIMIZATION_FEATURES.md) - Detailed feature documentation and usage examples
 - [📊 **Production Monitoring**](docs/PRODUCTION_MONITORING.md) - Complete observability stack and monitoring guide
 - [🏗️ **Architecture Guide**](docs/ARCHITECTURE_GUIDE.md) - Complete system architecture and design patterns
+- [📖 **Usage Examples**](docs/USAGE_EXAMPLES.md) - Comprehensive usage examples for all interfaces
+- [🛠️ **Tools Guide**](docs/TOOLS_GUIDE.md) - Detailed documentation for all 15+ specialized tools
 - [🏗️ **Phase 5.2 Architecture**](PHASE5_2_ARCHITECTURE_SUMMARY.md) - Dual platform coordination (Apache Iggy + Kafka)
 - [📊 **Project Status**](PROJECT_STATUS.md) - Current development status and achievements
 
@@ -489,202 +491,84 @@ sequenceDiagram
 
 **📖 For complete system architecture, component details, and design patterns**: [Architecture Guide Documentation](docs/ARCHITECTURE_GUIDE.md)
 
-## 🚀 Usage Examples
+## 🚀 Usage Examples Overview
 
-### Natural Language Interface
+**Multiple Interface Support**: **Natural Language + Direct Tools + CLI** ✅
 
+The VCF Analysis Agent provides comprehensive interfaces for genomic analysis, from natural language conversations to direct tool usage and command-line operations.
+
+### Interface Types
+| Interface | Use Case | Status |
+|-----------|----------|--------|
+| **Natural Language** | Conversational analysis, complex workflows | ✅ Production |
+| **Direct Tool Usage** | Programmatic access, custom scripts | ✅ Production |
+| **Command Line** | Batch processing, shell integration | ✅ Production |
+| **Data Store API** | Database operations, search queries | ✅ Production |
+
+### Quick Examples
 ```python
-from src.vcf_agent.agent import get_agent_with_session
+# Natural Language Interface
+response = agent("Analyze patient.vcf for pathogenic variants")
 
-# Create AI agent
-agent = get_agent_with_session(config, "ollama")
-
-# Natural conversation
-response = agent("Hello! What can you help me with?")
-# → "I can help you analyze VCF files, validate formats, compare variants..."
-
-# Complex analysis request
-response = agent("""
-Analyze sample_data/patient.vcf:
-1. Validate the file format
-2. Find pathogenic variants
-3. Generate clinical summary
-4. Load into graph database
-""")
-# → Executes multi-step workflow automatically
-```
-
-### Direct Tool Usage
-
-```python
-# Validate VCF file
+# Direct Tool Usage  
 result = agent.validate_vcf("sample_data/example.vcf")
+stats = agent.bcftools_stats_tool("input.vcf")
 
-# Generate comprehensive statistics
-stats = agent.bcftools_stats_tool("sample_data/example.vcf")
-
-# AI-powered comparison
-comparison = agent.ai_vcf_comparison_tool(
-    "file1.vcf", "file2.vcf", 
-    focus="clinical_significance"
-)
-
-# Load into graph database
-graph_result = agent.load_vcf_into_graph_db_tool(
-    "patient.vcf", "PATIENT_001"
-)
+# Data Store Operations
+manager = create_data_store_manager()
+results = manager.search_variants("pathogenic BRCA1 variant")
 ```
 
-### Command Line Interface
-
+### CLI Examples
 ```bash
 # Quick analysis
 vcf-agent analyze sample_data/example.vcf --output results/
 
-# Comprehensive workflow
-vcf-agent workflow \
-  --input patient.vcf \
-  --validate \
-  --ai-analysis \
-  --graph-load \
-  --output clinical_report.json
-
-# Search similar variants
-vcf-agent search "pathogenic BRCA1 variant" --limit 10
-
 # Batch processing
 vcf-agent batch process_list.txt --parallel 4
+
+# Search operations
+vcf-agent search "pathogenic BRCA1 variant" --limit 10
 ```
 
-### Data Store Operations
+**📖 For complete usage examples, workflows, and integration patterns**: [Usage Examples Documentation](docs/USAGE_EXAMPLES.md)
 
+## 🛠️ Available Tools Overview
+
+**15+ Specialized Tools**: **Validation + BCFtools + AI Analysis + Data Management** ✅
+
+The VCF Analysis Agent provides a comprehensive suite of specialized tools for genomic analysis, from VCF validation to AI-powered insights and database operations.
+
+### Tool Categories
+| Category | Tools | Status |
+|----------|-------|--------|
+| **Validation** | validate_vcf, echo | ✅ Production |
+| **BCFtools Suite** | view, query, filter, norm, stats, annotate | ✅ Production |
+| **AI Analysis** | vcf_analysis_summary, ai_vcf_comparison | ✅ Production |
+| **Data Management** | graph_load, search_variants | ✅ Production |
+
+### Key Tool Features
+- **Intelligent Tool Selection**: AI automatically selects appropriate tools
+- **Natural Language Interface**: Tools accessible via conversation
+- **Workflow Integration**: Chain tools for complex analysis pipelines
+- **Error Handling**: Robust error handling with graceful fallbacks
+
+### Quick Tool Examples
 ```python
-from src.vcf_agent.data_store_manager import create_data_store_manager
+# Validation Tools
+agent.validate_vcf("sample_data/example.vcf")
 
-# Initialize data store manager
-manager = create_data_store_manager(
-    lancedb_path="./data/lancedb",
-    kuzu_path="./data/kuzu_db"
-)
+# BCFtools Integration
+agent.bcftools_filter_tool(input_file="input.vcf", output_file="filtered.vcf", include_expression="QUAL>30")
 
-# Add sample with variants
-result = manager.add_sample_with_variants(
-    sample_data={"id": "SAMPLE_001", "name": "Patient 1"},
-    variants_data=[{
-        "id": "chr1-123456-A-G",
-        "chr": "1", "pos": 123456,
-        "ref": "A", "alt": "G",
-        "clinical_significance": "Pathogenic"
-    }]
-)
+# AI Analysis
+agent.vcf_analysis_summary_tool(vcf_file="patient.vcf", analysis_type="clinical")
 
-# Search variants
-results = manager.search_variants(
-    query="pathogenic variant in BRCA1",
-    search_type="hybrid",
-    limit=10
-)
-
-# Get sample analysis
-analysis = manager.get_sample_analysis("SAMPLE_001")
+# Database Operations
+agent.load_vcf_into_graph_db_tool(vcf_file="patient.vcf", sample_id="PATIENT_001")
 ```
 
-## 🛠️ Available Tools
-
-### Core Tools Overview
-
-```mermaid
-graph TD
-    TOOLS[🛠️ VCF Agent Tools] --> VALIDATION[📋 Validation Tools]
-    TOOLS --> BCFTOOLS[🔧 BCFtools Suite]
-    TOOLS --> AI_TOOLS[🤖 AI Analysis Tools]
-    TOOLS --> DATA_TOOLS[🗄️ Data Management]
-    
-    VALIDATION --> VALIDATE[validate_vcf<br/>File validation]
-    VALIDATION --> ECHO[echo<br/>System test]
-    
-    BCFTOOLS --> VIEW[bcftools_view_tool<br/>View & subset]
-    BCFTOOLS --> QUERY[bcftools_query_tool<br/>Extract data]
-    BCFTOOLS --> FILTER[bcftools_filter_tool<br/>Filter variants]
-    BCFTOOLS --> NORM[bcftools_norm_tool<br/>Normalize]
-    BCFTOOLS --> STATS[bcftools_stats_tool<br/>Statistics]
-    BCFTOOLS --> ANNOTATE[bcftools_annotate_tool<br/>Annotations]
-    
-    AI_TOOLS --> SUMMARY[vcf_analysis_summary_tool<br/>AI analysis]
-    AI_TOOLS --> COMPARE[ai_vcf_comparison_tool<br/>File comparison]
-    
-    DATA_TOOLS --> GRAPH_LOAD[load_vcf_into_graph_db_tool<br/>Graph database]
-    DATA_TOOLS --> SEARCH[search_variants<br/>Similarity search]
-    
-    style TOOLS fill:#00bf7d,color:#000000
-    style VALIDATION fill:#00b4c5,color:#000000
-    style BCFTOOLS fill:#0073e6,color:#ffffff
-    style AI_TOOLS fill:#2546f0,color:#ffffff
-    style DATA_TOOLS fill:#5928ed,color:#ffffff
-```
-
-### Tool Examples
-
-#### VCF Validation
-```python
-# Basic validation
-result = agent.validate_vcf("sample_data/example.vcf")
-# → "✅ VCF file 'sample_data/example.vcf' is valid and passed all validation checks."
-
-# Natural language
-response = agent("Please validate my VCF file and check for any issues")
-```
-
-#### BCFtools Integration
-```python
-# Filter high-quality variants
-result = agent.bcftools_filter_tool(
-    input_file="input.vcf",
-    output_file="filtered.vcf",
-    include_expression="QUAL>30 && DP>10"
-)
-
-# Extract variant information
-result = agent.bcftools_query_tool(
-    input_file="input.vcf",
-    format_string="%CHROM\t%POS\t%REF\t%ALT\t%QUAL\n"
-)
-
-# Generate comprehensive statistics
-stats = agent.bcftools_stats_tool("input.vcf")
-```
-
-#### AI-Powered Analysis
-```python
-# Comprehensive variant analysis
-analysis = agent.vcf_analysis_summary_tool(
-    vcf_file="patient.vcf",
-    analysis_type="clinical"
-)
-
-# Compare two VCF files
-comparison = agent.ai_vcf_comparison_tool(
-    vcf_file1="before.vcf",
-    vcf_file2="after.vcf",
-    focus="quality_differences"
-)
-```
-
-#### Graph Database Operations
-```python
-# Load VCF into graph database
-result = agent.load_vcf_into_graph_db_tool(
-    vcf_file="patient.vcf",
-    sample_id="PATIENT_001"
-)
-
-# Search for similar variants
-results = manager.search_variants(
-    query="pathogenic BRCA1 mutation",
-    search_type="hybrid",
-    limit=10
-)
-```
+**📖 For detailed tool documentation, parameters, and advanced usage**: [Tools Guide Documentation](docs/TOOLS_GUIDE.md)
 
 ## 🔧 Troubleshooting
 
