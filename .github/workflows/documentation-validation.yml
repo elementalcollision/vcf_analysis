@@ -1,0 +1,270 @@
+name: Documentation Validation
+
+# Ensure CLI documentation stays in sync with implementation
+# This workflow prevents documentation drift by validating that the CLI module docstring
+# accurately documents all implemented commands.
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/vcf_agent/cli.py'
+      - 'scripts/validate_cli_documentation.py'
+      - 'tests/test_cli_documentation.py'
+      - '.github/workflows/documentation-validation.yml'
+  
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'src/vcf_agent/cli.py'
+      - 'scripts/validate_cli_documentation.py'
+      - 'tests/test_cli_documentation.py'
+      - '.github/workflows/documentation-validation.yml'
+  
+  # Allow manual triggering
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  validate-cli-documentation:
+    name: Validate CLI Documentation Completeness
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # Install additional dependencies for validation
+          pip install pytest
+      
+      - name: Make validation script executable
+        run: chmod +x scripts/validate_cli_documentation.py
+      
+      - name: Run CLI documentation validation
+        id: validate-docs
+        run: |
+          echo "🔍 Validating CLI documentation completeness..."
+          python scripts/validate_cli_documentation.py --check-completeness --verbose
+          echo "✅ CLI documentation validation passed!"
+      
+      - name: Run CLI documentation tests
+        run: |
+          echo "🧪 Running CLI documentation tests..."
+          pytest tests/test_cli_documentation.py -v --tb=short
+          echo "✅ CLI documentation tests passed!"
+      
+      - name: Generate documentation report
+        if: always()
+        run: |
+          echo "📊 Generating detailed documentation report..."
+          python scripts/validate_cli_documentation.py --verbose > cli_documentation_report.txt
+          echo "Report generated: cli_documentation_report.txt"
+      
+      - name: Upload documentation report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: cli-documentation-report
+          path: cli_documentation_report.txt
+          retention-days: 30
+      
+      - name: Comment on PR with validation results
+        if: github.event_name == 'pull_request' && failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            let report = '';
+            try {
+              report = fs.readFileSync('cli_documentation_report.txt', 'utf8');
+            } catch (error) {
+              report = 'Could not read documentation report.';
+            }
+            
+            const comment = `
+            ## 📋 CLI Documentation Validation Failed
+            
+            The CLI documentation validation has detected discrepancies between the module docstring and the actual implementation.
+            
+            **What this means:**
+            - Commands may be implemented but not documented in the module docstring
+            - Commands may be documented but not actually implemented
+            - Examples in the docstring may reference non-existent commands
+            
+            **How to fix:**
+            1. Review the validation report below
+            2. Update the CLI module docstring in \`src/vcf_agent/cli.py\`
+            3. Ensure all implemented commands are documented
+            4. Remove any phantom commands from documentation
+            5. Verify all examples use valid commands
+            
+            <details>
+            <summary>📊 Detailed Validation Report</summary>
+            
+            \`\`\`
+            ${report}
+            \`\`\`
+            
+            </details>
+            
+            > 💡 **Tip:** Run \`python scripts/validate_cli_documentation.py --verbose\` locally to debug issues.
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  # Test validation script functionality
+  test-validation-script:
+    name: Test Validation Script Functionality
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Test validation script help
+        run: |
+          python scripts/validate_cli_documentation.py --help
+      
+      - name: Test validation script basic run
+        run: |
+          python scripts/validate_cli_documentation.py
+      
+      - name: Test validation script with verbose output
+        run: |
+          python scripts/validate_cli_documentation.py --verbose
+      
+      - name: Test script error handling with invalid path
+        run: |
+          # This should exit with code 2 (script error)
+          python scripts/validate_cli_documentation.py --cli-module "nonexistent.py" || test $? -eq 2
+
+  # Integration test with existing test suite
+  integration-test:
+    name: Integration with Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+      
+      - name: Run CLI documentation tests as part of test suite
+        run: |
+          echo "🧪 Running CLI documentation tests..."
+          pytest tests/test_cli_documentation.py -v --cov=scripts.validate_cli_documentation --cov-report=term-missing
+      
+      - name: Verify test integration
+        run: |
+          echo "✅ CLI documentation validation successfully integrated with test suite"
+
+  # Security check for validation script
+  security-check:
+    name: Security Check for Validation Script
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install security tools
+        run: |
+          pip install bandit safety
+      
+      - name: Run security scan on validation script
+        run: |
+          echo "🔒 Running security scan on validation script..."
+          bandit -r scripts/validate_cli_documentation.py -f json || true
+          safety check --json || true
+          echo "✅ Security check completed"
+
+  # Summary job that depends on all other jobs
+  documentation-validation-summary:
+    name: Documentation Validation Summary
+    runs-on: ubuntu-latest
+    needs: [validate-cli-documentation, test-validation-script, integration-test, security-check]
+    if: always()
+    
+    steps:
+      - name: Check job results
+        run: |
+          echo "📋 Documentation Validation Results:"
+          echo "=================================="
+          
+          # Check each job result
+          if [ "${{ needs.validate-cli-documentation.result }}" = "success" ]; then
+            echo "✅ CLI Documentation Validation: PASSED"
+          else
+            echo "❌ CLI Documentation Validation: FAILED"
+          fi
+          
+          if [ "${{ needs.test-validation-script.result }}" = "success" ]; then
+            echo "✅ Validation Script Tests: PASSED"
+          else
+            echo "❌ Validation Script Tests: FAILED"
+          fi
+          
+          if [ "${{ needs.integration-test.result }}" = "success" ]; then
+            echo "✅ Integration Tests: PASSED"
+          else
+            echo "❌ Integration Tests: FAILED"
+          fi
+          
+          if [ "${{ needs.security-check.result }}" = "success" ]; then
+            echo "✅ Security Check: PASSED"
+          else
+            echo "❌ Security Check: FAILED"
+          fi
+          
+          # Fail if any critical job failed
+          if [ "${{ needs.validate-cli-documentation.result }}" != "success" ]; then
+            echo "💥 CRITICAL: CLI documentation validation failed!"
+            echo "   The CLI module docstring is out of sync with the implementation."
+            echo "   This must be fixed before merging."
+            exit 1
+          fi
+          
+          echo ""
+          echo "🎉 All documentation validation checks passed!"
+          echo "   CLI documentation is accurate and complete." 

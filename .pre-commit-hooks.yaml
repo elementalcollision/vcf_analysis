@@ -1,0 +1,16 @@
+repos:
+  - repo: local
+    hooks:
+      - id: cli-documentation-validation
+        name: CLI Documentation Validation
+        entry: python scripts/validate_cli_documentation.py --check-completeness
+        language: system
+        files: ^src/vcf_agent/cli\.py$
+        description: Validate that CLI module docstring documents all implemented commands
+        
+      - id: cli-documentation-tests
+        name: CLI Documentation Tests
+        entry: pytest tests/test_cli_documentation.py -v
+        language: system
+        files: ^(src/vcf_agent/cli\.py|tests/test_cli_documentation\.py)$
+        description: Run CLI documentation completeness tests 
