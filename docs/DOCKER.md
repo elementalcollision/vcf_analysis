@@ -8,27 +8,96 @@ The VCF Analysis Agent is fully containerized using Docker with a multi-stage bu
 
 ### Multi-Stage Build Strategy
 
+```mermaid
+flowchart TD
+    subgraph "Docker Multi-Stage Build Architecture"
+        subgraph Stage1 ["🔨 Stage 1: Builder"]
+            A1[Ubuntu Base Image]:::builder
+            A2[Build Tools & Compilers]:::builder
+            A3[bcftools/htslib Compilation]:::builder
+            A4[Python Dependencies Build]:::builder
+            A5[Application Installation]:::builder
+            A1 --> A2 --> A3 --> A4 --> A5
+        end
+        
+        subgraph Stage2 ["🚀 Stage 2: Runtime Production"]
+            B1[Debian Slim Base]:::runtime
+            B2[Runtime Dependencies Only]:::runtime
+            B3[Non-root User Setup]:::runtime
+            B4[Security Hardening]:::runtime
+            B5[Minimal Attack Surface]:::runtime
+            B1 --> B2 --> B3 --> B4 --> B5
+        end
+        
+        subgraph Stage3 ["🛠️ Stage 3: Development"]
+            C1[Runtime Base + Dev Tools]:::development
+            C2[Testing Frameworks]:::development
+            C3[Debugging Utilities]:::development
+            C4[Hot Reload Support]:::development
+            C1 --> C2 --> C3 --> C4
+        end
+        
+        Stage1 -->|Copy Artifacts| Stage2
+        Stage2 -->|Extend Base| Stage3
+    end
+    
+    classDef builder fill:#00bf7d,stroke:#00a085,stroke-width:2px,color:#000000
+    classDef runtime fill:#0073e6,stroke:#005bb5,stroke-width:2px,color:#ffffff
+    classDef development fill:#2546f0,stroke:#1a37c7,stroke-width:2px,color:#ffffff
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Docker Architecture                      │
-├─────────────────────────────────────────────────────────────┤
-│ Stage 1: Builder                                           │
-│ ├── Ubuntu base with build tools                           │
-│ ├── bcftools/htslib compilation                            │
-│ ├── Python dependencies compilation                        │
-│ └── Application installation                               │
-├─────────────────────────────────────────────────────────────┤
-│ Stage 2: Runtime (Production)                              │
-│ ├── Debian slim base                                       │
-│ ├── Runtime dependencies only                              │
-│ ├── Non-root user setup                                    │
-│ └── Security hardening                                     │
-├─────────────────────────────────────────────────────────────┤
-│ Stage 3: Development                                       │
-│ ├── Runtime + development tools                            │
-│ ├── Testing frameworks                                     │
-│ └── Debugging utilities                                    │
-└─────────────────────────────────────────────────────────────┘
+
+### Container Deployment Architecture
+
+```mermaid
+graph TB
+    subgraph "🐳 Docker Container Ecosystem"
+        subgraph App ["VCF Analysis Agent"]
+            Main[Main Application:8000]:::app
+            Health[Health Checks]:::app
+            Logs[Logging System]:::app
+        end
+        
+        subgraph Monitor ["📊 Monitoring Stack"]
+            Prom[Prometheus:9090]:::monitor
+            Graf[Grafana:3000]:::monitor
+            Jaeger[Jaeger:16686]:::monitor
+        end
+        
+        subgraph DB ["💾 Database Layer"]
+            Lance[LanceDB Volume]:::database
+            Kuzu[Kuzu Volume]:::database
+        end
+        
+        subgraph Storage ["💿 Storage Volumes"]
+            Data[/app/data]:::storage
+            Logs2[/app/logs]:::storage
+            Tmp[/app/tmp]:::storage
+        end
+        
+        subgraph AI ["🤖 AI Services"]
+            Ollama[Ollama:11434]:::ai
+            OpenAI[OpenAI API]:::ai
+        end
+    end
+    
+    Main --> Lance
+    Main --> Kuzu
+    Main --> Data
+    Main --> Logs2
+    Main --> Tmp
+    
+    Prom --> Main
+    Graf --> Prom
+    Jaeger --> Main
+    
+    Main --> Ollama
+    Main --> OpenAI
+    
+    classDef app fill:#00bf7d,stroke:#00a085,stroke-width:2px,color:#000000
+    classDef monitor fill:#00b4c5,stroke:#0099aa,stroke-width:2px,color:#000000
+    classDef database fill:#0073e6,stroke:#005bb5,stroke-width:2px,color:#ffffff
+    classDef storage fill:#2546f0,stroke:#1a37c7,stroke-width:2px,color:#ffffff
+    classDef ai fill:#5928ed,stroke:#4520c7,stroke-width:2px,color:#ffffff
 ```
 
 ### Key Features
@@ -64,6 +133,62 @@ docker run --rm -it vcf-analysis-agent:latest --help
 ```
 
 ## 🔧 Building Images
+
+### Build Flow
+
+```mermaid
+flowchart LR
+    subgraph "🔨 Docker Build Process"
+        Start([Start Build]):::start
+        
+        subgraph Preparation
+            Source[Source Code]:::source
+            Deps[Dependencies]:::source
+            Config[Configuration]:::source
+        end
+        
+        subgraph BuildStage ["Build Stage"]
+            Compile[Compile bcftools/htslib]:::build
+            Install[Install Python Deps]:::build
+            Package[Package Application]:::build
+        end
+        
+        subgraph RuntimeStage ["Runtime Stage"]
+            Copy[Copy Artifacts]:::runtime
+            User[Setup Non-root User]:::runtime
+            Security[Apply Security Hardening]:::runtime
+        end
+        
+        subgraph Output
+            Prod[Production Image]:::output
+            Dev[Development Image]:::output
+        end
+        
+        Start --> Source
+        Start --> Deps
+        Start --> Config
+        
+        Source --> Compile
+        Deps --> Install
+        Config --> Package
+        
+        Compile --> Copy
+        Install --> Copy
+        Package --> Copy
+        
+        Copy --> User
+        User --> Security
+        
+        Security --> Prod
+        Security --> Dev
+    end
+    
+    classDef start fill:#00bf7d,stroke:#00a085,stroke-width:3px,color:#000000
+    classDef source fill:#00b4c5,stroke:#0099aa,stroke-width:2px,color:#000000
+    classDef build fill:#0073e6,stroke:#005bb5,stroke-width:2px,color:#ffffff
+    classDef runtime fill:#2546f0,stroke:#1a37c7,stroke-width:2px,color:#ffffff
+    classDef output fill:#5928ed,stroke:#4520c7,stroke-width:2px,color:#ffffff
+```
 
 ### Using the Build Script
 
@@ -111,6 +236,48 @@ docker buildx build --platform linux/amd64,linux/arm64 \
 | `GIT_COMMIT` | current | Git commit hash |
 
 ## 🚢 Deployment
+
+### Deployment Architecture
+
+```mermaid
+graph TB
+    subgraph "🌐 Deployment Options"
+        subgraph Docker ["🐳 Docker Compose"]
+            DC1[Production Stack]:::docker
+            DC2[Development Stack]:::docker
+            DC3[Monitoring Stack]:::docker
+        end
+        
+        subgraph K8s ["☸️ Kubernetes"]
+            K1[Deployment]:::k8s
+            K2[Services]:::k8s
+            K3[Ingress]:::k8s
+            K4[ConfigMaps]:::k8s
+            K5[Secrets]:::k8s
+        end
+        
+        subgraph Standalone ["🔧 Standalone"]
+            S1[Single Container]:::standalone
+            S2[Volume Mounts]:::standalone
+            S3[Environment Config]:::standalone
+        end
+        
+        subgraph Cloud ["☁️ Cloud Platforms"]
+            AWS[AWS ECS/EKS]:::cloud
+            Azure[Azure Container Instances]:::cloud
+            GCP[Google Cloud Run]:::cloud
+        end
+    end
+    
+    Docker --> K8s
+    Standalone --> Docker
+    K8s --> Cloud
+    
+    classDef docker fill:#00bf7d,stroke:#00a085,stroke-width:2px,color:#000000
+    classDef k8s fill:#00b4c5,stroke:#0099aa,stroke-width:2px,color:#000000
+    classDef standalone fill:#0073e6,stroke:#005bb5,stroke-width:2px,color:#ffffff
+    classDef cloud fill:#2546f0,stroke:#1a37c7,stroke-width:2px,color:#ffffff
+```
 
 ### Docker Compose (Recommended)
 
@@ -262,6 +429,59 @@ The application exposes the following ports:
 | 11434 | Ollama | Local LLM service (optional) |
 
 ## 🔍 Monitoring & Observability
+
+### Observability Stack Flow
+
+```mermaid
+flowchart LR
+    subgraph "📊 Observability Pipeline"
+        subgraph App ["🐳 Application Layer"]
+            VCF[VCF Agent]:::app
+            Metrics[Metrics Endpoint]:::app
+            Traces[Trace Data]:::app
+            Logs[Application Logs]:::app
+        end
+        
+        subgraph Collection ["📥 Collection Layer"]
+            Prom[Prometheus]:::collect
+            Jaeger[Jaeger Collector]:::collect
+            LogDriver[Docker Log Driver]:::collect
+        end
+        
+        subgraph Storage ["💾 Storage Layer"]
+            PromDB[Prometheus DB]:::storage
+            JaegerDB[Jaeger Storage]:::storage
+            LogFiles[Log Files]:::storage
+        end
+        
+        subgraph Visualization ["📈 Visualization"]
+            Grafana[Grafana Dashboards]:::visual
+            JaegerUI[Jaeger UI]:::visual
+            Alerts[Alert Manager]:::visual
+        end
+    end
+    
+    VCF --> Metrics
+    VCF --> Traces
+    VCF --> Logs
+    
+    Metrics --> Prom
+    Traces --> Jaeger
+    Logs --> LogDriver
+    
+    Prom --> PromDB
+    Jaeger --> JaegerDB
+    LogDriver --> LogFiles
+    
+    PromDB --> Grafana
+    JaegerDB --> JaegerUI
+    PromDB --> Alerts
+    
+    classDef app fill:#00bf7d,stroke:#00a085,stroke-width:2px,color:#000000
+    classDef collect fill:#00b4c5,stroke:#0099aa,stroke-width:2px,color:#000000
+    classDef storage fill:#0073e6,stroke:#005bb5,stroke-width:2px,color:#ffffff
+    classDef visual fill:#2546f0,stroke:#1a37c7,stroke-width:2px,color:#ffffff
+```
 
 ### Health Checks
 
