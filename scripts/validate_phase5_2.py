@@ -34,7 +34,7 @@ from vcf_agent.phase5.streaming_coordinator import (
     StreamingCoordinator, RoutingStrategy, RoutingDecision
 )
 from vcf_agent.phase5.kafka_processor import KafkaVCFProcessor
-from vcf_agent.phase5.monitoring import PerformanceMonitor, CircuitBreaker
+from vcf_agent.phase5.monitoring import PerformanceMonitor, CircuitBreaker, CircuitBreakerState
 from vcf_agent.phase5.vcf_message import VCFVariantMessage, VCFMessageType
 from vcf_agent.phase5.config import Phase5Config, IggyConfig, KafkaConfig, Environment
 
@@ -187,50 +187,71 @@ class Phase5_2Validator:
             
             # Initial state should be closed
             initial_state = breaker.can_execute()
-            initial_state_name = breaker.state.value
+            initial_state_name = breaker.state
             assert initial_state is True
-            assert initial_state_name == "closed"
+            assert initial_state_name == CircuitBreakerState.CLOSED
+            logger.debug(f"Initial state: {initial_state_name.value}")
             
             # Record failures to trigger state change
-            for i in range(4):  # Exceed threshold
+            for i in range(4):  # Exceed threshold (3)
                 breaker.record_failure()
                 logger.debug(f"Recorded failure {i+1}, state: {breaker.state.value}")
             
             # Should now be open
-            open_state = breaker.state.value
+            open_state = breaker.state
             open_can_execute = breaker.can_execute()
-            assert open_state == "open"
+            assert open_state == CircuitBreakerState.OPEN
             assert open_can_execute is False
+            logger.debug(f"After failures - State: {open_state.value}, Can execute: {open_can_execute}")
             
             # Wait for recovery timeout
-            await asyncio.sleep(1.1)
+            logger.debug("Waiting for recovery timeout...")
+            await asyncio.sleep(1.2)  # Slightly longer than timeout
             
-            # Should transition to half-open
+            # Should transition to half-open when we call can_execute
             half_open_can_execute = breaker.can_execute()
-            half_open_state = breaker.state.value
+            half_open_state = breaker.state
             assert half_open_can_execute is True
-            assert half_open_state == "half_open"
+            assert half_open_state == CircuitBreakerState.HALF_OPEN
+            logger.debug(f"After timeout - State: {half_open_state.value}, Can execute: {half_open_can_execute}")
             
-            # Record successes to close circuit
-            for _ in range(3):
-                breaker.record_success()
+            # Record successes to close circuit - need to call can_execute to consume half-open calls
+            # and record successes appropriately
+            success_count = 0
+            while breaker.state == CircuitBreakerState.HALF_OPEN and success_count < 5:
+                if breaker.can_execute():  # This increments half_open_calls
+                    breaker.record_success()
+                    success_count += 1
+                    logger.debug(f"Success {success_count}, state: {breaker.state.value}")
+                else:
+                    break
             
             # Should be closed again
-            final_state = breaker.state.value
-            assert final_state == "closed"
+            final_state = breaker.state
+            assert final_state == CircuitBreakerState.CLOSED
+            logger.debug(f"Final state: {final_state.value}")
             
             logger.info("✅ Circuit breaker patterns validated: closed → open → half-open → closed")
             self.results["feature_validations"]["circuit_breaker"] = {
                 "status": "passed",
-                "state_transitions": ["closed", "open", "half_open", "closed"],
+                "state_transitions": [
+                    CircuitBreakerState.CLOSED.value, 
+                    CircuitBreakerState.OPEN.value, 
+                    CircuitBreakerState.HALF_OPEN.value, 
+                    CircuitBreakerState.CLOSED.value
+                ],
                 "failure_threshold": 3,
-                "recovery_timeout": 1
+                "recovery_timeout": 1,
+                "successes_to_close": success_count
             }
             self.results["tests_passed"] += 1
             return True
             
         except Exception as e:
             logger.error(f"❌ Circuit breaker validation error: {e}")
+            logger.error(f"Exception details: {type(e).__name__}: {str(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             self.results["errors"].append(f"Circuit breaker: {e}")
             self.results["tests_failed"] += 1
             return False
