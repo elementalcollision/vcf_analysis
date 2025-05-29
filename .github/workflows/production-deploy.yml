@@ -1,5 +1,24 @@
 name: Production Deployment
 
+# ENVIRONMENT SETUP REQUIRED:
+# Before using this workflow, create the following environments in GitHub repository settings:
+# 1. Go to repository Settings > Environments
+# 2. Create environment: "staging"
+#    - Add environment URL: https://vcf-agent-staging.example.com
+#    - Configure protection rules as needed
+#    - Add required secrets: SLACK_WEBHOOK_URL, etc.
+# 3. Create environment: "production" 
+#    - Add environment URL: https://vcf-agent.example.com
+#    - Enable "Required reviewers" for production deployments
+#    - Add branch protection: only allow deployments from main/tags
+#    - Add required secrets: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, SLACK_WEBHOOK_URL
+# 4. Create environment: "production-rollback"
+#    - Add environment URL: https://vcf-agent.example.com
+#    - Configure emergency rollback access
+# 
+# For more information, see:
+# https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment
+
 on:
   push:
     tags:
@@ -24,6 +43,30 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # Validate workflow configuration and environment setup
+  validate-environments:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate environment configuration
+        run: |
+          echo "✅ Validating GitHub Actions workflow configuration..."
+          echo "Repository: ${{ github.repository }}"
+          echo "Workflow: ${{ github.workflow }}"
+          echo "Event: ${{ github.event_name }}"
+          
+          # Check if this is a valid deployment trigger
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
+            echo "✅ Tag-based deployment trigger detected"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "✅ Manual deployment trigger detected"
+            echo "Target environment: ${{ github.event.inputs.environment }}"
+          else
+            echo "❌ Invalid deployment trigger"
+            exit 1
+          fi
+          
+          echo "✅ Workflow validation complete"
+
   build:
     runs-on: ubuntu-latest
     outputs:
@@ -135,27 +178,45 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, security-scan, integration-tests]
     if: github.event.inputs.environment == 'staging' || github.ref_type == 'tag'
-    environment: staging
+    environment:
+      name: staging
+      url: https://vcf-agent-staging.example.com
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Deploy to staging
+        env:
+          ENVIRONMENT: staging
+          VERSION: ${{ github.ref_name || 'latest' }}
+          IMAGE_TAG: ${{ needs.build.outputs.image-tag }}
         run: |
           echo "Deploying to staging environment..."
+          echo "Environment: $ENVIRONMENT"
+          echo "Version: $VERSION" 
+          echo "Image: $IMAGE_TAG"
           # Add staging deployment logic here
 
       - name: Run staging health checks
+        env:
+          STAGING_URL: https://vcf-agent-staging.example.com
         run: |
           echo "Running staging health checks..."
+          echo "Health check URL: $STAGING_URL/health"
           # Add staging health check logic here
 
   deploy-production:
     runs-on: ubuntu-latest
     needs: [build, security-scan, integration-tests, deploy-staging]
     if: github.event.inputs.environment == 'production' || (github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v'))
-    environment: production
+    environment:
+      name: production
+      url: https://vcf-agent.example.com
+      # Note: Production environment should be configured in repository settings with:
+      # - Required reviewers for deployment approval
+      # - Protection rules and branch restrictions
+      # - Environment secrets for AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, etc.
     
     steps:
       - name: Checkout repository
@@ -170,12 +231,19 @@ jobs:
 
       - name: Deploy to production
         id: deploy
+        env:
+          ENVIRONMENT: production
+          VERSION: ${{ github.ref_name }}
+          IMAGE_TAG: ${{ needs.build.outputs.image-tag }}
+          PRODUCTION_URL: https://vcf-agent.example.com
         run: |
           echo "Starting production deployment..."
           
           # Set deployment variables
-          VERSION=${{ github.ref_name }}
-          IMAGE_TAG=${{ needs.build.outputs.image-tag }}
+          echo "Environment: $ENVIRONMENT"
+          echo "Version: $VERSION"
+          echo "Image Tag: $IMAGE_TAG"
+          echo "Production URL: $PRODUCTION_URL"
           
           # Create deployment directory
           mkdir -p /tmp/deployment
@@ -192,6 +260,7 @@ jobs:
           LOG_LEVEL=INFO
           OTEL_SAMPLING_RATE=0.1
           IMAGE_TAG=${IMAGE_TAG}
+          PRODUCTION_URL=${PRODUCTION_URL}
           EOF
           
           # Deploy using Docker Compose
@@ -207,8 +276,11 @@ jobs:
 
       - name: Run production health checks
         id: health-check
+        env:
+          PRODUCTION_URL: https://vcf-agent.example.com
         run: |
           echo "Running production health checks..."
+          echo "Base URL: $PRODUCTION_URL"
           
           # Service health checks
           services=("vcf-agent:8080" "prometheus:9090" "grafana:3000" "jaeger:16686")
@@ -253,8 +325,11 @@ jobs:
           echo "All health checks passed!"
 
       - name: Run performance validation
+        env:
+          PRODUCTION_URL: https://vcf-agent.example.com
         run: |
           echo "Running performance validation..."
+          echo "Performance monitoring URL: $PRODUCTION_URL"
           
           # Check response times
           response_time=$(curl -w "%{time_total}" -s -o /dev/null http://localhost:8080/health)
@@ -273,8 +348,11 @@ jobs:
 
       - name: Update deployment status
         if: success()
+        env:
+          PRODUCTION_URL: https://vcf-agent.example.com
         run: |
           echo "Deployment successful!"
+          echo "Production URL: $PRODUCTION_URL"
           
           # Send success notification
           curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
@@ -286,7 +364,7 @@ jobs:
                           "type": "section",
                           "text": {
                               "type": "mrkdwn",
-                              "text": "*VCF Agent Production Deployment Successful* ✅\n\n*Version:* `${{ github.ref_name }}`\n*Commit:* `${{ github.sha }}`\n*Deployed by:* ${{ github.actor }}\n*Deployment ID:* `${{ steps.deploy.outputs.deployment-id }}`"
+                              "text": "*VCF Agent Production Deployment Successful* ✅\n\n*Version:* `${{ github.ref_name }}`\n*Commit:* `${{ github.sha }}`\n*Deployed by:* ${{ github.actor }}\n*Deployment ID:* `${{ steps.deploy.outputs.deployment-id }}`\n*URL:* '$PRODUCTION_URL'"
                           }
                       }
                   ]
@@ -296,15 +374,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: [deploy-production]
     if: failure()
-    environment: production
+    environment:
+      name: production-rollback
+      url: https://vcf-agent.example.com
+      # Note: Consider using a separate rollback environment for additional protection
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Rollback deployment
+        env:
+          PRODUCTION_URL: https://vcf-agent.example.com
         run: |
           echo "Deployment failed, initiating rollback..."
+          echo "Production URL: $PRODUCTION_URL"
           
           # Get previous successful version
           PREVIOUS_VERSION=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -2 | tail -1)
@@ -330,6 +414,8 @@ jobs:
 
       - name: Notify rollback
         if: always()
+        env:
+          PRODUCTION_URL: https://vcf-agent.example.com
         run: |
           curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
               -H 'Content-type: application/json' \
@@ -340,7 +426,7 @@ jobs:
                           "type": "section",
                           "text": {
                               "type": "mrkdwn",
-                              "text": "*VCF Agent Production Deployment Failed* 🚨\n\n*Failed Version:* `${{ github.ref_name }}`\n*Rollback Status:* In Progress\n*Incident Response:* Please check logs and investigate\n*Runbook:* https://docs.company.com/runbooks/vcf-agent"
+                              "text": "*VCF Agent Production Deployment Failed* 🚨\n\n*Failed Version:* `${{ github.ref_name }}`\n*Rollback Status:* In Progress\n*Incident Response:* Please check logs and investigate\n*Runbook:* https://docs.company.com/runbooks/vcf-agent\n*Production URL:* '$PRODUCTION_URL'"
                           }
                       }
                   ]
