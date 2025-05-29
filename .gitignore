@@ -133,4 +133,7 @@ security-reports/
 
 # Memory profiling artifacts
 memory_profiles/
-*.memray 
+*.memray
+
+# Color palette files
+vibrant-palette.txt 

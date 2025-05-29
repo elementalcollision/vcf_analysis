@@ -57,10 +57,14 @@ flowchart LR
         BATCH[Batch Processing<br/>10K+ variants/sec]
     end
     
-    style AGENT fill:#e3f2fd
-    style INSIGHTS fill:#e8f5e8
-    style LANCE fill:#fff3e0
-    style KUZU fill:#f3e5f5
+    style AGENT fill:#00bf7d,color:#000000
+    style INSIGHTS fill:#00b4c5,color:#000000
+    style SEARCH fill:#0073e6,color:#ffffff
+    style GRAPH fill:#2546f0,color:#ffffff
+    style REPORTS fill:#5928ed,color:#ffffff
+    style LANCE fill:#00bf7d,color:#000000
+    style KUZU fill:#00b4c5,color:#000000
+    style BATCH fill:#0073e6,color:#ffffff
 ```
 
 ## ✨ Key Features
@@ -219,11 +223,17 @@ graph TB
     VARIANT_NODES --> GENE_NODES
     GENE_NODES --> RELATIONSHIPS
     
-    style DSM fill:#e3f2fd
-    style VCF_SCHEMA fill:#e8f5e8
-    style SAMPLE_NODES fill:#f3e5f5
-    style EMBED_SVC fill:#e8f5e8
-    style MEM_OPT fill:#e8f5e8
+    style DSM fill:#00bf7d,color:#000000
+    style VCF_SCHEMA fill:#00b4c5,color:#000000
+    style VECTOR_OPS fill:#0073e6,color:#ffffff
+    style BATCH_PROC fill:#2546f0,color:#ffffff
+    style SAMPLE_NODES fill:#5928ed,color:#ffffff
+    style VARIANT_NODES fill:#00bf7d,color:#000000
+    style GENE_NODES fill:#00b4c5,color:#000000
+    style RELATIONSHIPS fill:#0073e6,color:#ffffff
+    style EMBED_SVC fill:#2546f0,color:#ffffff
+    style PERF_MON fill:#5928ed,color:#ffffff
+    style MEM_OPT fill:#00bf7d,color:#000000
 ```
 
 ### VCF Variant Schema (LanceDB)
@@ -369,10 +379,16 @@ graph TB
     ANALYSIS --> CLAUDE
     ANALYSIS --> OLLAMA
     
-    style AGENT fill:#e3f2fd
-    style LANCE fill:#fff3e0
-    style KUZU fill:#f3e5f5
-    style OPENAI fill:#e8f5e8
+    style AGENT fill:#00bf7d,color:#000000
+    style NLP fill:#00b4c5,color:#000000
+    style TOOLS fill:#0073e6,color:#ffffff
+    style EXEC fill:#2546f0,color:#ffffff
+    style LANCE fill:#5928ed,color:#ffffff
+    style KUZU fill:#00bf7d,color:#000000
+    style FILES fill:#00b4c5,color:#000000
+    style OPENAI fill:#0073e6,color:#ffffff
+    style CLAUDE fill:#2546f0,color:#ffffff
+    style OLLAMA fill:#5928ed,color:#ffffff
 ```
 
 ### Data Flow Architecture
@@ -529,10 +545,11 @@ graph TD
     DATA_TOOLS --> GRAPH_LOAD[load_vcf_into_graph_db_tool<br/>Graph database]
     DATA_TOOLS --> SEARCH[search_variants<br/>Similarity search]
     
-    style TOOLS fill:#e3f2fd
-    style VALIDATION fill:#e8f5e8
-    style BCFTOOLS fill:#fff3e0
-    style AI_TOOLS fill:#f3e5f5
+    style TOOLS fill:#00bf7d,color:#000000
+    style VALIDATION fill:#00b4c5,color:#000000
+    style BCFTOOLS fill:#0073e6,color:#ffffff
+    style AI_TOOLS fill:#2546f0,color:#ffffff
+    style DATA_TOOLS fill:#5928ed,color:#ffffff
 ```
 
 ### Tool Examples
@@ -625,11 +642,11 @@ flowchart TD
     DATA --> DISK_SPACE[Disk Space<br/>Clean up data]
     DATA --> LOCK_FILES[Lock Files<br/>Restart services]
     
-    style ISSUE fill:#ffebee
-    style STARTUP fill:#fff3e0
-    style TOOLS fill:#e8f5e8
-    style AI fill:#e3f2fd
-    style DATA fill:#f3e5f5
+    style ISSUE fill:#00bf7d,color:#000000
+    style STARTUP fill:#00b4c5,color:#000000
+    style TOOLS fill:#0073e6,color:#ffffff
+    style AI fill:#2546f0,color:#ffffff
+    style DATA fill:#5928ed,color:#ffffff
 ```
 
 ### Quick Diagnostic Commands
@@ -701,10 +718,11 @@ graph LR
     MONITOR --> METRICS[Built-in metrics]
     MONITOR --> GRAFANA[Grafana dashboards]
     
-    style PERF fill:#e8f5e8
-    style BATCH fill:#e3f2fd
-    style PARALLEL fill:#fff3e0
-    style CACHE fill:#f3e5f5
+    style PERF fill:#00bf7d,color:#000000
+    style BATCH fill:#00b4c5,color:#000000
+    style PARALLEL fill:#0073e6,color:#ffffff
+    style CACHE fill:#2546f0,color:#ffffff
+    style MONITOR fill:#5928ed,color:#ffffff
 ```
 
 ## 📦 Installation
@@ -726,11 +744,11 @@ flowchart LR
     OLLAMA -->|No| INSTALL_OLLAMA[Install Ollama]
     INSTALL_OLLAMA --> READY
     
-    style START fill:#e3f2fd
-    style READY fill:#e8f5e8
-    style INSTALL_PYTHON fill:#fff3e0
-    style INSTALL_BCFTOOLS fill:#fff3e0
-    style INSTALL_OLLAMA fill:#fff3e0
+    style START fill:#00bf7d,color:#000000
+    style READY fill:#00b4c5,color:#000000
+    style INSTALL_PYTHON fill:#0073e6,color:#ffffff
+    style INSTALL_BCFTOOLS fill:#2546f0,color:#ffffff
+    style INSTALL_OLLAMA fill:#5928ed,color:#ffffff
 ```
 
 ### Quick Installation
@@ -867,11 +885,14 @@ graph LR
         LARGE[Large Files<br/>10K+ variants<br/>~1-5 minutes]
     end
     
-    style VCF_VAL fill:#e8f5e8
-    style EMBED fill:#e3f2fd
-    style SEARCH fill:#fff3e0
-    style GRAPH fill:#f3e5f5
-    style BATCH fill:#e8f5e8
+    style VCF_VAL fill:#00bf7d,color:#000000
+    style EMBED fill:#00b4c5,color:#000000
+    style SEARCH fill:#0073e6,color:#ffffff
+    style GRAPH fill:#2546f0,color:#ffffff
+    style BATCH fill:#5928ed,color:#ffffff
+    style SMALL fill:#00bf7d,color:#000000
+    style MEDIUM fill:#00b4c5,color:#000000
+    style LARGE fill:#0073e6,color:#ffffff
 ```
 
 ### Resource Requirements
@@ -900,10 +921,16 @@ flowchart TD
     PR --> REVIEW[👀 Code Review]
     REVIEW --> MERGE[✅ Merge to Main]
     
-    style FORK fill:#e3f2fd
-    style TEST fill:#e8f5e8
-    style REVIEW fill:#fff3e0
-    style MERGE fill:#e8f5e8
+    style FORK fill:#00bf7d,color:#000000
+    style CLONE fill:#00b4c5,color:#000000
+    style BRANCH fill:#0073e6,color:#ffffff
+    style CODE fill:#2546f0,color:#ffffff
+    style TEST fill:#5928ed,color:#ffffff
+    style COMMIT fill:#00bf7d,color:#000000
+    style PUSH fill:#00b4c5,color:#000000
+    style PR fill:#0073e6,color:#ffffff
+    style REVIEW fill:#2546f0,color:#ffffff
+    style MERGE fill:#5928ed,color:#ffffff
 ```
 
 ### Contribution Guidelines
@@ -979,9 +1006,14 @@ flowchart LR
     CREATE --> TEMPLATE[Use Issue Template]
     TEMPLATE --> SUBMIT[Submit with Details]
     
-    style HELP fill:#ffebee
-    style SOLVED fill:#e8f5e8
-    style CREATE fill:#e3f2fd
+    style HELP fill:#00bf7d,color:#000000
+    style DOCS fill:#00b4c5,color:#000000
+    style ISSUES fill:#0073e6,color:#ffffff
+    style DISCUSSIONS fill:#2546f0,color:#ffffff
+    style SOLVED fill:#5928ed,color:#ffffff
+    style CREATE fill:#00bf7d,color:#000000
+    style TEMPLATE fill:#00b4c5,color:#000000
+    style SUBMIT fill:#0073e6,color:#ffffff
 ```
 
 ### Support Channels
