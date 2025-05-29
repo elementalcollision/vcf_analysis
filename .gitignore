@@ -126,6 +126,10 @@ LOAD_TESTING_SESSION_SUMMARY.md
 PATH_FIXES_SUMMARY.md
 KUZU_SCHEMA_FIX_SUMMARY.md
 
+# Audit and internal analysis reports (should not be public)
+*_AUDIT_REPORT_*.md
+SAMPLE_DATA_AUDIT_REPORT_*.md
+
 # Temporary performance reports (keep important milestone reports)
 performance_reports/temp_*
 performance_reports/*_temp*
