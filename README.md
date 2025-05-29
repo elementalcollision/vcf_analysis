@@ -39,9 +39,8 @@
 - [🔧 **Apache Iggy Implementation**](APACHE_IGGY_IMPLEMENTATION_PLAN.md) - Streaming architecture implementation
 
 **Monitoring & Operations**  
-- [📊 **Performance Reports**](performance_reports/) - Detailed performance analysis and benchmarks
+- [📊 **Performance Reports**](performance_reports/) - Memory optimization, profiling analysis, and performance benchmarks
 - [🔐 **Security Reports**](security-reports/) - Security scanning and vulnerability assessments
-- [📈 **Memory Profiles**](memory_profiles/) - Memory usage analysis and optimization tracking
 
 ## 🚀 Quick Start
 
