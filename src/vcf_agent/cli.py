@@ -1,19 +1,61 @@
 """
 VCF Analysis Agent CLI Entrypoint
 
-- Provides a command-line interface for interacting with the agent
-- Accepts prompt strings for tool invocation (e.g., validation, echo)
-- Supports mock response for testing
-- Supports multiple model providers (Ollama, OpenAI, Cerebras)
-- Provides LanceDB integration commands:
-    * init-lancedb: Initialize LanceDB table
-    * add-variant: Add a variant record
-    * search-embedding: Search by embedding vector
+Provides a comprehensive command-line interface for VCF analysis, genomic data management,
+database operations, and compliance validation. Supports multiple AI model providers
+(Ollama, OpenAI, Cerebras) and integrates with both LanceDB vector database and 
+Kuzu graph database for advanced genomic data processing.
 
-Usage examples:
-    $ python -m vcf_agent.cli init-lancedb
-    $ python -m vcf_agent.cli add-variant --variant_id rs123 --chrom 1 --pos 12345 --ref A --alt G --embedding 0.1,0.2,...
-    $ python -m vcf_agent.cli search-embedding --embedding 0.1,0.2,...
+Interactive Commands:
+• ask: Natural language interface to the VCF agent for analysis and queries
+
+LanceDB Vector Database Operations:
+• init-lancedb: Initialize LanceDB table for variant storage
+• add-variant: Add individual variant records with embeddings
+• search-embedding: Search variants by embedding vector similarity
+• update-variant: Update existing variant records and metadata
+• delete-variants: Remove variants based on SQL filter criteria
+• create-lancedb-index: Create performance indexes on table columns
+• filter-lancedb: Query variants by metadata using SQL expressions
+
+VCF Processing & Database Population:
+• ingest-vcf: Complete VCF file processing into both LanceDB and Kuzu databases
+• populate-kuzu-from-vcf: Populate Kuzu graph database with VCF variant relationships
+
+Compliance & Quality Validation:
+• samspec: SAMspec compliance validation suite
+  - validate: Single VCF file compliance validation
+  - batch-validate: Multiple VCF file batch validation  
+  - explain: Detailed violation explanations and remediation guidance
+
+Global Options:
+• --model: Select AI provider (ollama, openai, cerebras)
+• --raw: Disable chain-of-thought reasoning for direct responses
+• --credentials: Path to API credentials file
+• --reference: Reference FASTA file for normalization
+
+Common Usage Examples:
+    # Interactive analysis
+    $ python -m vcf_agent.cli ask "Analyze variants in this VCF file for pathogenic mutations"
+    
+    # Complete VCF processing pipeline
+    $ python -m vcf_agent.cli ingest-vcf --vcf-file data.vcf.gz --batch-size 1000
+    
+    # LanceDB operations
+    $ python -m vcf_agent.cli init-lancedb --db_path ./variants_db
+    $ python -m vcf_agent.cli search-embedding --embedding 0.1,0.2,... --limit 5
+    $ python -m vcf_agent.cli filter-lancedb --filter_sql "chrom = '1' AND pos > 1000000"
+    
+    # Compliance validation
+    $ python -m vcf_agent.cli samspec validate file.vcf --format json --verbose
+    $ python -m vcf_agent.cli samspec batch-validate *.vcf --output-dir reports/
+    
+    # Advanced operations
+    $ python -m vcf_agent.cli create-lancedb-index --column chrom --index_type BTREE
+    $ python -m vcf_agent.cli update-variant --variant_id rs123 --updates '{"clinical_significance": "Benign"}'
+
+For detailed command help:
+    $ python -m vcf_agent.cli <command> --help
 """
 
 import argparse
