@@ -18,6 +18,7 @@
 - [⚡ **Memory Optimization Guide**](MEMORY_OPTIMIZATION_GUIDE.md) - Complete memory optimization strategies (>95% reduction)
 - [🧠 **Memory Optimization Features**](docs/MEMORY_OPTIMIZATION_FEATURES.md) - Detailed feature documentation and usage examples
 - [📊 **Production Monitoring**](docs/PRODUCTION_MONITORING.md) - Complete observability stack and monitoring guide
+- [🏗️ **Architecture Guide**](docs/ARCHITECTURE_GUIDE.md) - Complete system architecture and design patterns
 - [🏗️ **Phase 5.2 Architecture**](PHASE5_2_ARCHITECTURE_SUMMARY.md) - Dual platform coordination (Apache Iggy + Kafka)
 - [📊 **Project Status**](PROJECT_STATUS.md) - Current development status and achievements
 
@@ -438,83 +439,29 @@ erDiagram
     VARIANT ||--o{ VARIANT : "similar_to"
 ```
 
-## 🏗️ Architecture
+## 🏗️ Architecture Overview
 
-### System Overview
+**Multi-Layer Architecture**: **AI-powered genomic analysis platform** ✅
 
-```mermaid
-graph TB
-    subgraph "User Interfaces"
-        CLI[🖥️ Command Line]
-        API[🌐 REST API]
-        CHAT[💬 AI Chat Interface]
-    end
-    
-    subgraph "AI Agent Core"
-        AGENT[🤖 VCF Analysis Agent]
-        NLP[Natural Language Processing]
-        TOOLS[Tool Selection Engine]
-        EXEC[Execution Engine]
-    end
-    
-    subgraph "Specialized Tools"
-        VALIDATE[📋 VCF Validator]
-        BCFTOOLS[🔧 BCFtools Suite]
-        ANALYSIS[📊 AI Analysis]
-        COMPARE[⚖️ File Comparison]
-        GRAPH_LOAD[🕸️ Graph Loader]
-    end
-    
-    subgraph "Data Layer"
-        LANCE[(🔍 LanceDB<br/>Vector Search)]
-        KUZU[(🕸️ Kuzu<br/>Graph DB)]
-        FILES[(📁 File System<br/>VCF Storage)]
-    end
-    
-    subgraph "AI Models"
-        OPENAI[🧠 OpenAI GPT-4]
-        CLAUDE[🤖 Anthropic Claude]
-        OLLAMA[🏠 Local Ollama]
-    end
-    
-    CLI --> AGENT
-    API --> AGENT
-    CHAT --> AGENT
-    
-    AGENT --> NLP
-    NLP --> TOOLS
-    TOOLS --> EXEC
-    
-    EXEC --> VALIDATE
-    EXEC --> BCFTOOLS
-    EXEC --> ANALYSIS
-    EXEC --> COMPARE
-    EXEC --> GRAPH_LOAD
-    
-    VALIDATE --> FILES
-    BCFTOOLS --> FILES
-    ANALYSIS --> LANCE
-    GRAPH_LOAD --> KUZU
-    COMPARE --> LANCE
-    
-    ANALYSIS --> OPENAI
-    ANALYSIS --> CLAUDE
-    ANALYSIS --> OLLAMA
-    
-    style AGENT fill:#00bf7d,color:#000000
-    style NLP fill:#00b4c5,color:#000000
-    style TOOLS fill:#0073e6,color:#ffffff
-    style EXEC fill:#2546f0,color:#ffffff
-    style LANCE fill:#5928ed,color:#ffffff
-    style KUZU fill:#00bf7d,color:#000000
-    style FILES fill:#00b4c5,color:#000000
-    style OPENAI fill:#0073e6,color:#ffffff
-    style CLAUDE fill:#2546f0,color:#ffffff
-    style OLLAMA fill:#5928ed,color:#ffffff
-```
+The VCF Analysis Agent implements a sophisticated multi-layer architecture designed for enterprise genomic workloads, combining AI-powered analysis with high-performance databases and production-grade observability.
 
-### Data Flow Architecture
+### System Components
+| Layer | Components | Status |
+|-------|------------|--------|
+| **User Interfaces** | CLI, REST API, AI Chat Interface | ✅ Production |
+| **AI Agent Core** | NLP Engine, Tool Selection, Execution Engine | ✅ Production |
+| **Specialized Tools** | VCF Validator, BCFtools Suite, AI Analysis | ✅ Production |
+| **Data Layer** | LanceDB (Vector), Kuzu (Graph), File System | ✅ Production |
+| **AI Models** | OpenAI GPT-4, Claude, Local Ollama | ✅ Production |
 
+### Key Architecture Features
+- **Dual-Database Design**: Vector search (LanceDB) + Graph relationships (Kuzu)
+- **AI-Powered Tool Selection**: Intelligent workflow orchestration
+- **Memory Optimized**: >95% memory reduction with 768-dim embeddings
+- **Production Observability**: Complete monitoring with OpenTelemetry
+- **Enterprise Security**: Multi-layer security with container hardening
+
+### Data Flow
 ```mermaid
 sequenceDiagram
     participant User
@@ -539,6 +486,8 @@ sequenceDiagram
     Tools->>Agent: Comprehensive analysis results
     Agent->>User: "Found 3 pathogenic variants with clinical evidence..."
 ```
+
+**📖 For complete system architecture, component details, and design patterns**: [Architecture Guide Documentation](docs/ARCHITECTURE_GUIDE.md)
 
 ## 🚀 Usage Examples
 
