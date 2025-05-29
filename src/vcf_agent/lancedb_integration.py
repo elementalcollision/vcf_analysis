@@ -4,7 +4,7 @@
 # and success/failure status.
 from lancedb.pydantic import LanceModel, Vector
 import lancedb
-from typing import List, Optional, Annotated, Type, cast, Literal, Dict, Tuple
+from typing import List, Optional, Annotated, Type, cast, Literal, Dict, Tuple, Any
 import logging # Added for error logging
 from lancedb.table import LanceTable # Ensure this import is present and correct
 import threading # Added for locking
@@ -14,18 +14,33 @@ from datetime import datetime
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
+import time
 
 # Import Kuzu integration functions
 from . import graph_integration
 # Import API clients for embedding generation
 from .api_clients import OpenAIClient, CredentialManager
-from .config import SessionConfig
+from .config import SessionConfig, MemoryOptimizationConfig
 
 # Add import for sqlparse if available
 try:
     import sqlparse  # type: ignore
 except ImportError:
     sqlparse = None
+
+# Optional imports for advanced optimizations
+try:
+    from sklearn.decomposition import PCA
+    from sklearn.preprocessing import StandardScaler
+    HAS_SKLEARN = True
+except ImportError:
+    HAS_SKLEARN = False
+
+try:
+    import psutil
+    HAS_PSUTIL = True
+except ImportError:
+    HAS_PSUTIL = False
 
 logger = logging.getLogger(__name__) # Added for error logging
 
@@ -129,7 +144,7 @@ class VCFVariant(LanceModel):
         reference (str): Reference allele sequence.
         alternate (str): Alternate allele sequence.
         variant_description (str): Human-readable description for embedding generation.
-        variant_vector (Vector): 1536-dimensional embedding vector for similarity search.
+        variant_vector (Vector): 1536-dimensional embedding vector for similarity search (legacy compatibility).
         analysis_summary (str): AI-generated analysis summary of the variant.
         sample_id (str): Identifier for the sample containing this variant.
         quality_score (Optional[float]): Variant quality score from VCF.
@@ -148,7 +163,33 @@ class VCFVariant(LanceModel):
     reference: str
     alternate: str
     variant_description: str
-    variant_vector: Vector(1536)  # OpenAI text-embedding-3-small dimension
+    variant_vector: Vector(1536)  # Original dimension for backward compatibility
+    analysis_summary: str
+    sample_id: str
+    quality_score: Optional[float] = None
+    filter_status: Optional[str] = None
+    genotype: Optional[str] = None
+    allele_frequency: Optional[float] = None
+    clinical_significance: Optional[str] = None
+    gene_symbol: Optional[str] = None
+    consequence: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+class VCFVariantPhase3(LanceModel):
+    """
+    Phase 3 optimized Pydantic model representing a VCF variant record in LanceDB.
+    Uses 768-dimensional embeddings for 50% memory reduction.
+    
+    This model is used when Phase 3 embedding optimization is enabled.
+    """
+    variant_id: str
+    chromosome: str
+    position: int
+    reference: str
+    alternate: str
+    variant_description: str
+    variant_vector: Vector(768)  # Phase 3 optimized dimensions (50% reduction)
     analysis_summary: str
     sample_id: str
     quality_score: Optional[float] = None
@@ -165,7 +206,7 @@ class VCFVariant(LanceModel):
 class Variant(LanceModel):
     """
     Legacy Pydantic model for backward compatibility.
-    Use VCFVariant for new implementations.
+    Use VCFVariant or VCFVariantPhase3 for new implementations.
     """
     variant_id: str
     embedding: Vector(1024)  # type: ignore[valid-type]
@@ -176,30 +217,218 @@ class Variant(LanceModel):
     clinical_significance: Optional[str] = None
 
 # Embedding service for generating variant embeddings
+class MemoryAwareEmbeddingCache:
+    """
+    Memory-aware caching system for embeddings with automatic cleanup.
+    Integrated directly into the embedding service for production use.
+    """
+    def __init__(self, max_size_mb: int = 40, max_entries: int = 1000):
+        self.max_size_mb = max_size_mb
+        self.max_entries = max_entries
+        self.cache = {}
+        self.access_times = {}
+        self.memory_usage_mb = 0.0
+        
+    def _estimate_memory_usage(self, embedding: List[float]) -> float:
+        """Estimate memory usage of an embedding in MB."""
+        return len(embedding) * 4 / 1024 / 1024  # 4 bytes per float
+    
+    def _cleanup_cache(self):
+        """Remove least recently used entries to free memory."""
+        if not self.cache:
+            return
+            
+        # Sort by access time and remove oldest entries
+        sorted_items = sorted(self.access_times.items(), key=lambda x: x[1])
+        entries_to_remove = len(sorted_items) // 4  # Remove 25% of entries
+        
+        for key, _ in sorted_items[:entries_to_remove]:
+            if key in self.cache:
+                embedding_size = self._estimate_memory_usage(self.cache[key])
+                del self.cache[key]
+                del self.access_times[key]
+                self.memory_usage_mb -= embedding_size
+    
+    def get(self, key: str) -> Optional[List[float]]:
+        """Get cached embedding with access time tracking."""
+        if key in self.cache:
+            self.access_times[key] = time.time()
+            return self.cache[key]
+        return None
+    
+    def put(self, key: str, embedding: List[float]):
+        """Cache embedding with memory management."""
+        embedding_size = self._estimate_memory_usage(embedding)
+        
+        # Check if we need to cleanup before adding
+        if (self.memory_usage_mb + embedding_size > self.max_size_mb or 
+            len(self.cache) >= self.max_entries):
+            self._cleanup_cache()
+        
+        self.cache[key] = embedding
+        self.access_times[key] = time.time()
+        self.memory_usage_mb += embedding_size
+    
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """Get cache statistics."""
+        return {
+            "cache_entries": len(self.cache),
+            "memory_usage_mb": round(self.memory_usage_mb, 2),
+            "max_size_mb": self.max_size_mb,
+            "max_entries": self.max_entries,
+            "memory_utilization_percent": round((self.memory_usage_mb / self.max_size_mb) * 100, 1)
+        }
+
+class DimensionReducer:
+    """
+    PCA-based dimension reduction for embeddings.
+    Integrated directly into the embedding service.
+    """
+    def __init__(self, target_dimensions: int = 768):
+        self.target_dimensions = target_dimensions
+        self.original_dimensions = 1536
+        self.pca_model = None
+        self.scaler = None
+        self.is_trained = False
+        self.training_embeddings = []
+        self.training_samples_needed = 1000  # Minimum samples for reliable PCA
+        
+        if not HAS_SKLEARN:
+            logger.warning("scikit-learn not available, dimension reduction disabled")
+    
+    def can_reduce_dimensions(self) -> bool:
+        """Check if dimension reduction is available."""
+        return HAS_SKLEARN and self.is_trained
+    
+    def add_training_embedding(self, embedding: List[float]) -> bool:
+        """Add embedding to training dataset. Returns True when ready to train."""
+        if not HAS_SKLEARN or len(embedding) != self.original_dimensions:
+            return False
+            
+        self.training_embeddings.append(embedding)
+        
+        # Train when we have enough samples
+        if len(self.training_embeddings) >= self.training_samples_needed and not self.is_trained:
+            self._train_pca_model()
+            return True
+        return False
+    
+    def _train_pca_model(self):
+        """Train PCA model on collected embeddings."""
+        if not HAS_SKLEARN or not self.training_embeddings:
+            return
+            
+        try:
+            training_data = np.array(self.training_embeddings)
+            
+            # Standardize the data
+            self.scaler = StandardScaler()
+            scaled_data = self.scaler.fit_transform(training_data)
+            
+            # Train PCA
+            self.pca_model = PCA(n_components=self.target_dimensions)
+            self.pca_model.fit(scaled_data)
+            
+            self.is_trained = True
+            
+            # Calculate variance retention
+            variance_retained = np.sum(self.pca_model.explained_variance_ratio_)
+            logger.info(f"PCA model trained: {self.original_dimensions}→{self.target_dimensions} dimensions, {variance_retained:.1%} variance retained")
+            
+            # Clear training data to free memory
+            self.training_embeddings.clear()
+            
+        except Exception as e:
+            logger.error(f"PCA training failed: {e}")
+    
+    def reduce_embedding(self, embedding: List[float]) -> List[float]:
+        """Reduce embedding dimensions using trained PCA model."""
+        if not self.can_reduce_dimensions() or len(embedding) != self.original_dimensions:
+            return embedding
+            
+        try:
+            # Apply same preprocessing and reduction
+            scaled_embedding = self.scaler.transform([embedding])
+            reduced_embedding = self.pca_model.transform(scaled_embedding)
+            return reduced_embedding[0].tolist()
+        except Exception as e:
+            logger.error(f"Dimension reduction failed: {e}")
+            return embedding
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get dimension reduction statistics."""
+        stats = {
+            "is_trained": self.is_trained,
+            "target_dimensions": self.target_dimensions,
+            "original_dimensions": self.original_dimensions,
+            "training_samples_collected": len(self.training_embeddings),
+            "training_samples_needed": self.training_samples_needed
+        }
+        
+        if self.is_trained and self.pca_model is not None:
+            stats["variance_retained"] = float(np.sum(self.pca_model.explained_variance_ratio_))
+            stats["memory_reduction_percent"] = (1 - self.target_dimensions / self.original_dimensions) * 100
+        
+        return stats
+
 class VariantEmbeddingService:
     """
-    Service for generating embeddings for VCF variants using various AI models.
-    Supports OpenAI, Ollama, and other embedding providers.
+    Production-ready embedding service with integrated memory optimizations.
+    
+    Features:
+    - Memory-aware caching with automatic cleanup
+    - PCA dimension reduction for 50% memory savings
+    - Streaming batch processing for large datasets
+    - Configurable optimization levels
+    - Comprehensive performance monitoring
     """
     
     def __init__(self, session_config: Optional[SessionConfig] = None):
         """
-        Initialize the embedding service.
+        Initialize the embedding service with integrated optimizations.
         
         Args:
-            session_config: Session configuration for model provider selection.
+            session_config: Session configuration including memory optimization settings.
         """
         self.session_config = session_config or SessionConfig()
+        self.memory_config = self.session_config.memory_optimization
         self.openai_client = None
-        self.embedding_cache = {}  # Simple in-memory cache
         
+        # Initialize memory-aware caching
+        if self.memory_config.caching_strategy == "memory_aware":
+            self.embedding_cache = MemoryAwareEmbeddingCache(
+                max_size_mb=self.memory_config.cache_max_size_mb,
+                max_entries=self.memory_config.cache_max_entries
+            )
+        else:
+            self.embedding_cache = {}  # Simple dictionary cache
+        
+        # Initialize dimension reduction
+        self.dimension_reducer = None
+        if self.memory_config.dimension_reduction_enabled and HAS_SKLEARN:
+            self.dimension_reducer = DimensionReducer(
+                target_dimensions=self.memory_config.target_dimensions
+            )
+        
+        # Initialize API client
         if self.session_config.model_provider == "openai":
             try:
                 credential_manager = CredentialManager(self.session_config.credentials_file)
                 self.openai_client = OpenAIClient(credential_manager)
             except Exception as e:
                 logger.warning(f"Failed to initialize OpenAI client for embeddings: {e}")
-    
+        
+        # Performance tracking
+        self.generation_stats = {
+            "embeddings_generated": 0,
+            "cache_hits": 0,
+            "dimension_reductions": 0,
+            "batch_generations": 0
+        }
+        
+        logger.info(f"VariantEmbeddingService initialized: optimization_level={self.memory_config.optimization_level}, "
+                   f"dimensions={self.get_embedding_dimensions()}, caching={self.memory_config.caching_strategy}")
+
     def generate_variant_description(self, variant_data: Dict) -> str:
         """
         Generate a human-readable description for a variant.
@@ -234,9 +463,27 @@ class VariantEmbeddingService:
         
         return " ".join(description_parts)
     
-    async def generate_embedding(self, text: str) -> List[float]:
+    def _check_memory_threshold(self) -> bool:
+        """Check if memory usage is above threshold and cleanup if needed."""
+        if not HAS_PSUTIL or not self.memory_config.memory_management_enabled:
+            return False
+            
+        try:
+            process = psutil.Process()
+            memory_mb = process.memory_info().rss / 1024 / 1024
+            
+            if memory_mb > self.memory_config.memory_cleanup_threshold_mb:
+                logger.info(f"Memory threshold exceeded ({memory_mb:.1f}MB), triggering cleanup")
+                if hasattr(self.embedding_cache, '_cleanup_cache'):
+                    self.embedding_cache._cleanup_cache()
+                return True
+        except Exception as e:
+            logger.debug(f"Memory check failed: {e}")
+        return False
+    
+    def generate_embedding_sync(self, text: str) -> List[float]:
         """
-        Generate embedding for the given text.
+        Generate embedding for the given text with integrated optimizations.
         
         Args:
             text: Text to generate embedding for.
@@ -245,53 +492,141 @@ class VariantEmbeddingService:
             List of float values representing the embedding vector.
         """
         # Check cache first
-        if text in self.embedding_cache:
-            return self.embedding_cache[text]
+        cache_key = f"{self.session_config.model_provider}:{text}"
+        
+        if hasattr(self.embedding_cache, 'get'):
+            # Memory-aware cache
+            cached_embedding = self.embedding_cache.get(cache_key)
+            if cached_embedding:
+                self.generation_stats["cache_hits"] += 1
+                return cached_embedding
+        elif isinstance(self.embedding_cache, dict):
+            # Simple cache
+            if cache_key in self.embedding_cache:
+                self.generation_stats["cache_hits"] += 1
+                return self.embedding_cache[cache_key]
         
         try:
+            # Generate original embedding
             if self.session_config.model_provider == "openai" and self.openai_client:
-                # Use OpenAI embeddings
                 response = self.openai_client.client.embeddings.create(
                     model="text-embedding-3-small",
                     input=text
                 )
-                embedding = response.data[0].embedding
-                
+                original_embedding = response.data[0].embedding
             elif self.session_config.model_provider == "ollama":
-                # Use Ollama embeddings (placeholder - would need ollama client)
+                # Placeholder for Ollama implementation
                 logger.warning("Ollama embeddings not yet implemented, using random vector")
-                embedding = np.random.normal(0, 1, 1536).tolist()
-                
+                original_embedding = np.random.normal(0, 1, 1536).tolist()
             else:
                 # Fallback to random embedding for development
                 logger.warning(f"Embedding provider {self.session_config.model_provider} not implemented, using random vector")
-                embedding = np.random.normal(0, 1, 1536).tolist()
+                original_embedding = np.random.normal(0, 1, 1536).tolist()
             
-            # Cache the result
-            self.embedding_cache[text] = embedding
-            return embedding
+            # Add to dimension reducer training if applicable
+            if self.dimension_reducer and not self.dimension_reducer.is_trained:
+                self.dimension_reducer.add_training_embedding(original_embedding)
+            
+            # Apply dimension reduction if enabled and trained
+            final_embedding = original_embedding
+            if (self.memory_config.dimension_reduction_enabled and 
+                self.dimension_reducer and 
+                self.dimension_reducer.can_reduce_dimensions()):
+                try:
+                    final_embedding = self.dimension_reducer.reduce_embedding(original_embedding)
+                    self.generation_stats["dimension_reductions"] += 1
+                except Exception as e:
+                    logger.warning(f"Dimension reduction failed, using original embedding: {e}")
+            
+            # Cache result
+            if hasattr(self.embedding_cache, 'put'):
+                self.embedding_cache.put(cache_key, final_embedding)
+            elif isinstance(self.embedding_cache, dict):
+                self.embedding_cache[cache_key] = final_embedding
+            
+            self.generation_stats["embeddings_generated"] += 1
+            
+            # Check memory threshold after generation
+            self._check_memory_threshold()
+            
+            return final_embedding
             
         except Exception as e:
             logger.error(f"Failed to generate embedding: {e}")
-            # Return random embedding as fallback
-            return np.random.normal(0, 1, 1536).tolist()
+            # Return appropriate dimension fallback
+            fallback_dimensions = self.get_embedding_dimensions()
+            return np.random.normal(0, 1, fallback_dimensions).tolist()
     
-    def generate_embedding_sync(self, text: str) -> List[float]:
+    async def generate_embedding(self, text: str) -> List[float]:
+        """Generate embedding for the given text (async version)."""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.generate_embedding_sync, text)
+    
+    def generate_embeddings_batch(self, texts: List[str]) -> List[List[float]]:
         """
-        Synchronous wrapper for embedding generation.
+        Generate embeddings for multiple texts with streaming optimization.
         
         Args:
-            text: Text to generate embedding for.
+            texts: List of texts to generate embeddings for.
             
         Returns:
-            List of float values representing the embedding vector.
+            List of embedding vectors.
         """
-        try:
-            loop = asyncio.get_event_loop()
-            return loop.run_until_complete(self.generate_embedding(text))
-        except RuntimeError:
-            # No event loop running, create a new one
-            return asyncio.run(self.generate_embedding(text))
+        if not texts:
+            return []
+        
+        self.generation_stats["batch_generations"] += 1
+        batch_size = self.memory_config.streaming_batch_size
+        all_embeddings = []
+        
+        # Process in batches for memory efficiency
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i:i + batch_size]
+            batch_embeddings = []
+            
+            for text in batch:
+                embedding = self.generate_embedding_sync(text)
+                batch_embeddings.append(embedding)
+            
+            all_embeddings.extend(batch_embeddings)
+            
+            # Memory cleanup between batches if needed
+            if self.memory_config.memory_management_enabled:
+                self._check_memory_threshold()
+        
+        logger.info(f"Generated {len(all_embeddings)} embeddings using streaming batch processing (batch_size: {batch_size})")
+        return all_embeddings
+    
+    def get_embedding_dimensions(self) -> int:
+        """Get the current embedding dimensions based on configuration."""
+        return self.memory_config.get_embedding_dimensions()
+    
+    def get_optimization_stats(self) -> Dict[str, Any]:
+        """Get comprehensive optimization statistics."""
+        stats = {
+            "optimization_level": self.memory_config.optimization_level,
+            "embedding_dimensions": self.get_embedding_dimensions(),
+            "generation_stats": self.generation_stats.copy(),
+            "memory_management_enabled": self.memory_config.memory_management_enabled,
+            "dimension_reduction_enabled": self.memory_config.dimension_reduction_enabled
+        }
+        
+        # Add cache statistics
+        if hasattr(self.embedding_cache, 'get_cache_stats'):
+            stats["cache_stats"] = self.embedding_cache.get_cache_stats()
+        elif isinstance(self.embedding_cache, dict):
+            stats["cache_stats"] = {"cache_entries": len(self.embedding_cache), "type": "simple"}
+        
+        # Add dimension reduction statistics
+        if self.dimension_reducer:
+            stats["dimension_reduction_stats"] = self.dimension_reducer.get_stats()
+        
+        # Calculate efficiency metrics
+        total_operations = self.generation_stats["embeddings_generated"] + self.generation_stats["cache_hits"]
+        if total_operations > 0:
+            stats["cache_hit_rate"] = round((self.generation_stats["cache_hits"] / total_operations) * 100, 1)
+        
+        return stats
 
 # LanceDB connection (local path for now)
 def get_db(db_path: str = "./lancedb"):
@@ -634,17 +969,18 @@ def filter_variants_by_metadata(table: LanceTable, filter_sql: str, select_colum
 
 # Enhanced VCF Variant operations based on DECISION-001 specifications
 
-def get_or_create_vcf_table(db, table_name: str = "vcf_variants"):
+def get_or_create_vcf_table(db, table_name: str = "vcf_variants", use_optimized_model: bool = None):
     """
     Opens an existing VCF variants LanceDB table or creates a new one if it doesn't exist.
-    Uses the enhanced VCFVariant schema.
+    Uses the enhanced VCFVariant schema or VCFVariantPhase3 for optimized storage.
 
     Args:
         db (lancedb.DBConnection): LanceDB database connection object.
         table_name (str): Name of the table to open or create. Defaults to 'vcf_variants'.
+        use_optimized_model (bool): Whether to use optimized model. If None, uses default configuration.
 
     Returns:
-        LanceTable: The opened or newly created LanceDB table with VCFVariant schema.
+        LanceTable: The opened or newly created LanceDB table with appropriate schema.
 
     Raises:
         Exception: If table creation or opening fails.
@@ -654,13 +990,23 @@ def get_or_create_vcf_table(db, table_name: str = "vcf_variants"):
         >>> table = get_or_create_vcf_table(db, "vcf_variants")
     """
     logger.info(f"Attempting to get or create VCF table '{table_name}'...")
+    
+    # Use default optimization configuration if not specified
+    if use_optimized_model is None:
+        default_config = MemoryOptimizationConfig()
+        use_optimized_model = default_config.is_optimized_model_enabled()
+    
+    # Select appropriate model
+    schema_model = VCFVariantPhase3 if use_optimized_model else VCFVariant
+    schema_name = "VCFVariantPhase3" if use_optimized_model else "VCFVariant"
+    
     try:
         if table_name in db.table_names():
             table = db.open_table(table_name)
             logger.info(f"Opened existing VCF table: '{table_name}'.")
         else:
-            table = db.create_table(table_name, schema=VCFVariant, mode="overwrite")
-            logger.info(f"Created new VCF table: '{table_name}' with schema {VCFVariant.__name__}.")
+            table = db.create_table(table_name, schema=schema_model, mode="overwrite")
+            logger.info(f"Created new VCF table: '{table_name}' with schema {schema_name} (optimized: {use_optimized_model}).")
         return table
     except Exception as e:
         logger.error(f"Failed to get or create VCF table '{table_name}': {e}")
@@ -672,7 +1018,7 @@ def create_vcf_variant_record(
     analysis_summary: str = ""
 ) -> Dict:
     """
-    Create a VCFVariant record with embedding generation.
+    Create a VCFVariant record with embedding generation and integrated optimizations.
     
     Args:
         variant_data: Dictionary containing variant information.
@@ -680,7 +1026,7 @@ def create_vcf_variant_record(
         analysis_summary: AI-generated analysis summary.
         
     Returns:
-        Dictionary ready for insertion into LanceDB.
+        Dictionary ready for insertion into LanceDB with appropriate embedding dimensions.
     """
     if embedding_service is None:
         embedding_service = VariantEmbeddingService()
@@ -688,8 +1034,13 @@ def create_vcf_variant_record(
     # Generate variant description
     description = embedding_service.generate_variant_description(variant_data)
     
-    # Generate embedding
+    # Generate embedding with integrated optimizations
     embedding = embedding_service.generate_embedding_sync(description)
+    
+    # Validate embedding dimensions
+    expected_dimensions = embedding_service.get_embedding_dimensions()
+    if len(embedding) != expected_dimensions:
+        logger.warning(f"Embedding dimension mismatch: expected {expected_dimensions}, got {len(embedding)}")
     
     # Create timestamp
     now = datetime.now()
@@ -716,6 +1067,7 @@ def create_vcf_variant_record(
         "updated_at": now
     }
     
+    logger.debug(f"Created VCF variant record with {len(embedding)}-dimensional embedding")
     return record
 
 def batch_add_vcf_variants(
@@ -752,16 +1104,65 @@ def batch_add_vcf_variants(
     logger.info(f"Starting batch insertion of {len(variants_data)} variants with batch_size={batch_size}, max_workers={max_workers}")
     
     def process_batch(batch_data: List[Dict]) -> List[Dict]:
-        """Process a batch of variants with embeddings."""
+        """Process a batch of variants with embeddings and optimizations."""
         processed_records = []
-        for variant_data in batch_data:
-            try:
-                record = create_vcf_variant_record(variant_data, embedding_service)
-                processed_records.append(record)
-            except Exception as e:
-                logger.error(f"Failed to process variant {variant_data.get('variant_id', 'unknown')}: {e}")
-                continue
-        return processed_records
+        
+        # Use streaming batch processing if available
+        try:
+            # Extract descriptions
+            descriptions = []
+            for variant_data in batch_data:
+                description = embedding_service.generate_variant_description(variant_data)
+                descriptions.append(description)
+            
+            # Generate embeddings in batch
+            embeddings = embedding_service.generate_embeddings_batch(descriptions)
+            
+            # Create records with pre-generated embeddings
+            for i, variant_data in enumerate(batch_data):
+                try:
+                    # Build record manually to use pre-generated embedding
+                    now = datetime.now()
+                    record = {
+                        "variant_id": variant_data.get("variant_id", f"{variant_data.get('chromosome', 'unknown')}-{variant_data.get('position', 0)}-{variant_data.get('reference', '')}-{variant_data.get('alternate', '')}"),
+                        "chromosome": variant_data.get("chromosome", variant_data.get("chrom", "")),
+                        "position": variant_data.get("position", variant_data.get("pos", 0)),
+                        "reference": variant_data.get("reference", variant_data.get("ref", "")),
+                        "alternate": variant_data.get("alternate", variant_data.get("alt", "")),
+                        "variant_description": descriptions[i],
+                        "variant_vector": embeddings[i],
+                        "analysis_summary": "",
+                        "sample_id": variant_data.get("sample_id", ""),
+                        "quality_score": variant_data.get("quality_score", variant_data.get("qual")),
+                        "filter_status": variant_data.get("filter_status", variant_data.get("filter")),
+                        "genotype": variant_data.get("genotype", variant_data.get("gt")),
+                        "allele_frequency": variant_data.get("allele_frequency", variant_data.get("af")),
+                        "clinical_significance": variant_data.get("clinical_significance"),
+                        "gene_symbol": variant_data.get("gene_symbol"),
+                        "consequence": variant_data.get("consequence"),
+                        "created_at": now,
+                        "updated_at": now
+                    }
+                    processed_records.append(record)
+                except Exception as e:
+                    logger.error(f"Failed to process variant {variant_data.get('variant_id', 'unknown')}: {e}")
+                    continue
+                    
+            logger.debug(f"Processed batch of {len(processed_records)} variants using optimized processing")
+            return processed_records
+            
+        except Exception as e:
+            logger.warning(f"Batch processing failed, falling back to individual processing: {e}")
+            
+            # Fallback to individual processing
+            for variant_data in batch_data:
+                try:
+                    record = create_vcf_variant_record(variant_data, embedding_service, "")
+                    processed_records.append(record)
+                except Exception as e:
+                    logger.error(f"Failed to process variant {variant_data.get('variant_id', 'unknown')}: {e}")
+                    continue
+            return processed_records
     
     total_added = 0
     
@@ -787,7 +1188,7 @@ def batch_add_vcf_variants(
                         logger.error(f"Failed to add batch: {e}")
                         continue
         
-        logger.info(f"Successfully added {total_added} variants to table.")
+        logger.info(f"Successfully added {total_added} variants to table with optimized processing")
         return total_added
         
     except Exception as e:

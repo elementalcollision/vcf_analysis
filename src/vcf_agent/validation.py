@@ -11,6 +11,9 @@ from typing import Tuple, Optional
 from .bcftools_integration import bcftools_stats
 from .gatk_integration import gatk_validatevariants
 from .config import CONFIG
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def file_exists(filepath: str) -> bool:
@@ -182,32 +185,35 @@ def validate_vcf_file(filepath: str, tool: Optional[str] = None) -> Tuple[bool, 
     rc, out, err = compliance_check(filepath, tool)
     
     # Determine the tool name used for logging/messaging
-    used_tool_name = tool or CONFIG.get('compliance_tool', 'unknown_tool')
+    tool_name = tool or CONFIG.get('compliance_tool', 'bcftools')
 
+    logger.debug(f"Compliance check with {tool_name} completed")
+    logger.debug(f"Exit code: {rc}")
+    logger.debug(f"stdout: {out}")
+    logger.debug(f"stderr: {err}")
+
+    # Check if the command succeeded
     if rc != 0:
-        # If the command itself failed, report error from stderr
-        error_message = err.strip() if err else "Unknown error (non-zero exit code with no stderr)"
-        return False, f"Compliance check ({used_tool_name}) failed: {error_message}"
+        error_msg = f"Compliance check ({tool_name}) failed with exit code {rc}: {err}"
+        logger.error(error_msg)
+        return False, error_msg
 
-    # For bcftools, even with rc=0, check stdout for warnings
-    # GATK and other tools might indicate errors differently (e.g., non-zero rc is primary)
-    if used_tool_name == "bcftools":
-        # Combine stdout and stderr for bcftools warnings, as some might go to stdout
-        # and actual errors (if rc was non-zero) would have been in err.
-        # Here, rc is 0, so we are looking for warnings in 'out' or 'err'.
-        bcftools_output_warnings = []
-        if out:
-            for line in out.splitlines():
-                if line.startswith("[W::") or line.startswith("[E::"):
-                    bcftools_output_warnings.append(line)
-        if err: # Also check stderr in case warnings ended up there with rc=0
-            for line in err.splitlines():
-                if line.startswith("[W::") or line.startswith("[E::"):
-                    bcftools_output_warnings.append(line)
-        
-        if bcftools_output_warnings:
-            # If warnings found in bcftools stats output, consider it a validation failure for strict checks
-            return False, f"Compliance check (bcftools) passed with rc=0 but contained warnings: {'; '.join(bcftools_output_warnings)}"
+    # Check for specific warnings/errors in the output even if rc=0
+    bcftools_output_warnings = []
+    combined_output = (out + '\n' + (err or '')).lower()
+    warning_keywords = ['warning', 'error', 'malformed', 'invalid', 'corrupt']
+    for line in combined_output.split('\n'):
+        if any(keyword in line for keyword in warning_keywords):
+            bcftools_output_warnings.append(line.strip())
 
-    # If no non-zero rc, and for bcftools no specific warnings in stdout/stderr, then it's valid
+    if err:  # Also check stderr in case warnings ended up there with rc=0
+        for line in err.split('\n'):
+            if line.strip() and any(keyword in line.lower() for keyword in warning_keywords):
+                bcftools_output_warnings.append(line.strip())
+
+    if bcftools_output_warnings:
+        warning_msg = ("Compliance check ({}) passed with rc=0 but contained warnings: {}".format(
+                       tool_name, '; '.join(bcftools_output_warnings)))
+        return False, warning_msg
+
     return True, None 
