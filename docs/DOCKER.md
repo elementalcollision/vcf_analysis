@@ -12,38 +12,34 @@ The VCF Analysis Agent is fully containerized using Docker with a multi-stage bu
 flowchart TD
     subgraph "Docker Multi-Stage Build Architecture"
         subgraph Stage1 ["🔨 Stage 1: Builder"]
-            A1[Ubuntu Base Image]:::builder
-            A2[Build Tools & Compilers]:::builder
-            A3[bcftools/htslib Compilation]:::builder
-            A4[Python Dependencies Build]:::builder
-            A5[Application Installation]:::builder
+            A1[Ubuntu Base Image]
+            A2[Build Tools & Compilers]
+            A3[bcftools/htslib Compilation]
+            A4[Python Dependencies Build]
+            A5[Application Installation]
             A1 --> A2 --> A3 --> A4 --> A5
         end
         
         subgraph Stage2 ["🚀 Stage 2: Runtime Production"]
-            B1[Debian Slim Base]:::runtime
-            B2[Runtime Dependencies Only]:::runtime
-            B3[Non-root User Setup]:::runtime
-            B4[Security Hardening]:::runtime
-            B5[Minimal Attack Surface]:::runtime
+            B1[Debian Slim Base]
+            B2[Runtime Dependencies Only]
+            B3[Non-root User Setup]
+            B4[Security Hardening]
+            B5[Minimal Attack Surface]
             B1 --> B2 --> B3 --> B4 --> B5
         end
         
         subgraph Stage3 ["🛠️ Stage 3: Development"]
-            C1[Runtime Base + Dev Tools]:::development
-            C2[Testing Frameworks]:::development
-            C3[Debugging Utilities]:::development
-            C4[Hot Reload Support]:::development
+            C1[Runtime Base + Dev Tools]
+            C2[Testing Frameworks]
+            C3[Debugging Utilities]
+            C4[Hot Reload Support]
             C1 --> C2 --> C3 --> C4
         end
         
         Stage1 -->|Copy Artifacts| Stage2
         Stage2 -->|Extend Base| Stage3
     end
-    
-    classDef builder fill:#00bf7d,stroke:#00a085,stroke-width:2px,color:#000000
-    classDef runtime fill:#0073e6,stroke:#005bb5,stroke-width:2px,color:#ffffff
-    classDef development fill:#2546f0,stroke:#1a37c7,stroke-width:2px,color:#ffffff
 ```
 
 ### Container Deployment Architecture
@@ -52,31 +48,31 @@ flowchart TD
 graph TB
     subgraph "🐳 Docker Container Ecosystem"
         subgraph App ["VCF Analysis Agent"]
-            Main[Main Application:8000]:::app
-            Health[Health Checks]:::app
-            Logs[Logging System]:::app
+            Main[Main Application:8000]
+            Health[Health Checks]
+            Logs[Logging System]
         end
         
         subgraph Monitor ["📊 Monitoring Stack"]
-            Prom[Prometheus:9090]:::monitor
-            Graf[Grafana:3000]:::monitor
-            Jaeger[Jaeger:16686]:::monitor
+            Prom[Prometheus:9090]
+            Graf[Grafana:3000]
+            Jaeger[Jaeger:16686]
         end
         
         subgraph DB ["💾 Database Layer"]
-            Lance[LanceDB Volume]:::database
-            Kuzu[Kuzu Volume]:::database
+            Lance[LanceDB Volume]
+            Kuzu[Kuzu Volume]
         end
         
         subgraph Storage ["💿 Storage Volumes"]
-            Data[/app/data]:::storage
-            Logs2[/app/logs]:::storage
-            Tmp[/app/tmp]:::storage
+            Data[/app/data]
+            Logs2[/app/logs]
+            Tmp[/app/tmp]
         end
         
         subgraph AI ["🤖 AI Services"]
-            Ollama[Ollama:11434]:::ai
-            OpenAI[OpenAI API]:::ai
+            Ollama[Ollama:11434]
+            OpenAI[OpenAI API]
         end
     end
     
@@ -92,12 +88,6 @@ graph TB
     
     Main --> Ollama
     Main --> OpenAI
-    
-    classDef app fill:#00bf7d,stroke:#00a085,stroke-width:2px,color:#000000
-    classDef monitor fill:#00b4c5,stroke:#0099aa,stroke-width:2px,color:#000000
-    classDef database fill:#0073e6,stroke:#005bb5,stroke-width:2px,color:#ffffff
-    classDef storage fill:#2546f0,stroke:#1a37c7,stroke-width:2px,color:#ffffff
-    classDef ai fill:#5928ed,stroke:#4520c7,stroke-width:2px,color:#ffffff
 ```
 
 ### Key Features
@@ -139,29 +129,29 @@ docker run --rm -it vcf-analysis-agent:latest --help
 ```mermaid
 flowchart LR
     subgraph "🔨 Docker Build Process"
-        Start([Start Build]):::start
+        Start([Start Build])
         
         subgraph Preparation
-            Source[Source Code]:::source
-            Deps[Dependencies]:::source
-            Config[Configuration]:::source
+            Source[Source Code]
+            Deps[Dependencies]
+            Config[Configuration]
         end
         
         subgraph BuildStage ["Build Stage"]
-            Compile[Compile bcftools/htslib]:::build
-            Install[Install Python Deps]:::build
-            Package[Package Application]:::build
+            Compile[Compile bcftools/htslib]
+            Install[Install Python Deps]
+            Package[Package Application]
         end
         
         subgraph RuntimeStage ["Runtime Stage"]
-            Copy[Copy Artifacts]:::runtime
-            User[Setup Non-root User]:::runtime
-            Security[Apply Security Hardening]:::runtime
+            Copy[Copy Artifacts]
+            User[Setup Non-root User]
+            Security[Apply Security Hardening]
         end
         
         subgraph Output
-            Prod[Production Image]:::output
-            Dev[Development Image]:::output
+            Prod[Production Image]
+            Dev[Development Image]
         end
         
         Start --> Source
@@ -182,12 +172,6 @@ flowchart LR
         Security --> Prod
         Security --> Dev
     end
-    
-    classDef start fill:#00bf7d,stroke:#00a085,stroke-width:3px,color:#000000
-    classDef source fill:#00b4c5,stroke:#0099aa,stroke-width:2px,color:#000000
-    classDef build fill:#0073e6,stroke:#005bb5,stroke-width:2px,color:#ffffff
-    classDef runtime fill:#2546f0,stroke:#1a37c7,stroke-width:2px,color:#ffffff
-    classDef output fill:#5928ed,stroke:#4520c7,stroke-width:2px,color:#ffffff
 ```
 
 ### Using the Build Script
@@ -243,40 +227,35 @@ docker buildx build --platform linux/amd64,linux/arm64 \
 graph TB
     subgraph "🌐 Deployment Options"
         subgraph Docker ["🐳 Docker Compose"]
-            DC1[Production Stack]:::docker
-            DC2[Development Stack]:::docker
-            DC3[Monitoring Stack]:::docker
+            DC1[Production Stack]
+            DC2[Development Stack]
+            DC3[Monitoring Stack]
         end
         
         subgraph K8s ["☸️ Kubernetes"]
-            K1[Deployment]:::k8s
-            K2[Services]:::k8s
-            K3[Ingress]:::k8s
-            K4[ConfigMaps]:::k8s
-            K5[Secrets]:::k8s
+            K1[Deployment]
+            K2[Services]
+            K3[Ingress]
+            K4[ConfigMaps]
+            K5[Secrets]
         end
         
         subgraph Standalone ["🔧 Standalone"]
-            S1[Single Container]:::standalone
-            S2[Volume Mounts]:::standalone
-            S3[Environment Config]:::standalone
+            S1[Single Container]
+            S2[Volume Mounts]
+            S3[Environment Config]
         end
         
         subgraph Cloud ["☁️ Cloud Platforms"]
-            AWS[AWS ECS/EKS]:::cloud
-            Azure[Azure Container Instances]:::cloud
-            GCP[Google Cloud Run]:::cloud
+            AWS[AWS ECS/EKS]
+            Azure[Azure Container Instances]
+            GCP[Google Cloud Run]
         end
     end
     
     Docker --> K8s
     Standalone --> Docker
     K8s --> Cloud
-    
-    classDef docker fill:#00bf7d,stroke:#00a085,stroke-width:2px,color:#000000
-    classDef k8s fill:#00b4c5,stroke:#0099aa,stroke-width:2px,color:#000000
-    classDef standalone fill:#0073e6,stroke:#005bb5,stroke-width:2px,color:#ffffff
-    classDef cloud fill:#2546f0,stroke:#1a37c7,stroke-width:2px,color:#ffffff
 ```
 
 ### Docker Compose (Recommended)
@@ -436,28 +415,28 @@ The application exposes the following ports:
 flowchart LR
     subgraph "📊 Observability Pipeline"
         subgraph App ["🐳 Application Layer"]
-            VCF[VCF Agent]:::app
-            Metrics[Metrics Endpoint]:::app
-            Traces[Trace Data]:::app
-            Logs[Application Logs]:::app
+            VCF[VCF Agent]
+            Metrics[Metrics Endpoint]
+            Traces[Trace Data]
+            Logs[Application Logs]
         end
         
         subgraph Collection ["📥 Collection Layer"]
-            Prom[Prometheus]:::collect
-            Jaeger[Jaeger Collector]:::collect
-            LogDriver[Docker Log Driver]:::collect
+            Prom[Prometheus]
+            Jaeger[Jaeger Collector]
+            LogDriver[Docker Log Driver]
         end
         
         subgraph Storage ["💾 Storage Layer"]
-            PromDB[Prometheus DB]:::storage
-            JaegerDB[Jaeger Storage]:::storage
-            LogFiles[Log Files]:::storage
+            PromDB[Prometheus DB]
+            JaegerDB[Jaeger Storage]
+            LogFiles[Log Files]
         end
         
         subgraph Visualization ["📈 Visualization"]
-            Grafana[Grafana Dashboards]:::visual
-            JaegerUI[Jaeger UI]:::visual
-            Alerts[Alert Manager]:::visual
+            Grafana[Grafana Dashboards]
+            JaegerUI[Jaeger UI]
+            Alerts[Alert Manager]
         end
     end
     
@@ -476,11 +455,6 @@ flowchart LR
     PromDB --> Grafana
     JaegerDB --> JaegerUI
     PromDB --> Alerts
-    
-    classDef app fill:#00bf7d,stroke:#00a085,stroke-width:2px,color:#000000
-    classDef collect fill:#00b4c5,stroke:#0099aa,stroke-width:2px,color:#000000
-    classDef storage fill:#0073e6,stroke:#005bb5,stroke-width:2px,color:#ffffff
-    classDef visual fill:#2546f0,stroke:#1a37c7,stroke-width:2px,color:#ffffff
 ```
 
 ### Health Checks
