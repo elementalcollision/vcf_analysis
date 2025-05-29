@@ -17,6 +17,9 @@ ENV/
 # Aegis Framework (task management context - should not be committed)
 .context/
 
+# Development files (summaries, test files, cache, logs)
+.development/
+
 # Jupyter
 .ipynb_checkpoints
 
