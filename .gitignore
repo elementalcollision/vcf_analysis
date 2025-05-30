@@ -8,6 +8,12 @@ __pycache__/
 .eggs/
 *.log
 
+# Backup files
+*.bak
+*.backup
+*.orig
+*~
+
 # Environments
 .env
 .venv
@@ -59,6 +65,13 @@ coverage.xml
 .tox/
 .cache/
 pytest_cache/
+
+# CLI Documentation Validation artifacts
+.validation-cache/
+.cli-validation.yml
+.cli-validation.yaml
+cli-validation.yml
+cli-validation.yaml
 
 # Secrets
 *.key
@@ -125,6 +138,9 @@ test_*.py
 LOAD_TESTING_SESSION_SUMMARY.md
 PATH_FIXES_SUMMARY.md
 KUZU_SCHEMA_FIX_SUMMARY.md
+SESSION_SUMMARY_*.md
+*SESSION_SUMMARY*.md
+SESSION_SUMMARY_2025-*.md
 
 # Audit and internal analysis reports (should not be public)
 *_AUDIT_REPORT_*.md
@@ -147,4 +163,16 @@ memory_profiles/
 *.memray
 
 # Color palette files
-vibrant-palette.txt 
+vibrant-palette.txt
+
+# Documentation build artifacts (ensure these are never committed)
+docs_site/
+docs/docs_src/_build/
+docs/_build/
+site/
+.mkdocs_cache/
+
+# MkDocs and Sphinx build artifacts
+*.html
+docs/docs_src/_static/
+docs/docs_src/api/api/ 

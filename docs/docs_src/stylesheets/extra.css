@@ -1,0 +1,363 @@
+/* Custom CSS for CLI Enhanced Validation Engine Documentation */
+
+/* Improve code block appearance */
+.highlight {
+    margin: 1em 0;
+}
+
+/* Better grid cards styling */
+.grid.cards {
+    margin-top: 1em;
+}
+
+/* Custom admonition styling */
+.admonition {
+    margin: 1em 0;
+}
+
+/* CLI Enhanced Validation Engine Documentation - Layout & UI Fixes */
+
+/* ==========================================================================
+   LAYOUT FIXES - Sidebar Overlap Prevention
+   ========================================================================== */
+
+/* Fix main content area to prevent sidebar overlap */
+.md-main__inner {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Ensure proper sidebar width and positioning */
+.md-sidebar {
+  width: var(--md-sidebar-width, 12.1rem);
+  max-width: var(--md-sidebar-width, 12.1rem);
+}
+
+.md-sidebar--primary {
+  left: 0;
+  width: var(--md-sidebar-width, 12.1rem);
+  z-index: 3;
+}
+
+.md-sidebar--secondary {
+  right: 0;
+  width: var(--md-sidebar-width, 12.1rem);
+  z-index: 2;
+}
+
+/* Fix content container to respect sidebar space */
+@media screen and (min-width: 60em) {
+  .md-sidebar--primary:not([hidden]) ~ .md-main .md-main__inner {
+    margin-left: var(--md-sidebar-width, 12.1rem);
+  }
+}
+
+@media screen and (min-width: 76.25em) {
+  .md-sidebar--secondary:not([hidden]) ~ .md-main .md-main__inner {
+    margin-right: var(--md-sidebar-width, 12.1rem);
+  }
+}
+
+/* Ensure content doesn't overflow */
+.md-content {
+  max-width: none;
+  margin: 0 0.8rem;
+}
+
+/* ==========================================================================
+   RESPONSIVE FIXES
+   ========================================================================== */
+
+/* Mobile layout improvements */
+@media screen and (max-width: 59.9375em) {
+  .md-nav--primary .md-nav__title {
+    background-color: var(--md-primary-fg-color);
+    color: var(--md-primary-bg-color);
+  }
+  
+  .md-main__inner {
+    margin: 0;
+  }
+  
+  .md-content {
+    margin: 0 0.8rem;
+  }
+}
+
+/* Tablet layout improvements */
+@media screen and (min-width: 60em) and (max-width: 76.1875em) {
+  .md-sidebar--secondary {
+    display: none;
+  }
+  
+  .md-main__inner {
+    margin-right: 0;
+  }
+}
+
+/* ==========================================================================
+   NAVIGATION IMPROVEMENTS
+   ========================================================================== */
+
+/* Better navigation item spacing */
+.md-nav__item {
+  padding: 0;
+}
+
+.md-nav__link {
+  padding: 0.625em 0.8rem;
+  margin: 0.125rem 0;
+  border-radius: 0.2rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.md-nav__link:hover {
+  background-color: var(--md-accent-fg-color--transparent);
+}
+
+.md-nav__link--active {
+  background-color: var(--md-accent-fg-color--transparent);
+  color: var(--md-accent-fg-color);
+  font-weight: 500;
+}
+
+/* Section headers */
+.md-nav__title {
+  font-weight: 600;
+  color: var(--md-primary-fg-color);
+  padding: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ==========================================================================
+   CONTENT STYLING IMPROVEMENTS
+   ========================================================================== */
+
+/* Better typography */
+.md-typeset h1 {
+  color: var(--md-primary-fg-color);
+  border-bottom: 2px solid var(--md-accent-fg-color);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.md-typeset h2 {
+  color: var(--md-primary-fg-color);
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+  padding-bottom: 0.3rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.md-typeset h3 {
+  color: var(--md-primary-fg-color);
+  margin-top: 1.5rem;
+  margin-bottom: 0.8rem;
+}
+
+/* Code blocks improvements */
+.md-typeset pre {
+  border-radius: 0.3rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.md-typeset code {
+  background-color: var(--md-code-bg-color);
+  padding: 0.2em 0.4em;
+  border-radius: 0.2rem;
+  font-size: 0.85em;
+}
+
+/* ==========================================================================
+   HEADER AND BRANDING
+   ========================================================================== */
+
+/* Custom header styling */
+.md-header {
+  background-color: var(--md-primary-fg-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.md-header__title {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* Add a custom logo placeholder */
+.md-header__button.md-logo::before {
+  content: "🔧";
+  font-size: 1.5rem;
+  color: var(--md-primary-bg-color);
+}
+
+/* ==========================================================================
+   TABLE OF CONTENTS FIXES
+   ========================================================================== */
+
+/* Better TOC positioning */
+.md-sidebar--secondary .md-sidebar__scrollwrap {
+  margin: 0;
+}
+
+.md-nav--secondary .md-nav__title {
+  display: none;
+}
+
+.md-nav--secondary .md-nav__item {
+  border-left: 2px solid var(--md-default-fg-color--lightest);
+  margin-left: 0.8rem;
+}
+
+.md-nav--secondary .md-nav__link--active {
+  border-left-color: var(--md-accent-fg-color);
+  color: var(--md-accent-fg-color);
+}
+
+/* ==========================================================================
+   SEARCH IMPROVEMENTS
+   ========================================================================== */
+
+.md-search__form {
+  background-color: var(--md-default-bg-color);
+  border-radius: 0.3rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.md-search__input {
+  background-color: transparent;
+}
+
+/* ==========================================================================
+   ADMONITIONS AND ALERTS
+   ========================================================================== */
+
+.md-typeset .admonition {
+  border-radius: 0.3rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 1.5rem 0;
+}
+
+.md-typeset .admonition-title {
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   TABS STYLING
+   ========================================================================== */
+
+.md-typeset .tabbed-set {
+  border-radius: 0.3rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 1.5rem 0;
+}
+
+.md-typeset .tabbed-labels {
+  border-radius: 0.3rem 0.3rem 0 0;
+}
+
+.md-typeset .tabbed-content {
+  border-radius: 0 0 0.3rem 0.3rem;
+}
+
+/* ==========================================================================
+   FOOTER IMPROVEMENTS
+   ========================================================================== */
+
+.md-footer {
+  background-color: var(--md-footer-bg-color);
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* ==========================================================================
+   ACCESSIBILITY IMPROVEMENTS
+   ========================================================================== */
+
+/* Focus indicators */
+.md-nav__link:focus,
+.md-search__input:focus {
+  outline: 2px solid var(--md-accent-fg-color);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .md-nav__link {
+    border: 1px solid transparent;
+  }
+  
+  .md-nav__link--active {
+    border-color: var(--md-accent-fg-color);
+  }
+}
+
+/* ==========================================================================
+   PRINT STYLES
+   ========================================================================== */
+
+@media print {
+  .md-sidebar,
+  .md-header,
+  .md-footer {
+    display: none !important;
+  }
+  
+  .md-main__inner {
+    margin: 0 !important;
+  }
+  
+  .md-content {
+    margin: 0 !important;
+    max-width: none !important;
+  }
+}
+
+/* ==========================================================================
+   CUSTOM BRANDING
+   ========================================================================== */
+
+/* CLI tool specific styling */
+.cli-command {
+  background-color: var(--md-code-bg-color);
+  border-left: 4px solid var(--md-accent-fg-color);
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 0 0.3rem 0.3rem 0;
+  font-family: var(--md-code-font-family);
+}
+
+.cli-output {
+  background-color: var(--md-default-fg-color--lightest);
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 0.3rem;
+  font-family: var(--md-code-font-family);
+  color: var(--md-default-fg-color);
+}
+
+/* Status indicators */
+.status-success {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.status-warning {
+  color: #ff9800;
+  font-weight: 600;
+}
+
+.status-error {
+  color: #f44336;
+  font-weight: 600;
+}
+
+/* Performance indicators */
+.performance-metric {
+  display: inline-block;
+  background-color: var(--md-accent-fg-color--transparent);
+  color: var(--md-accent-fg-color);
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.2rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin: 0.2rem;
+} 

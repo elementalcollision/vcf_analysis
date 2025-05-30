@@ -1,0 +1,31 @@
+# CLI Documentation Validation Configuration Example
+# Copy this file to your project root as .cli-validation.yml to customize validation behavior
+
+validation:
+  mode: comprehensive  # Options: quick, comprehensive, strict
+  cache:
+    enabled: true
+    ttl_hours: 24        # Cache time-to-live in hours
+    max_size_mb: 100     # Maximum cache size in MB
+    dir: ".validation-cache"  # Cache directory path
+
+performance:
+  incremental: true      # Enable incremental validation for Git workflows
+  parallel_workers: 4    # Number of parallel validation workers
+  timeout_seconds: 300   # Timeout for validation operations
+
+rules:
+  coverage_threshold: 95.0                    # Required docstring coverage percentage
+  docstring_formats: [google, numpy, sphinx] # Supported docstring formats
+  require_examples: true                      # Require examples in CLI function docstrings
+  validate_parameter_types: true             # Validate parameter types in docstrings
+  fail_on_warnings: false                    # Whether to fail on warnings
+
+ci_cd:
+  github_actions:
+    annotations: true          # Enable GitHub Actions annotations
+    cache_key_version: v1      # Cache key version for CI
+    fail_on_warnings: false    # Whether to fail CI on warnings
+  pre_commit:
+    quick_mode: true           # Use quick mode for pre-commit hooks
+    staged_files_only: true    # Only validate staged files in pre-commit 

@@ -1,0 +1,212 @@
+/* Performance Optimization CSS for CLI Enhanced Validation Engine Documentation */
+
+/* Critical rendering path optimization */
+.md-container {
+  will-change: scroll-position;
+}
+
+/* Improve font rendering performance */
+.md-typeset {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeSpeed;
+}
+
+/* Optimize code block rendering */
+.md-typeset pre {
+  contain: layout style paint;
+}
+
+.highlight {
+  contain: layout style paint;
+}
+
+/* Lazy loading for images */
+.md-typeset img {
+  loading: lazy;
+  decoding: async;
+}
+
+/* Navigation performance improvements */
+.md-nav {
+  contain: layout style;
+}
+
+.md-nav__link {
+  will-change: color;
+  transition: color 0.125s ease-in-out;
+}
+
+/* Search performance optimization */
+.md-search__form {
+  contain: layout style;
+}
+
+.md-search-result {
+  contain: layout style paint;
+}
+
+/* Table performance optimization */
+.md-typeset table {
+  contain: layout style;
+  table-layout: fixed;
+}
+
+/* Mermaid diagram optimization */
+.mermaid {
+  contain: layout style paint;
+  max-width: 100%;
+  overflow: auto;
+}
+
+/* Performance-optimized animations */
+@media (prefers-reduced-motion: no-preference) {
+  .md-nav__link--active {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Reduce motion for accessibility and performance */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Code copy button optimization */
+.md-clipboard {
+  will-change: opacity;
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* Feedback widget optimization */
+.md-feedback {
+  contain: layout style;
+}
+
+/* Performance monitoring styles */
+.performance-indicator {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-size: 12px;
+  z-index: 1000;
+  display: none;
+}
+
+/* Development performance debugging */
+.debug-performance .performance-indicator {
+  display: block;
+}
+
+/* High contrast mode optimization */
+@media (prefers-contrast: high) {
+  .md-typeset {
+    text-shadow: none;
+  }
+  
+  .highlight {
+    filter: contrast(1.2);
+  }
+}
+
+/* Dark mode performance optimization */
+[data-md-color-scheme="slate"] {
+  .md-typeset {
+    text-rendering: optimizeSpeed;
+  }
+}
+
+/* Mobile performance optimizations */
+@media screen and (max-width: 76.1875em) {
+  .md-nav {
+    contain: layout style paint;
+  }
+  
+  .md-search {
+    contain: layout style;
+  }
+  
+  /* Reduce complexity on mobile */
+  .md-typeset .highlight {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Tab performance optimization */
+.tabbed-set {
+  contain: layout style;
+}
+
+.tabbed-content {
+  contain: layout style paint;
+}
+
+/* Admonition performance */
+.admonition {
+  contain: layout style;
+}
+
+/* Progress bar styling for performance feedback */
+.loading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, #1976d2, #42a5f5);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease-out;
+  z-index: 9999;
+}
+
+.loading-progress.active {
+  transform: scaleX(1);
+}
+
+/* Skeleton loading styles */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, transparent 37%, transparent 63%, #f0f0f0 75%);
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Critical path CSS inlining support */
+.critical-css-loaded .md-typeset {
+  visibility: visible;
+}
+
+/* GPU acceleration for smooth scrolling */
+.md-content {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Optimize list rendering */
+.md-nav__list {
+  contain: layout;
+}
+
+.md-nav__item {
+  contain: layout;
+} 

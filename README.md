@@ -22,6 +22,8 @@
 - [📖 **Usage Examples**](docs/USAGE_EXAMPLES.md) - Comprehensive usage examples for all interfaces
 - [🛠️ **Tools Guide**](docs/TOOLS_GUIDE.md) - Detailed documentation for all 15+ specialized tools
 - [📝 **CLI Documentation Standards**](docs/CLI_DOCUMENTATION_STYLE_GUIDE.md) - Comprehensive CLI documentation style guide and validation framework
+- [🔧 **CLI Enhanced Validation Engine**](scripts/cli_enhanced_validation.py) - Production-ready CLI validation with AST analysis, caching, and CI/CD integration ✅ **Priority 2 Complete**
+- [📚 **Documentation Website**](http://127.0.0.1:8000/cli-validation-docs/) - Complete documentation site with MkDocs + Sphinx integration ✅ **Priority 2 Complete**
 - [🏗️ **Phase 5.2 Architecture**](PHASE5_2_ARCHITECTURE_SUMMARY.md) - Dual platform coordination (Apache Iggy + Kafka)
 - [📊 **Project Status**](PROJECT_STATUS.md) - Current development status and achievements
 

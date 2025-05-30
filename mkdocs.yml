@@ -1,0 +1,250 @@
+# Enhanced MkDocs Configuration - Production Optimized
+site_name: CLI Enhanced Validation Engine
+site_description: Enterprise-grade CLI documentation validation with comprehensive guides and API reference
+site_url: https://vcf-agent.github.io/cli-validation-docs/
+site_author: VCF Agent Development Team
+
+# Repository information
+repo_name: VCF_Agent
+repo_url: https://github.com/vcf-agent/VCF_Agent
+edit_uri: edit/main/docs/docs_src/
+
+# Build settings
+strict: false
+use_directory_urls: true
+
+# Content directories
+docs_dir: 'docs/docs_src'
+site_dir: 'docs_site'
+
+# Navigation structure
+nav:
+  - Home: index.md
+  - User Guide:
+    - user_guide/index.md
+    - Quick Start: user_guide/quick_start.md
+    - Configuration: user_guide/configuration.md
+    - CLI Reference: user_guide/cli_reference.md
+    - Examples: user_guide/examples.md
+    - Troubleshooting: user_guide/troubleshooting.md
+  - Integration:
+    - integration/index.md
+    - GitHub Actions: integration/github_actions.md
+    - Pre-commit Hooks: integration/pre_commit_hooks.md
+    - Development Workflow: integration/development_workflow.md
+    - IDE Integration: integration/ide_integration.md
+  - API Reference: api/index.md
+  - Advanced:
+    - advanced/index.md
+    - Performance Tuning: advanced/performance_tuning.md
+    - Extending: advanced/extending.md
+    - Contributing: advanced/contributing.md
+  - Architecture: architecture/production-architecture.md
+  - Deployment:
+    - GitHub Setup: deployment/github-environments-setup.md
+    - Production Runbook: deployment/production-deployment-runbook.md
+
+# Theme configuration with performance features
+theme:
+  name: material
+  
+  # Color scheme
+  palette:
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  
+  # Font configuration
+  font:
+    text: Roboto
+    code: Roboto Mono
+  
+  # Remove non-existent logo references - will use default Material theme icon
+  # logo: assets/images/logo.png
+  # favicon: assets/images/favicon.png
+  
+  # Navigation features - fixed to prevent sidebar overlap
+  features:
+    - navigation.instant      # Instant loading
+    - navigation.tracking     # URL tracking
+    - navigation.top         # Back to top button
+    - navigation.sections    # Section navigation
+    - search.highlight       # Highlight search terms
+    - search.share           # Share search
+    - search.suggest         # Search suggestions
+    - content.code.copy      # Copy code blocks
+    - content.code.annotate  # Annotate code
+    - content.tabs.link      # Link content tabs
+
+# Performance-optimized plugins
+plugins:
+  - search:
+      lang: en
+      separator: '[\s\-\.]+'
+      
+  - awesome-pages:
+      filename: .pages
+      collapse_single_pages: true
+      strict: false
+      
+  - mermaid2:
+      arguments:
+        theme: |
+          ^(JSON.parse(__md_get_palette).palette.scheme === 'slate') ?
+          'dark' : 'default'
+          
+  - git-revision-date-localized:
+      type: datetime
+      timezone: UTC
+      locale: en
+      fallback_to_build_date: true
+      enable_creation_date: true
+      exclude:
+        - index.md
+        
+  - minify:
+      minify_html: true
+      minify_js: true
+      minify_css: true
+      htmlmin_opts:
+        remove_comments: true
+        remove_empty_space: true
+      js_files:
+        - javascripts/extra.js
+      css_files:
+        - stylesheets/extra.css
+      cache_safe: true
+
+# Markdown extensions for performance and features
+markdown_extensions:
+  # Table of contents
+  - toc:
+      permalink: true
+      permalink_title: Anchor link to this section
+      toc_depth: 3
+      
+  # Admonitions
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+          
+  # Tabs
+  - pymdownx.tabbed:
+      alternate_style: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+          
+  # Code highlighting
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+      use_pygments: true
+      
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: docs/docs_src
+      check_paths: true
+      
+  # Content features
+  - attr_list
+  - md_in_html
+  - abbr
+  - footnotes
+  - meta
+  
+  # Formatting
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.mark
+  - pymdownx.tilde
+  - pymdownx.keys
+  
+  # Lists and tables
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - tables
+  
+  # Links and references
+  - pymdownx.magiclink:
+      normalize_issue_symbols: true
+      repo_url_shorthand: true
+      user: vcf-agent
+      repo: VCF_Agent
+
+# SEO and metadata
+extra:
+  version:
+    provider: mike
+    
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/vcf-agent/VCF_Agent
+      name: GitHub Repository
+    - icon: fontawesome/solid/envelope
+      link: mailto:contact@vcf-agent.com
+      name: Contact Us
+      
+  analytics:
+    provider: google
+    property: G-XXXXXXXXXX
+    feedback:
+      title: Was this page helpful?
+      ratings:
+        - icon: material/emoticon-happy-outline
+          name: This page was helpful
+          data: 1
+          note: >-
+            Thanks for your feedback!
+        - icon: material/emoticon-sad-outline
+          name: This page could be improved
+          data: 0
+          note: >-
+            Thanks for your feedback! Help us improve this page by
+            <a href="https://github.com/vcf-agent/VCF_Agent/issues" target="_blank" rel="noopener">opening an issue</a>.
+  
+  consent:
+    title: Cookie consent
+    description: >-
+      We use cookies to recognize your repeated visits and preferences, as well
+      as to measure the effectiveness of our documentation and whether users
+      find what they're searching for. With your consent, you're helping us to
+      make our documentation better.
+      
+  # Performance optimization  
+  generator: false
+
+# Additional CSS and JavaScript
+extra_css:
+  - stylesheets/extra.css
+  - stylesheets/performance.css
+
+extra_javascript:
+  - javascripts/extra.js
+  - javascripts/performance.js
+
+# Watch files for development
+watch:
+  - docs/docs_src/
+  - mkdocs.yml
+
+# Copyright
+copyright: >
+  Copyright &copy; 2025 VCF Agent Development Team –
+  <a href="#__consent">Change cookie settings</a> 

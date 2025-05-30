@@ -1,0 +1,25 @@
+# Documentation Dependencies for CLI Enhanced Validation Engine
+# Based on Phase 5 research findings for hybrid MkDocs + Sphinx system
+
+# MkDocs and Material Theme
+mkdocs>=1.5.3
+mkdocs-material>=9.5.0
+mkdocs-awesome-pages-plugin>=2.9.2
+mkdocs-mermaid2-plugin>=1.1.1
+
+# Sphinx and Extensions
+sphinx>=7.2.6
+sphinx-autodoc-typehints>=1.25.2
+sphinx-rtd-theme>=2.0.0
+myst-parser>=2.0.0
+
+# API Documentation
+sphinx-autoapi>=3.0.0
+
+# Development and Testing
+linkchecker>=10.2.1
+
+# Optional enhancements
+pymdown-extensions>=10.7
+mkdocs-git-revision-date-localized-plugin>=1.2.4
+mkdocs-minify-plugin>=0.7.1 

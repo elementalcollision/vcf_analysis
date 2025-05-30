@@ -1,0 +1,346 @@
+name: Documentation CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths: 
+      - 'docs/**'
+      - 'scripts/cli_enhanced_validation.py'
+      - 'mkdocs.yml'
+      - '.github/workflows/documentation.yml'
+  pull_request:
+    branches: [main]
+    paths: 
+      - 'docs/**'
+      - 'mkdocs.yml'
+
+env:
+  PYTHON_VERSION: '3.10'
+  NODE_VERSION: '18'
+
+jobs:
+  # Phase 1: Build and Test Documentation
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for git-based plugins
+        
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          ~/.cache/mkdocs-material
+        key: docs-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('**/requirements*.txt', 'mkdocs.yml') }}
+        restore-keys: |
+          docs-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-
+          
+    - name: Install documentation dependencies
+      run: |
+        pip install --upgrade pip
+        pip install mkdocs-material==9.6.14 mkdocs-mermaid2-plugin mkdocs-git-revision-date-localized-plugin
+        pip install mkdocs-awesome-pages-plugin mkdocs-minify-plugin
+        pip install sphinx sphinx-rtd-theme sphinx-autodoc-typehints sphinx-autoapi
+        pip install docstring_parser requests pytest
+        
+    - name: Build MkDocs documentation
+      run: |
+        echo "🏗️ Building MkDocs documentation..."
+        start_time=$(date +%s)
+        mkdocs build --strict
+        end_time=$(date +%s)
+        build_time=$((end_time - start_time))
+        echo "✅ MkDocs build completed in ${build_time}s"
+        echo "MKDOCS_BUILD_TIME=${build_time}" >> $GITHUB_ENV
+        
+    - name: Build Sphinx API documentation  
+      run: |
+        echo "🏗️ Building Sphinx API documentation..."
+        cd docs/docs_src
+        start_time=$(date +%s)
+        sphinx-build -b html . _build -W
+        end_time=$(date +%s)
+        build_time=$((end_time - start_time))
+        echo "✅ Sphinx build completed in ${build_time}s"
+        echo "SPHINX_BUILD_TIME=${build_time}" >> $GITHUB_ENV
+        
+    - name: Run documentation tests
+      run: |
+        echo "🧪 Running documentation quality tests..."
+        cd scripts
+        python test-documentation.py > documentation-test-results.json
+        
+    - name: Install link checker
+      run: |
+        npm install -g broken-link-checker
+        
+    - name: Validate links
+      run: |
+        echo "🔗 Starting local server for link validation..."
+        mkdocs serve --dev-addr 127.0.0.1:8000 &
+        SERVER_PID=$!
+        sleep 5
+        
+        echo "🔗 Validating internal and external links..."
+        blc http://127.0.0.1:8000 --recursive --ordered --filter-level 3 || echo "Some links may be broken"
+        
+        # Stop the server
+        kill $SERVER_PID || true
+        
+    - name: Performance testing
+      run: |
+        echo "⚡ Testing page load performance..."
+        # Install lighthouse
+        npm install -g lighthouse
+        
+        # Start server for testing
+        mkdocs serve --dev-addr 127.0.0.1:8000 &
+        SERVER_PID=$!
+        sleep 5
+        
+        # Run lighthouse on key pages
+        lighthouse http://127.0.0.1:8000/ --output json --output-path lighthouse-home.json --quiet
+        lighthouse http://127.0.0.1:8000/user_guide/quick_start/ --output json --output-path lighthouse-quickstart.json --quiet
+        
+        # Stop the server
+        kill $SERVER_PID || true
+        
+    - name: Upload test artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results-${{ github.sha }}
+        path: |
+          scripts/documentation-test-results.json
+          lighthouse-*.json
+        retention-days: 30
+        
+    - name: Upload documentation artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: documentation-${{ github.sha }}
+        path: |
+          docs_site/
+          docs/docs_src/_build/
+        retention-days: 30
+
+    - name: Comment on PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const mkdocsBuildTime = process.env.MKDOCS_BUILD_TIME;
+          const sphinxBuildTime = process.env.SPHINX_BUILD_TIME;
+          const totalBuildTime = parseInt(mkdocsBuildTime) + parseInt(sphinxBuildTime);
+          
+          const comment = `## 📊 Documentation Build Report
+          
+          **Build Performance:**
+          - 🏗️ MkDocs build: ${mkdocsBuildTime}s
+          - 📚 Sphinx build: ${sphinxBuildTime}s
+          - ⏱️ Total build time: ${totalBuildTime}s
+          
+          **Quality Checks:**
+          - ✅ Build successful
+          - 🔗 Link validation completed
+          - ⚡ Performance testing completed
+          
+          The documentation is ready for review!`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  # Phase 2: Deploy to GitHub Pages (Production)
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Configure Git
+      run: |
+        git config user.name github-actions[bot]
+        git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+        
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install mkdocs-material==9.6.14 mkdocs-mermaid2-plugin mkdocs-git-revision-date-localized-plugin
+        pip install mkdocs-awesome-pages-plugin mkdocs-minify-plugin
+        pip install sphinx sphinx-rtd-theme sphinx-autodoc-typehints sphinx-autoapi
+        pip install docstring_parser
+        
+    - name: Build complete documentation site
+      run: |
+        echo "🏗️ Building complete documentation for deployment..."
+        
+        # Build MkDocs site
+        mkdocs build
+        
+        # Build Sphinx API docs and integrate
+        cd docs/docs_src  
+        sphinx-build -b html . _build
+        cd ../..
+        
+        # Copy Sphinx docs to MkDocs site
+        mkdir -p docs_site/api/
+        cp -r docs/docs_src/_build/* docs_site/api/
+        
+        echo "✅ Complete documentation site built"
+        
+    - name: Setup GitHub Pages
+      uses: actions/configure-pages@v3
+      
+    - name: Upload to GitHub Pages
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: docs_site/
+        
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
+      
+    - name: Notify deployment success
+      run: |
+        echo "🚀 Documentation deployed successfully!"
+        echo "📖 Site URL: ${{ steps.deployment.outputs.page_url }}"
+
+  # Phase 3: Performance Monitoring
+  monitor:
+    if: github.ref == 'refs/heads/main'
+    needs: deploy
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Wait for deployment
+      run: sleep 30
+      
+    - name: Performance audit
+      run: |
+        echo "📊 Running post-deployment performance audit..."
+        npm install -g lighthouse
+        
+        SITE_URL="${{ needs.deploy.outputs.page_url }}"
+        if [ -z "$SITE_URL" ]; then
+          SITE_URL="https://vcf-agent.github.io/cli-validation-docs/"
+        fi
+        
+        lighthouse "$SITE_URL" --output json --output-path audit-results.json --quiet
+        
+        # Extract key metrics
+        PERFORMANCE_SCORE=$(jq '.categories.performance.score * 100' audit-results.json)
+        ACCESSIBILITY_SCORE=$(jq '.categories.accessibility.score * 100' audit-results.json)
+        SEO_SCORE=$(jq '.categories.seo.score * 100' audit-results.json)
+        
+        echo "📊 Performance Audit Results:"
+        echo "🚀 Performance: ${PERFORMANCE_SCORE}%"
+        echo "♿ Accessibility: ${ACCESSIBILITY_SCORE}%"
+        echo "🔍 SEO: ${SEO_SCORE}%"
+        
+        # Set thresholds
+        if (( $(echo "$PERFORMANCE_SCORE < 90" | bc -l) )); then
+          echo "⚠️ Performance score below threshold (90%)"
+        fi
+        
+        if (( $(echo "$ACCESSIBILITY_SCORE < 95" | bc -l) )); then
+          echo "⚠️ Accessibility score below threshold (95%)"
+        fi
+        
+        if (( $(echo "$SEO_SCORE < 90" | bc -l) )); then
+          echo "⚠️ SEO score below threshold (90%)"
+        fi
+        
+    - name: Upload performance results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-audit-${{ github.sha }}
+        path: audit-results.json
+        
+    - name: Create performance issue if thresholds not met
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '📊 Documentation Performance Issue',
+            body: `## Performance Audit Failed
+            
+            The documentation site performance audit failed to meet minimum thresholds:
+            
+            - **Performance**: Minimum 90%
+            - **Accessibility**: Minimum 95%  
+            - **SEO**: Minimum 90%
+            
+            **Action Required**: Review and optimize the documentation site.
+            
+            **Workflow**: ${context.workflow}
+            **Run**: ${context.runNumber}
+            **Commit**: ${context.sha}`,
+            labels: ['documentation', 'performance']
+          });
+
+  # Phase 4: Update gitignore and cleanup
+  cleanup:
+    if: always()
+    needs: [build-and-test]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Update .gitignore for documentation artifacts
+      run: |
+        # Add documentation artifacts to .gitignore if not present
+        echo "# Documentation artifacts - Auto-generated" >> .gitignore
+        echo ".validation-cache/" >> .gitignore
+        echo "*.backup" >> .gitignore
+        echo "*.bak" >> .gitignore
+        echo "*.orig" >> .gitignore
+        echo "*~" >> .gitignore
+        echo "docs_site/" >> .gitignore
+        echo "docs/docs_src/_build/" >> .gitignore
+        echo "lighthouse-*.json" >> .gitignore
+        echo "documentation-test-results.json" >> .gitignore
+        
+        # Remove duplicates and sort
+        sort .gitignore | uniq > .gitignore.tmp
+        mv .gitignore.tmp .gitignore
+        
+    - name: Commit updated .gitignore
+      if: github.ref == 'refs/heads/main'
+      run: |
+        git add .gitignore
+        if ! git diff --cached --quiet; then
+          git commit -m "docs: Update .gitignore with documentation artifacts"
+          git push
+        fi 

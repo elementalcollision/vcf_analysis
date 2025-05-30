@@ -1,0 +1,68 @@
+version: '3.8'
+
+volumes:
+  grafana_data: {}
+
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:latest # Using the latest version, consider pinning to a specific version for stability
+    container_name: jaeger_vcf_agent
+    ports:
+      # OTLP gRPC receiver
+      - "4317:4317"
+      # OTLP HTTP receiver
+      - "4318:4318"
+      # Jaeger UI
+      - "16686:16686"
+      # Zipkin compatible port (optional, if you need to send Zipkin format traces)
+      # - "9411:9411"
+      # Prometheus metrics from Jaeger itself (optional)
+      - "16687:16687"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      # You can set sampling strategies here if needed, e.g.:
+      # - COLLECTOR_SAMPLING_STRATEGY_TYPE=const
+      # - COLLECTOR_SAMPLING_STRATEGY_PARAM=1 # Sample all
+      # Or for probabilistic:
+      # - COLLECTOR_SAMPLING_STRATEGY_TYPE=probabilistic
+      # - COLLECTOR_SAMPLING_STRATEGY_PARAM=0.1 # Sample 10%
+      - LOG_LEVEL=info # Adjust log level as needed (e.g., debug, warn, error)
+    # volumes:
+      # - ./jaeger-ui.json:/etc/jaeger/jaeger-ui.json # Optional: For custom UI configuration
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus_vcf_agent
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    restart: unless-stopped
+    # For Linux hosts, if host.docker.internal doesn't work for vcf_agent scraping:
+    # network_mode: "host" 
+    # Or add depends_on if Prometheus should wait for Jaeger (though not strictly necessary for scraping)
+    # depends_on:
+    #   - jaeger 
+
+  grafana:
+    image: grafana/grafana-oss:latest # Using latest OSS version
+    container_name: grafana_vcf_agent
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      # You can also mount provisioning files for data sources and dashboards here
+      # - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      # - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+    environment:
+      # GF_SECURITY_ADMIN_USER: admin # Default is admin
+      # GF_SECURITY_ADMIN_PASSWORD: admin # Default is admin, will be asked to change on first login
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning # If using provisioning
+      # GF_AUTH_ANONYMOUS_ENABLED: true # If anonymous access is desired for viewing
+      # GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    restart: unless-stopped
+    depends_on:
+      - prometheus # Grafana depends on Prometheus for its data source 
