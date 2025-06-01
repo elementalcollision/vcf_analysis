@@ -283,6 +283,17 @@ def link_variant_to_sample(conn: kuzu.Connection, sample_id: str, variant_id: st
         raise
 
 def execute_query(conn: kuzu.Connection, cypher_query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    """Executes a Cypher query using the Kuzu connection and returns the results as a list of dictionaries.
+    Parameters:
+        - conn (kuzu.Connection): The database connection object to execute the query.
+        - cypher_query (str): The Cypher query to execute.
+        - params (Optional[Dict[str, Any]]): Parameters to include in the query, defaults to None.
+    Returns:
+        - List[Dict[str, Any]]: A list of dictionaries representing the query results.
+    Processing Logic:
+        - Handles both single and list results from the query execution, focusing on the first query result in case of a list.
+        - Converts the query result to a Pandas DataFrame and then to a list of dictionaries.
+        - Contains error handling for unexpected types and ensures cleanup of resources."""
     query_result_union: Optional[Union[kuzu.query_result.QueryResult, List[kuzu.query_result.QueryResult]]] = None
     try:
         print(f"Executing Cypher query: {cypher_query} with params: {params}")

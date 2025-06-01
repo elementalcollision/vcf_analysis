@@ -70,6 +70,18 @@ class PrometheusMetrics:
     
     def __init__(self):
         # VCF Processing Metrics
+        """Initializes various metrics for monitoring VCF processing and system performance.
+        Parameters:
+            None
+        Returns:
+            None
+        Processing Logic:
+            - Sets up counters, histograms, and gauges to track VCF processing, platform health, 
+        system resource usage, message metrics, errors, and performance targets.
+            - Metrics are categorized into VCF processing, platform health, system resources, 
+        message properties, error tracking, and performance monitoring.
+            - Specific labels are applied to track dimensions such as platform, chromosome, status, 
+        component, error type, severity, compression, and others crucial for detailed monitoring."""
         self.variants_processed_total = Counter(
             'vcf_variants_processed_total',
             'Total number of VCF variants processed',
@@ -303,6 +315,15 @@ class IggyMetricsCollector:
     """
     
     def __init__(self):
+        """Initializes an object with monitoring attributes for Apache Iggy operations.
+        Parameters:
+            - None
+        Returns:
+            - None
+        Processing Logic:
+            - Initializes a deque to maintain a history of up to 100 metrics records.
+            - Sets up a CircuitBreaker with specific failure and recovery parameters to handle operation failures.
+            - Creates and assigns performance metrics for latency, throughput, and health using a meter object."""
         self.is_running = False
         self.metrics_history: deque = deque(maxlen=100)
         self.circuit_breaker = CircuitBreaker(
@@ -389,6 +410,15 @@ class KafkaMetricsCollector:
     """
     
     def __init__(self):
+        """Initializes the Kafka monitoring and circuit breaking mechanism.
+        Parameters:
+            None
+        Returns:
+            None
+        Processing Logic:
+            - Sets up a circuit breaker with specified thresholds for monitoring Kafka operations.
+            - Initializes performance metrics using histograms and gauges for latency, throughput, health, and consumer lag.
+            - The metrics history is stored in a deque with a maximum length of 100 for efficient tracking."""
         self.is_running = False
         self.metrics_history: deque = deque(maxlen=100)
         self.circuit_breaker = CircuitBreaker(

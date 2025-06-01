@@ -33,6 +33,15 @@ def is_vcf_or_bcf(filename):
     return ext.endswith(".vcf") or ext.endswith(".vcf.gz") or ext.endswith(".bcf")
 
 def generate_markdown_report(results, directory):
+    """Generate a markdown report based on compliance check results.
+    Parameters:
+        - results (List[Tuple[str, str, bool, str]]): A list of tuples containing the file name, tool used, validity, and error message.
+        - directory (str): The directory that was checked.
+    Returns:
+        - str: A markdown-formatted string representing the compliance report.
+    Processing Logic:
+        - Formats each result into a markdown table row, replacing pipe characters in error messages to avoid markdown misinterpretation.
+        - Marks validity with a check or cross emoji based on the boolean value."""
     lines = ["# Batch Compliance Check Report\n",
              f"Checked directory: `{directory}`\n",
              "| File | Tool | Valid | Error |",
@@ -43,6 +52,17 @@ def generate_markdown_report(results, directory):
 
 def generate_color_markdown_report(results, directory):
     # Uses HTML <span> for color, which works in GitHub/HTML renderers
+    """Generate a markdown report with colored pass/fail annotations based on compliance check results.
+    Parameters:
+        - results (list of tuples): A list where each tuple contains details about the compliance check (`filename`, `tool`, `validity`, `error_message`).
+        - directory (str): The directory that was checked.
+    Returns:
+        - str: A markdown-formatted string that represents the batch compliance check report.
+    Processing Logic:
+        - Builds a markdown table with headers and formatted data for each file and tool checked.
+        - Uses HTML `<span>` elements to apply color styling for pass and fail indicators.
+        - Replaces any pipe characters in the error messages to avoid markdown table misalignment.
+        - Appends a legend explaining the color codes used for pass and fail statuses."""
     lines = ["# Batch Compliance Check Report\n",
              f"Checked directory: `{directory}`\n",
              "| File | Tool | Valid | Error |",
@@ -58,6 +78,17 @@ def generate_color_markdown_report(results, directory):
     return "\n".join(lines)
 
 def generate_html_report(results, directory):
+    """Generates an HTML report summarizing the compliance checks performed on files.
+    Parameters:
+        - results (list of tuples): A list where each tuple contains file information from compliance checks. Each tuple consists of four items: file name (str), tool name (str), validation status (bool), and error message (str).
+        - directory (str): The directory path where the compliance checks were performed.
+    Returns:
+        - str: An HTML formatted string representing the compliance check report.
+    Processing Logic:
+        - Constructs an HTML document with a styled report table.
+        - Generates current date and time to include in the report.
+        - Formats validation status with PASS or FAIL indicators.
+        - Converts error message pipes ('|') into spaces for better readability."""
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     html = [
         "<!DOCTYPE html>",
@@ -97,6 +128,16 @@ def generate_html_report(results, directory):
     return "\n".join(html)
 
 def main():
+    """Batch VCF/BCF Compliance Checker main function.
+    Parameters:
+        - None
+    Returns:
+        - None
+    Processing Logic:
+        - Parses command-line arguments for directory, tool, output file, edge-case generation, notifications, and output format.
+        - Scans the specified directory for VCF/BCF files and validates them against the selected compliance tool.
+        - Handles edge-case generation if specified and outputs validation results in the chosen format.
+        - Saves the compliance report to stdout or a specified file, potentially notifying by saving to a specific folder if the notify option is selected."""
     parser = argparse.ArgumentParser(description="Batch VCF/BCF Compliance Checker")
     parser.add_argument("-d", "--directory", default="sample_data", help="Directory to scan for VCF/BCF files")
     parser.add_argument("-t", "--tool", default=None, help="Compliance tool to use (bcftools, gatk, or as configured)")

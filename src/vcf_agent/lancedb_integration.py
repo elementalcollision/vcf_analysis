@@ -293,6 +293,17 @@ class DimensionReducer:
     Integrated directly into the embedding service.
     """
     def __init__(self, target_dimensions: int = 768):
+        """Initialize an object for dimensionality reduction using PCA.
+        Parameters:
+            - target_dimensions (int): Desired number of dimensions for the reduced dataset. Defaults to 768.
+        Returns:
+            - None: The function does not return any value. It sets up internal state for future processing.
+        Processing Logic:
+            - Sets up initial dimensions and checks for availability of scikit-learn.
+            - Initializes model attributes such as PCA model and scaler as None.
+            - Flags is_trained to False, indicating model needs training.
+            - Prepares to store training embeddings and specifies a minimum sample size for reliable PCA application.
+            - Issues a warning when scikit-learn is unavailable, showing dimension reduction feature will not work."""
         self.target_dimensions = target_dimensions
         self.original_dimensions = 1536
         self.pca_model = None

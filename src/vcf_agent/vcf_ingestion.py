@@ -143,6 +143,17 @@ class VCFStreamer:
     """Memory-efficient VCF file streaming processor."""
     
     def __init__(self, vcf_path: str, batch_size: int = 1000, resume_from: Optional[str] = None):
+        """Initializes an instance with paths and settings for processing VCF files.
+        Parameters:
+            - vcf_path (str): Path to the VCF file to be processed.
+            - batch_size (int): Number of records to process at a time, defaults to 1000.
+            - resume_from (Optional[str]): Position to resume processing from, in format 'chrom:pos'.
+        Returns:
+            - None
+        Processing Logic:
+            - Parses the 'resume_from' parameter to extract the chromosome and position if provided.
+            - Logs a warning if the 'resume_from' format is invalid.
+            - Sets the current processing position to None initially."""
         self.vcf_path = vcf_path
         self.batch_size = batch_size
         self.resume_from = resume_from
@@ -278,6 +289,16 @@ class VCFIngestionPipeline:
     """Main VCF ingestion pipeline orchestrator."""
     
     def __init__(self, config: IngestionConfig):
+        """Initialize the ingestion process with configuration settings.
+        Parameters:
+            - config (IngestionConfig): The configuration settings for the ingestion process which includes file paths, batch size, and embedding dimensions.
+        Returns:
+            - None
+        Processing Logic:
+            - Initializes the VCFStreamer with the specified file, batch size, and resume point from the configuration.
+            - Sets up an EmbeddingGenerator with the specified embedding dimensions from the configuration.
+            - Establishes initial null state for database connections which will be setup later as required.
+            - Initializes the progress tracking mechanism and prepares results tracking."""
         self.config = config
         self.validator = VCFValidator()
         self.streamer = VCFStreamer(

@@ -137,6 +137,20 @@ class SessionConfig:
         ollama_base_url: Optional[str] = "http://localhost:11434",
         memory_optimization: Optional[MemoryOptimizationConfig] = None
     ):
+        """Initializes an instance of the class with configuration settings for model interaction.
+        Parameters:
+            - raw_mode (Optional[bool]): Indicates if the instance should operate in raw mode; default is None.
+            - model_provider (Literal["ollama", "openai", "cerebras"]): Specifies the provider of the model, defaults to "ollama".
+            - credentials_file (Optional[str]): Path to the credentials file, if applicable.
+            - reference_fasta (Optional[str]): Path to the reference FASTA file, if necessary.
+            - ollama_model_name (Optional[str]): Name of the Ollama model to use; default is "qwen3:4b".
+            - ollama_base_url (Optional[str]): Base URL for accessing Ollama model services, defaults to "http://localhost:11434".
+            - memory_optimization (Optional[MemoryOptimizationConfig]): Configuration for memory optimization, defaults to a new MemoryOptimizationConfig instance.
+        Returns:
+            - None: This is a constructor, therefore it does not return a value.
+        Processing Logic:
+            - Sets the model provider to a default of "ollama" if not specified.
+            - Initializes a memory optimization configuration if none is provided."""
         self.raw_mode = raw_mode
         self.model_provider = model_provider
         self.credentials_file = credentials_file

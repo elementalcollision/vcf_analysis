@@ -130,6 +130,16 @@ class KafkaConnectionManager:
     """
     
     def __init__(self, config: Phase5Config):
+        """Initializes the Kafka connection configuration and tracking metrics.
+        Parameters:
+            - config (Phase5Config): Configuration object for initializing Kafka connections.
+        Returns:
+            - None: The constructor does not return a value.
+        Processing Logic:
+            - Initializes the Kafka producer and consumer dictionaries for storing connection instances.
+            - Sets initial health status and tracks the last health check time.
+            - Configures maximum consecutive failure threshold for connection health.
+            - Sets up metric counters for monitoring the total number of Kafka connections and errors."""
         self.config = config
         self.kafka_config = config.kafka
         self.producers: Dict[str, KafkaProducer] = {}
