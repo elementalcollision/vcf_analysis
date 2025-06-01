@@ -43,6 +43,17 @@ class EmbeddingCache:
     """Thread-safe LRU cache for embeddings with optimized persistence."""
     
     def __init__(self, max_size: int = 10000, persist_file: Optional[str] = None, max_cache_file_size_mb: int = 50):
+        """Initialize a cache object with specific constraints and optional persistence.
+        Parameters:
+            - max_size (int): Maximum number of items the cache can hold. Default is 10000.
+            - persist_file (Optional[str]): File path for persistence option. If provided, cache can be saved to or loaded from this file.
+            - max_cache_file_size_mb (int): Maximum size of the cache file in megabytes. Default is 50.
+        Returns:
+            - None: The constructor initializes attributes and loads cache if persist_file is specified.
+        Processing Logic:
+            - Initializes a thread-safe cache and tracks access order for eviction purposes.
+            - Sets up attributes for managing cache size and persistence options.
+            - Tries to load cache data from persist_file if the file is provided."""
         self.max_size = max_size
         self.persist_file = persist_file
         self.max_cache_file_size_mb = max_cache_file_size_mb
@@ -197,6 +208,17 @@ class OptimizedEmbeddingService:
     """
     
     def __init__(self, base_service, config: OptimizationConfig):
+        """Initialize the OptimizedEmbeddingService with caching capabilities.
+        Parameters:
+            - base_service: The base service to be optimized with embedding caching.
+            - config (OptimizationConfig): Configuration object for the embedding optimization settings.
+        Returns:
+            - None
+        Processing Logic:
+            - Initializes with MemoryAwareEmbeddingCache if Phase 2 is available and caching is enabled.
+            - Registers the cache with the Phase 2 recovery system if applicable.
+            - Falls back to an original EmbeddingCache if Phase 2 is not available but caching is enabled.
+            - Sets up internal statistics tracking for cache usage and embedding requests."""
         self.base_service = base_service
         self.config = config
         
@@ -516,6 +538,15 @@ class PerformanceOptimizer:
     """Main optimization coordinator."""
     
     def __init__(self, config: OptimizationConfig = None):
+        """Initializes an optimization system with configurable components.
+        Parameters:
+            - config (OptimizationConfig, optional): Configuration settings for optimization. Defaults to a new OptimizationConfig instance if not provided.
+        Returns:
+            - None: This function does not return a value.
+        Processing Logic:
+            - Initializes `embedding_cache` to None.
+            - Sets up `query_batcher`, `async_processor`, and `memory_optimizer` using the provided or default configuration.
+            - Initializes a statistics dictionary to track applied optimizations, time saved, and memory saved."""
         self.config = config or OptimizationConfig()
         self.embedding_cache = None
         self.query_batcher = QueryBatcher(self.config)

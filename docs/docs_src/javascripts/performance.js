@@ -411,6 +411,19 @@
     };
 
     // Initialize all performance features
+    /**
+    * Initializes various performance optimization features when the DOM is ready.
+    * @example
+    * init()
+    * // Logs "📊 Performance optimization features initialized"
+    * @param {void} None - This function does not take any parameters.
+    * @returns {void} This function does not return anything.
+    * @description
+    *   - Sets up event listener to delay initialization until the DOM is fully loaded.
+    *   - Initializes features like Performance, LazyLoading, Prefetching, ProgressiveEnhancement, and ErrorTracking.
+    *   - Adds a loading progress indicator to the body of the document.
+    *   - Ensures progress bar activation during page navigation.
+    */
     function init() {
         // Wait for DOM to be ready
         if (document.readyState === 'loading') {

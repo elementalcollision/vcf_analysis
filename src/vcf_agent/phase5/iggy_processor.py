@@ -111,6 +111,15 @@ class IggyConnectionManager:
     """
     
     def __init__(self, config: Phase5Config):
+        """Initializes the necessary configurations and metrics for managing Iggy clients.
+        Parameters:
+            - config (Phase5Config): Configuration object that contains settings for Iggy clients.
+        Returns:
+            - None: This is an initializer and does not return a value.
+        Processing Logic:
+            - Sets up initial connection health check values and maximum failure thresholds.
+            - Configures stream and topic names from Iggy configuration.
+            - Initializes metric counters for tracking connections and connection errors."""
         self.config = config
         self.iggy_config = config.iggy
         self.clients: Dict[str, IggyClient] = {}

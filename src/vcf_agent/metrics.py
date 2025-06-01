@@ -173,6 +173,18 @@ def safe_register_metric(metric, registry=None):
 
 # --- Structlog OTel Processor ---
 def add_otel_context(_, __, event_dict):
+    """Add OpenTelemetry (OTel) context information to the event dictionary.
+    Parameters:
+        - _ (unused): Placeholder for the first parameter that is not used.
+        - __ (unused): Placeholder for the second parameter that is not used.
+        - event_dict (dict): The dictionary to which OTel context information will be added.
+    Returns:
+        - dict: The updated event dictionary with OTel context information added, if available.
+    Processing Logic:
+        - Extracts the current span using OpenTelemetry tracing utilities.
+        - Checks if the span is recording and has a valid span context.
+        - Retrieves and formats the trace ID and span ID from the span context.
+        - Attempts to get the service name from the span's associated resource attributes, using a common method or resorting to private attributes if necessary."""
     current_span = trace.get_current_span()
     if isinstance(current_span, Span) and current_span.is_recording():
         span_context = current_span.get_span_context()
@@ -197,6 +209,15 @@ def add_otel_context(_, __, event_dict):
 
 def setup_logging():
     # Basic logging configuration (can be overridden by app-level config)
+    """Setup logging configuration using structlog.
+    Parameters:
+        - None
+    Returns:
+        - BoundLogger: A configured logger object ready for structured logging.
+    Processing Logic:
+        - Sets basic logging configuration using environment variable or defaults to 'INFO'.
+        - Configures structlog with processors for adding logger name and level and formatting logs.
+        - Customizes log rendering for better readability, optionally with JSON output."""
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO").upper(), format="%(message)s")
     structlog.configure(
         processors=[
@@ -345,6 +366,15 @@ METRICS_HTTP_PORT = int(os.environ.get("VCF_AGENT_METRICS_PORT", 8000))
 _metrics_server_thread = None
 
 def start_metrics_http_server(port: Optional[int] = None):
+    """Starts a Prometheus metrics HTTP server on the specified port.
+    Parameters:
+        - port (Optional[int]): Port number for the metrics server. Uses a default port if not provided.
+    Returns:
+        - None
+    Processing Logic:
+        - Initializes a background thread to start the HTTP server using the specified registry configuration.
+        - Ensures the server is only started if it is not running already.
+        - Logs all outcomes - successful start, server already running, or errors encountered during startup."""
     global _metrics_server_thread
     actual_port = port if port is not None else METRICS_HTTP_PORT
     if _metrics_server_thread is None or not _metrics_server_thread.is_alive():
@@ -430,6 +460,22 @@ def observe_ai_interaction(
     error_type: Optional[str] = None
 ):
     # Increment request and error counters
+    """Observe and record metrics related to AI interaction.
+    Parameters:
+        - model_provider (str): Name of the AI model provider.
+        - endpoint_task (str): Specific task or endpoint being invoked.
+        - duration_seconds (float): Duration of the AI interaction in seconds.
+        - prompt_tokens (Optional[int]): Number of prompt tokens used in the request, if applicable.
+        - completion_tokens (Optional[int]): Number of completion tokens generated, if applicable.
+        - total_tokens (Optional[int]): Total number of tokens used when prompt and completion tokens are not specified.
+        - success (bool): Whether the interaction was successful or not, default is True.
+        - error_type (Optional[str]): Type of error encountered if the interaction was not successful.
+    Returns:
+        - None: The function does not return a value; it updates metrics.
+    Processing Logic:
+        - Inc/observe appropriate metrics based on success or failure of interaction.
+        - Record error type unless specified otherwise.
+        - Avoid double counting of tokens when prompt/completion tokens are specified along with total tokens."""
     status_str = "success" if success else "error"
     VCF_AGENT_AI_REQUESTS_TOTAL.labels(model_provider=model_provider, endpoint_task=endpoint_task, status=status_str).inc()
 

@@ -242,6 +242,17 @@ class CacheManager:
     """
     
     def __init__(self, cache_dir: str = ".validation-cache", ttl_hours: int = 24, max_size_mb: int = 100):
+        """Initialize a cache manager with specified directory, time-to-live, and size constraints.
+        Parameters:
+            - cache_dir (str): Directory where cached data will be stored. Defaults to ".validation-cache".
+            - ttl_hours (int): Time-to-live for cached items in hours. Defaults to 24 hours.
+            - max_size_mb (int): Maximum cache size in megabytes. Defaults to 100MB.
+        Returns:
+            - None: This method initializes the cache manager; there is no return value.
+        Processing Logic:
+            - Converts ttl_hours to seconds for internal use.
+            - Ensures that the cache directory exists, creating it if necessary.
+            - Initializes cache hit/miss statistics counters."""
         self.cache_dir = Path(cache_dir)
         self.ttl_seconds = ttl_hours * 3600
         self.max_size_bytes = max_size_mb * 1024 * 1024
@@ -568,6 +579,14 @@ class ValidationConfig:
     """
     
     def __init__(self, config_file: Optional[str] = None):
+        """Initializes the ValidationConfig class with default settings and optional configuration file.
+        Parameters:
+            - config_file (Optional[str]): The path to a configuration file to override default settings.
+        Returns:
+            - None: This constructor does not return any value.
+        Processing Logic:
+            - Initializes various default settings related to caching, performance, validation rules, and CI/CD.
+            - Loads additional configuration settings from the provided file, if specified."""
         self.logger = logging.getLogger(__name__ + '.ValidationConfig')
         
         # Default configuration

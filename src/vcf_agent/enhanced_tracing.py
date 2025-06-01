@@ -346,6 +346,19 @@ class EnhancedTraceService:
         tracing_config: Optional[TracingConfig] = None,
         environment: Optional[str] = None
     ):
+        """Initializes a tracer for monitoring service performance and memory optimization.
+        Parameters:
+            - service_name (str): Name of the service for which tracing is initialized.
+            - config (Optional[MemoryOptimizationConfig]): Configuration for optimizing memory usage, defaults to a standard configuration if not provided.
+            - tracing_config (Optional[TracingConfig]): Configuration for tracing, defaults to environment-based configuration if not provided.
+            - environment (Optional[str]): Environment setting for tracing, overrides default if specified.
+        Returns:
+            - None: This is a constructor method, it does not return a value.
+        Processing Logic:
+            - Initializes tracing configuration with environment setting if provided.
+            - Sets up tracer and sampling based on environmental configurations.
+            - Initializes performance tracking structures for operations.
+            - Sets logger to debug mode if tracing in debug mode is enabled."""
         self.service_name = service_name
         self.memory_config = config or MemoryOptimizationConfig()
         self.tracing_config = tracing_config or TracingConfig.from_environment()
@@ -484,7 +497,30 @@ class EnhancedTraceService:
         """Decorator for AI provider operations."""
         def decorator(func):
             @functools.wraps(func)
+            """Wraps a function to add AI provider span context for tracking execution details.
+            Parameters:
+                - func (function): The function to be wrapped, which can be asynchronous or synchronous.
+            Returns:
+                - function: The wrapped version of the input function with added span context attributes.
+            Processing Logic:
+                - Determines if the function is synchronous or asynchronous and uses the appropriate wrapper.
+                - Establishes an AI provider span context to track execution details such as function name, arguments, and success status.
+                - Handles exceptions by setting success attribute to false, while successful executions set it to true."""
             async def async_wrapper(*args, **kwargs):
+                """A wrapper for an asynchronous function that integrates tracing and error handling.
+                Parameters:
+                    - *args: Arguments to be passed to the asynchronous function.
+                    - **kwargs: Keyword arguments to be passed to the asynchronous function.
+                    - provider (str): The AI provider managing the span context.
+                    - model (str): The model being used for the operation.
+                    - operation (str): The operation being traced.
+                    - func (Callable): The asynchronous function to be wrapped.
+                Returns:
+                    - Any: The result returned by the asynchronous function.
+                Processing Logic:
+                    - Executes the wrapped asynchronous function within a tracing span context.
+                    - Sets attributes on the span based on function name, argument counts, and execution success.
+                    - Raises any exception from the asynchronous function after logging it in the span."""
                 with self.ai_provider_span_context(provider, model, operation) as span:
                     # Add function-specific attributes
                     span.set_ai_attributes(
@@ -503,6 +539,16 @@ class EnhancedTraceService:
             
             @functools.wraps(func)
             def sync_wrapper(*args, **kwargs):
+                """Syncs function calls within an AI provider span context for monitoring and tracking.
+                Parameters:
+                    - *args: Variable length argument list for the target function.
+                    - **kwargs: Arbitrary keyword arguments for the target function.
+                Returns:
+                    - Any: The result of the function `func` when called with provided arguments.
+                Processing Logic:
+                    - The synchronous execution of the function is wrapped in a monitoring span context.
+                    - Function metadata like name and argument count are logged in the span.
+                    - Success or failure of the function execution is recorded as span attributes."""
                 with self.ai_provider_span_context(provider, model, operation) as span:
                     span.set_ai_attributes(
                         function_name=func.__name__,
@@ -531,7 +577,29 @@ class EnhancedTraceService:
         """Decorator for VCF processing operations."""
         def decorator(func):
             @functools.wraps(func)
+            """Apply a decorator to a function to perform context logging during its execution.
+            Parameters:
+                - func (callable): The function to be wrapped by the decorator.
+            Returns:
+                - callable: A wrapped function that logs its execution context including arguments and success status.
+            Processing Logic:
+                - Establish a context for the operation before function execution.
+                - Log function name, argument count, and keyword argument count.
+                - Execute the function within this context.
+                - Capture and log the success status or handle exceptions accordingly."""
             def wrapper(*args, **kwargs):
+                """Wrapper function for executing a given function within a VCF operation context, recording attributes about the operation.
+                Parameters:
+                    - *args: Variable length argument list passed to the wrapped function.
+                    - **kwargs: Arbitrary keyword arguments passed to the wrapped function.
+                    - operation (Operation object): The context of VCF operation during execution.
+                Returns:
+                    - any: Whatever the wrapped function returns upon successful execution.
+                Processing Logic:
+                    - The function execution is wrapped within a context manager.
+                    - VCF operation attributes such as function name and argument counts are recorded.
+                    - Success or failure of the function invocation is captured in the context attributes.
+                    - Raises any exception encountered during function execution after setting 'success' to False."""
                 with self.vcf_operation_context(operation) as span:
                     span.set_vcf_attributes(
                         function_name=func.__name__,
@@ -554,7 +622,28 @@ class EnhancedTraceService:
         """Decorator for memory optimization operations."""
         def decorator(func):
             @functools.wraps(func)
+            """A decorator for function memory context management.
+            Parameters:
+                - func (callable): The function to be wrapped and managed within a memory context.
+            Returns:
+                - callable: The wrapped function with added memory context and attribute management.
+            Processing Logic:
+                - Opens a memory context before executing the function, capturing it in a span.
+                - Sets memory attributes such as function name and optimization level.
+                - Upon successful function execution, sets a success attribute in the span.
+                - On exception, sets a failure attribute and re-raises the exception."""
             def wrapper(*args, **kwargs):
+                """Wrapper function to execute another function while managing memory context and capturing its attributes.
+                Parameters:
+                    - *args: Positional arguments to pass to the `func`.
+                    - **kwargs: Keyword arguments to pass to the `func`.
+                Returns:
+                    - The return value of the executed function `func`.
+                Processing Logic:
+                    - Establishes a memory context using `self.memory_context`.
+                    - Sets attributes related to the function name and optimization level.
+                    - Executes the given function, capturing success or failure state.
+                    - Raises any exceptions encountered during execution."""
                 with self.memory_context(operation) as span:
                     span.set_memory_attributes(
                         function_name=func.__name__,
